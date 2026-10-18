@@ -1,0 +1,249 @@
+@import "tailwindcss";
+
+/*
+ * Light and dark, from the TaskFlow design tokens (project 17), the same shadcn values the
+ * extension uses (jj_source_code/src/styles/app.css). next-themes sets data-theme on <html>.
+ */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+:root {
+  --background: oklch(0.994 0.003 300);
+  --foreground: oklch(0.185 0.022 296);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.185 0.022 296);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.185 0.022 296);
+  --primary: oklch(0.53 0.22 295);
+  --primary-foreground: oklch(0.99 0.004 300);
+  --secondary: oklch(0.965 0.008 300);
+  --secondary-foreground: oklch(0.24 0.024 296);
+  --muted: oklch(0.965 0.008 300);
+  --muted-foreground: oklch(0.53 0.022 296);
+  --accent: oklch(0.955 0.014 300);
+  --accent-foreground: oklch(0.24 0.028 296);
+  --destructive: oklch(0.58 0.22 27);
+  --border: oklch(0.912 0.008 300);
+  --input: oklch(0.912 0.008 300);
+  --ring: oklch(0.53 0.22 295);
+  --sidebar: oklch(0.975 0.006 300);
+  --sidebar-foreground: oklch(0.185 0.022 296);
+  --sidebar-border: oklch(0.912 0.008 300);
+  --radius: 0.75rem;
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --background: oklch(0.165 0.018 296);
+  --foreground: oklch(0.97 0.006 300);
+  --card: oklch(0.215 0.02 296);
+  --card-foreground: oklch(0.97 0.006 300);
+  --popover: oklch(0.225 0.022 296);
+  --popover-foreground: oklch(0.97 0.006 300);
+  --primary: oklch(0.7 0.18 296);
+  --primary-foreground: oklch(0.16 0.02 296);
+  --secondary: oklch(0.26 0.022 296);
+  --secondary-foreground: oklch(0.97 0.006 300);
+  --muted: oklch(0.26 0.022 296);
+  --muted-foreground: oklch(0.72 0.022 296);
+  --accent: oklch(0.285 0.03 296);
+  --accent-foreground: oklch(0.98 0.005 300);
+  --destructive: oklch(0.68 0.19 22);
+  --border: oklch(0.3 0.02 296);
+  --input: oklch(0.3 0.02 296);
+  --ring: oklch(0.7 0.18 296);
+  --sidebar: oklch(0.185 0.019 296);
+  --sidebar-foreground: oklch(0.97 0.006 300);
+  --sidebar-border: oklch(0.28 0.02 296);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  /* Geist for everything, headings included. */
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+@layer base {
+  *,
+  ::after,
+  ::before {
+    border-color: var(--color-border);
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  /* The mobile menu is a modal <dialog>: keep the page behind it still. */
+  html:has(dialog[open]) {
+    overflow: hidden;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
+}
+
+@layer components {
+  /*
+   * Reading typography for long-form pages (the design's <site-prose>). Measure under
+   * about 68ch; body 16px/28px so prose and the bordered definition rows share one rhythm.
+   */
+  .jj-prose {
+    max-width: 65ch;
+    font-size: var(--text-base);
+    line-height: 1.75rem;
+    color: color-mix(in oklab, var(--foreground) 90%, transparent);
+  }
+  .jj-prose > * + *,
+  .jj-prose p {
+    margin-top: 1rem;
+  }
+  .jj-prose > :first-child {
+    margin-top: 0;
+  }
+  .jj-prose ul,
+  .jj-prose ol {
+    margin-top: 1rem;
+    padding-left: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .jj-prose ul {
+    list-style: disc;
+  }
+  .jj-prose ol {
+    list-style: decimal;
+  }
+  .jj-prose li {
+    padding-left: 0.25rem;
+  }
+  .jj-prose li > p {
+    margin-top: 0;
+  }
+  .jj-prose li::marker {
+    color: color-mix(in oklab, var(--primary) 70%, transparent);
+  }
+  .jj-prose ol > li::marker {
+    font-weight: 600;
+  }
+  .jj-prose h3 {
+    margin-top: 2rem;
+    font-size: var(--text-lg);
+    line-height: 1.375;
+    font-weight: 600;
+    letter-spacing: -0.025em;
+    color: var(--foreground);
+  }
+  .jj-prose a {
+    border-radius: var(--radius-sm);
+    font-weight: 500;
+    color: var(--primary);
+    text-decoration-line: underline;
+    text-decoration-color: color-mix(in oklab, var(--primary) 30%, transparent);
+    text-underline-offset: 4px;
+  }
+  .jj-prose a:hover {
+    text-decoration-color: var(--primary);
+  }
+  .jj-prose a:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+  .jj-prose strong {
+    font-weight: 600;
+    color: var(--foreground);
+  }
+  .jj-prose code {
+    border-radius: var(--radius-md);
+    background: var(--muted);
+    padding: 0.125rem 0.375rem;
+    font-size: var(--text-sm);
+    color: var(--foreground);
+    overflow-wrap: break-word;
+  }
+
+  /* A keyboard key, in prose or in definition rows. */
+  .jj-kbd {
+    display: inline-flex;
+    align-items: center;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    border-bottom-width: 2px;
+    background: var(--card);
+    padding: 0 0.375rem;
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    line-height: 1.5rem;
+    color: var(--foreground);
+  }
+
+  /* "The short version" box on the legal pages (the design's <site-summary>). */
+  .jj-summary ul {
+    margin-top: 0.75rem;
+    display: grid;
+    gap: 0.5rem;
+  }
+  .jj-summary li {
+    position: relative;
+    padding-left: 1.25rem;
+    font-size: var(--text-base);
+    line-height: 1.75rem;
+    color: var(--foreground);
+  }
+  .jj-summary li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.625rem;
+    width: 0.375rem;
+    height: 0.375rem;
+    border-radius: 9999px;
+    background: var(--primary);
+  }
+  .jj-summary a {
+    border-radius: var(--radius-sm);
+    font-weight: 500;
+    color: var(--primary);
+    text-decoration-line: underline;
+    text-underline-offset: 4px;
+  }
+  .jj-summary a:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+}
