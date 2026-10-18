@@ -1,0 +1,126 @@
+export const toc = [
+  { id: "install", label: "Install and pin" },
+  { id: "save", label: "Save a page" },
+  { id: "notes", label: "Notes and details" },
+  { id: "collections", label: "Collections and nesting" },
+  { id: "tags", label: "Tags and filters" },
+  { id: "import", label: "Import from Chrome" },
+  { id: "shortcuts", label: "Shortcuts that open sites" },
+  { id: "insights", label: "Insights" },
+  { id: "backup", label: "Back up and move" },
+]
+
+<Section anchor="install" title="Install and pin">
+<Prose>
+
+1. Open Jupiter Jots on the Chrome Web Store and choose **Add to Chrome**.
+2. Click the puzzle piece in Chrome’s toolbar and pin Jupiter Jots, so its button is always one click away.
+3. Click the button. The first time, Jupiter Jots offers to import your existing bookmarks. You can skip this and do it later.
+
+There is no account to create. Your library starts empty, on this computer.
+
+</Prose>
+</Section>
+
+<Section anchor="save" title="Save a page">
+<Prose>
+
+The popup, the side panel and the full-screen library are the same app in three sizes. Save from whichever is closest.
+
+</Prose>
+<Defs>
+<Def term="Popup">Click the toolbar button, then Save. Pick a collection and add a note if you want.</Def>
+<Def term="Side panel">Keep it open beside what you read. It follows your tabs and offers Save this page.</Def>
+<Def term="Full screen">Save the page you were on before you opened the library, then sort and tidy.</Def>
+<Def term="Right-click">On any page or link, choose Save page to Jupiter Jots or Save link to Jupiter Jots.</Def>
+<Def term="Keyboard">Press <Kbd>Alt</Kbd> <Kbd>Shift</Kbd> <Kbd>S</Kbd> on any page. It saves to your default collection.</Def>
+</Defs>
+<Prose className="mt-6">
+
+If you saved the page before, Jupiter Jots tells you instead of making a duplicate.
+
+</Prose>
+</Section>
+
+<Section anchor="notes" title="Notes and details">
+<Prose>
+
+Every bookmark keeps the page’s title, its own description and its preview image. Add a **note** to say why you saved it, in your words. Notes are searchable, so “that article about database locks” finds it even when the title says nothing of the sort.
+
+If you select text on a page before saving, it is kept with the bookmark. Open a bookmark to edit any of it, mark it as a favourite, or archive it when you are done.
+
+</Prose>
+</Section>
+
+<Section anchor="collections" title="Collections and nesting">
+<Prose>
+
+Collections are where bookmarks live. Create one from the sidebar or the Collections page, and give it a name, an icon, an emoji or a site logo, and a colour.
+
+- **Nest them** as deep as you need: drag a collection onto another on the Collections page, or choose its parent when you edit it.
+- **Move bookmarks** by choosing a collection when you save, or by selecting several in the library and moving them together.
+- **Unsorted** holds anything saved without a collection, ready to file later.
+
+When you delete a collection, Jupiter Jots asks where its bookmarks should go. Deleted bookmarks go to the trash first.
+
+</Prose>
+</Section>
+
+<Section anchor="tags" title="Tags and filters">
+<Prose>
+
+Tags work across collections. Add as many as you like to a bookmark, such as `#recipe` or `#read-later`, and manage them on the Tags page.
+
+To narrow the library, combine filters: collection, tag, favourites, archive or date. Sort by newest, oldest, title or last opened, and switch between grid and list. Search covers titles, addresses, notes, page descriptions, tags and collection names.
+
+</Prose>
+</Section>
+
+<Section anchor="import" title="Import from Chrome">
+<Prose>
+
+1. Open the full-screen library and go to **Import & export**.
+2. Choose **Import from Chrome**. When Chrome asks to let Jupiter Jots read your bookmarks, allow it.
+3. Select the folders you want, and name the collection they go into.
+4. Choose **Import**. Each folder becomes a collection inside it, with its nesting kept. Pages you already saved are skipped.
+
+You can undo the whole import in one step, and your Chrome bookmarks are never changed. From another browser, export a bookmarks HTML file there and import that file instead. CSV files from Raindrop or Pocket work too.
+
+</Prose>
+</Section>
+
+<Section anchor="shortcuts" title="Shortcuts that open sites">
+<Prose>
+
+Besides <Kbd>Alt</Kbd> <Kbd>Shift</Kbd> <Kbd>S</Kbd> to save, you can set up to nine shortcuts that each open a site you choose.
+
+1. In Jupiter Jots, open **Settings** and go to **Keyboard shortcuts**.
+2. Choose a site for a shortcut, from your bookmarks or by typing an address.
+3. Choose **Choose keys**. Chrome’s shortcuts page opens at `chrome://extensions/shortcuts`; press the keys you want next to that shortcut.
+
+Chrome only lets you set extension keys on its own page, which is why this step happens there. If the site is already open, the shortcut switches to its tab instead of opening another.
+
+</Prose>
+</Section>
+
+<Section anchor="insights" title="Insights">
+<Prose>
+
+Insights shows how you use your library: how often you open links, which collections and tags you return to, when in the week you read, and which saves you have never opened. It also suggests small next steps, like tagging untagged links or giving a daily site a shortcut.
+
+It is built from a log of opens and saves that stays on your device. You can pause or clear it in Settings.
+
+</Prose>
+</Section>
+
+<Section anchor="backup" title="Back up and move">
+<Prose>
+
+Your library lives only in this browser, so uninstalling Jupiter Jots or clearing its data deletes it. Keep a copy:
+
+- **Back up** or **Export** from the Import & export page. JSON keeps everything, including notes, tags and nesting.
+- Export a single collection as JSON, browser bookmarks HTML or CSV.
+- To move to another computer, import the JSON file there.
+
+</Prose>
+</Section>

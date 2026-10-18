@@ -1,0 +1,139 @@
+export const toc = [
+  { id: "who", label: "Who this covers" },
+  { id: "collect", label: "What we collect" },
+  { id: "stored", label: "What is stored on your device" },
+  { id: "reads", label: "What the extension reads" },
+  { id: "network", label: "What leaves your device" },
+  { id: "permissions", label: "Permissions" },
+  { id: "deleting", label: "Keeping and deleting your data" },
+  { id: "children", label: "Children" },
+  { id: "changes", label: "Changes to this policy" },
+  { id: "contact", label: "Contact" },
+]
+
+<Summary>
+
+- Everything you save stays in your browser on this device. We never receive it.
+- There is no account, no server, no analytics and no tracking.
+- Nothing is sold or shared, because nothing is collected.
+- Pages are read only when you save them. Chrome bookmarks are read only when you import them.
+- Uninstalling deletes your library. Export a backup first if you want to keep it.
+
+</Summary>
+
+<div className="mt-12 space-y-14">
+
+<Section anchor="who" title="Who this covers">
+<Prose>
+
+This policy covers the Jupiter Jots extension for Chrome, version 2.0.0 and later. Jupiter Jots is built and maintained by an independent developer, called “we” and “us” here.
+
+</Prose>
+</Section>
+
+<Section anchor="collect" title="What we collect">
+<Prose>
+
+**Nothing.** Jupiter Jots has no account and no server to send anything to. The extension contains no analytics, telemetry, advertising or crash-reporting code, and it does not track the sites you visit.
+
+We never see your bookmarks, notes, tags, collections, settings or how you use the extension. We cannot sell or share what we never receive, and we do not.
+
+</Prose>
+</Section>
+
+<Section anchor="stored" title="What is stored on your device">
+<Prose>
+
+Your library lives in your browser’s own database (IndexedDB), inside your Chrome profile on this computer. It holds:
+
+- **Bookmarks:** each page’s address and title, its description and preview image address if the page provides them, any text you had selected, and the date you saved it.
+- **Notes, tags and collections**, including the icon, emoji or colour you give a collection.
+- **Settings**, such as your theme, default collection and the sites your keyboard shortcuts open.
+- **An activity log** of when you open or save a bookmark, and from where (popup, side panel, full screen or a shortcut). It powers the Insights page. You can pause or clear it in Settings.
+
+Jupiter Jots asks Chrome for unlimited local storage so a large library is not trimmed. That storage never leaves your device.
+
+</Prose>
+</Section>
+
+<Section anchor="reads" title="What the extension reads">
+<Prose>
+
+Jupiter Jots reads a page only when you ask it to save something.
+
+- **When you open the popup**, it reads the address and title of the tab you are on, so it can save it and tell you if it is already saved.
+- **When you save a page**, a one-off script runs in that tab to read the page’s own description and preview image from its meta tags, and any text you have selected. It reads nothing else.
+- **While the side panel or full-screen library is open**, it sees the address and title of the tab in front, to offer Save this page. These are compared on your device and kept only if you save the page.
+- **Read descriptions from any tab** is an optional setting, off by default. If you turn it on, Chrome asks you to allow access to all sites, so the side panel and full screen can read the description of the page in front when you save it. You can turn it off in Settings.
+- **Your Chrome bookmarks** are read only when you choose Import from Chrome, after Chrome asks your permission. Jupiter Jots copies the folders you pick and never changes your Chrome bookmarks.
+
+</Prose>
+</Section>
+
+<Section anchor="network" title="What leaves your device">
+<Prose>
+
+Jupiter Jots sends nothing to us. It makes only the requests any web page makes to show pictures, plus one request to Google if you choose a site logo for a collection.
+
+</Prose>
+<Defs>
+<Def term="Preview images">A bookmark’s picture is the page’s own preview image, loaded from that site when the bookmark is shown.</Def>
+<Def term="Site icons">The small icon next to a bookmark is the one the site declares, loaded from that site, or Chrome’s own saved copy of it.</Def>
+<Def term="Collection logos">Only if you pick Logo as a collection’s icon and type a domain. The logo is loaded from Google’s favicon service, which tells Google the domain you typed.</Def>
+<Def term="Opening a bookmark">Opens the site in a tab, exactly as clicking a link would.</Def>
+</Defs>
+</Section>
+
+<Section anchor="permissions" title="Permissions">
+<Prose>
+
+Chrome lists the permissions an extension asks for. This is what each one is for.
+
+</Prose>
+<Defs>
+<Def term="Unlimited storage">Keeps a large library on your device without Chrome trimming it.</Def>
+<Def term="Active tab">Reads the address and title of the tab you are on when you click the toolbar button.</Def>
+<Def term="Scripting">Reads the description and preview image of the page you are saving, once, when you save it.</Def>
+<Def term="Tabs">Lets the side panel and full screen offer to save the tab in front, and lets shortcuts switch to a site that is already open.</Def>
+<Def term="Side panel, context menus">Show Jupiter Jots in Chrome’s side panel, and add Save page and Save link to the right-click menu.</Def>
+<Def term="Favicon">Shows site icons from Chrome’s own icon cache.</Def>
+<Def term="Bookmarks" aside="(optional)">Asked for only when you import from Chrome. Read once, never changed.</Def>
+<Def term="All sites" aside="(optional, off)">Only if you turn on Read descriptions from any tab. Used to read the description of the page in front when you save it.</Def>
+</Defs>
+</Section>
+
+<Section anchor="deleting" title="Keeping and deleting your data">
+<Prose>
+
+Your library exists only on your device, so **uninstalling Jupiter Jots or clearing its site data deletes everything**. We have no copy to restore it from.
+
+To keep a copy, use **Export** or **Back up** on the Import & export page. A JSON backup can be imported again on any computer. You can also delete single bookmarks, empty the trash or clear the activity log at any time.
+
+</Prose>
+</Section>
+
+<Section anchor="children" title="Children">
+<Prose>
+
+Jupiter Jots does not collect personal information from anyone, including children under 13. It is a general-purpose tool and is not directed at children.
+
+</Prose>
+</Section>
+
+<Section anchor="changes" title="Changes to this policy">
+<Prose>
+
+If a future version changes what Jupiter Jots stores or sends, for example when optional sync arrives, we will update this page and its date before that version ships, and note it in the [changelog](/changelog). Anything that sends data off your device will be optional and off until you turn it on.
+
+</Prose>
+</Section>
+
+<Section anchor="contact" title="Contact">
+<Prose>
+
+Questions about privacy? Email <SupportEmail /> or see [Support](/support).
+
+</Prose>
+</Section>
+
+</div>
