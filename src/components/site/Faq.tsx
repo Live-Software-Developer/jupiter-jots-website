@@ -29,7 +29,7 @@ export function Faq({ q, children }: { q: string; children: ReactNode }) {
         </button>
       </h3>
       <div id={`${id}-a`} role="region" aria-labelledby={`${id}-q`} hidden={!open} className="pb-5">
-        <p className="max-w-prose text-base leading-7 text-muted-foreground">{children}</p>
+        <p className="text-base leading-7 text-muted-foreground">{children}</p>
       </div>
     </div>
   )

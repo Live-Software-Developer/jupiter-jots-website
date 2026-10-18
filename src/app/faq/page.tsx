@@ -29,7 +29,6 @@ export default function FaqPage() {
         <Faq />
         <HelpBlock
           title="Didn’t find your answer?"
-          className="max-w-3xl"
           actions={
             <>
               <Link href="/guide" className={btnPrimary("md")}>

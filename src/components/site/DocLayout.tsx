@@ -30,13 +30,13 @@ export function DocLayout({
   )
 }
 
-/** Intro, then a single reading column (About, Support). */
+/** Intro, then the content at the header's full width (About, Support). */
 export function PlainLayout({ title, lede, children }: { title: string; lede?: string; children: ReactNode }) {
   return (
     <>
       <PageIntro title={title} lede={lede} />
       <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 lg:py-14">
-        <div className="max-w-3xl space-y-14">{children}</div>
+        <div className="space-y-14">{children}</div>
       </div>
     </>
   )

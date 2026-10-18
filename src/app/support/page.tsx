@@ -64,7 +64,7 @@ export default function SupportPage() {
       </Section>
 
       <Section anchor="contact" title="Contact us">
-        <div className="max-w-prose rounded-xl border border-border bg-muted/50 p-5 sm:p-6">
+        <div className="rounded-xl border border-border bg-muted/50 p-5 sm:p-6">
           <p className="text-sm text-muted-foreground">Email</p>
           <a
             href={`mailto:${SUPPORT_EMAIL}`}

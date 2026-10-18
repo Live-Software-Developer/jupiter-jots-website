@@ -118,11 +118,10 @@
 
 @layer components {
   /*
-   * Reading typography for long-form pages (the design's <site-prose>). Measure under
-   * about 68ch; body 16px/28px so prose and the bordered definition rows share one rhythm.
+   * Reading typography for long-form pages (the design's <site-prose>). Content spans the
+   * header's width; body 16px/28px so prose and the bordered definition rows share one rhythm.
    */
   .jj-prose {
-    max-width: 65ch;
     font-size: var(--text-base);
     line-height: 1.75rem;
     color: color-mix(in oklab, var(--foreground) 90%, transparent);

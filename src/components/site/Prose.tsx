@@ -10,7 +10,7 @@ export function Prose({ className, children }: { className?: string; children: R
 /** "The short version" box at the top of a legal page (the design's <site-summary>). */
 export function Summary({ title = "The short version", children }: { title?: string; children: ReactNode }) {
   return (
-    <aside aria-label={title} className="jj-summary block max-w-prose rounded-xl border border-border bg-muted/50 p-5 sm:p-6">
+    <aside aria-label={title} className="jj-summary block rounded-xl border border-border bg-muted/50 p-5 sm:p-6">
       <h2 className="text-lg leading-snug font-semibold tracking-tight text-foreground">{title}</h2>
       {children}
     </aside>
@@ -19,7 +19,7 @@ export function Summary({ title = "The short version", children }: { title?: str
 
 /** Bordered definition rows used on the legal, guide and about pages. */
 export function Defs({ className, children }: { className?: string; children: ReactNode }) {
-  return <dl className={cn("mt-6 max-w-prose border-b border-border text-base", className)}>{children}</dl>
+  return <dl className={cn("mt-6 border-b border-border text-base", className)}>{children}</dl>
 }
 
 /** One definition row. `wide` gives the term 3 of 12 columns (About) instead of 4. */
