@@ -6,8 +6,8 @@
 /** The public URL of the site. SITE_URL at build time overrides it (e.g. for a staging host). */
 export const SITE_URL = (process.env.SITE_URL ?? "https://jj.livesoftwaredeveloper.com").replace(/\/$/, "")
 
-/** PLACEHOLDER. The Chrome Web Store listing. Every "Add to Chrome" link reads this. */
-export const STORE_URL = "https://chromewebstore.google.com/"
+/** The Chrome Web Store listing. Every "Add to Chrome" link reads this. */
+export const STORE_URL = "https://chromewebstore.google.com/detail/jupiter-jots/dnfmgdmobmoglemckapnbgncnfhkighd"
 
 /** Where support and privacy questions go. */
 export const SUPPORT_EMAIL = "support@livesoftwaredeveloper.com"

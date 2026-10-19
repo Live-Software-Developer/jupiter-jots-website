@@ -18,10 +18,9 @@ pnpm og           # re-render share images and icons (needs Chrome and Python wi
 
 | What | Where | Current value |
 |---|---|---|
-| Chrome Web Store listing | `STORE_URL` in `src/lib/site.ts` (every "Add to Chrome" and "Chrome Web Store" link reads it) | `https://chromewebstore.google.com/` |
 | Governing law in the terms | `GOVERNING_LAW` in `src/lib/site.ts` (shown with a dashed outline on /terms) | `[your country]` |
 
-Already set: support email `support@livesoftwaredeveloper.com` (`SUPPORT_EMAIL`) and site URL `https://jj.livesoftwaredeveloper.com` (`SITE_URL`, overridable with the `SITE_URL` env var at build time).
+Already set: the Chrome Web Store listing (`STORE_URL`, every "Add to Chrome" link reads it), support email `support@livesoftwaredeveloper.com` (`SUPPORT_EMAIL`) and site URL `https://jj.livesoftwaredeveloper.com` (`SITE_URL`, overridable with the `SITE_URL` env var at build time).
 
 ## Routes
 
