@@ -1,0 +1,53 @@
+import { describe, expect, it } from 'vitest'
+import { renderToStaticMarkup } from 'react-dom/server'
+import { renderMarkdown } from './markdown'
+
+const html = (s: string) => renderToStaticMarkup(<>{renderMarkdown(s)}</>)
+
+describe('renderMarkdown', () => {
+  it('renders paragraphs and line breaks', () => {
+    expect(html('a\nb\n\nc')).toBe('<p>a<br/>b</p><p>c</p>')
+  })
+  it('renders bold, italic and code', () => {
+    expect(html('**b** *i* `c`')).toBe('<p><strong>b</strong> <em>i</em> <code>c</code></p>')
+  })
+  it('nests italic inside bold', () => {
+    expect(html('**a *b* c**')).toBe('<p><strong>a <em>b</em> c</strong></p>')
+  })
+  it('renders unordered and ordered lists with inline marks', () => {
+    expect(html('- one\n- **two**')).toBe('<ul><li>one</li><li><strong>two</strong></li></ul>')
+    expect(html('1. a\n2. b')).toBe('<ol><li>a</li><li>b</li></ol>')
+  })
+  it('renders blockquotes', () => {
+    expect(html('> *hi*\n> there')).toBe('<blockquote><em>hi</em><br/>there</blockquote>')
+  })
+  it('does not nest lists', () => {
+    expect(html('- a\n  - b')).toBe('<ul><li>a</li></ul><p>  - b</p>')
+  })
+  it('renders unclosed markers literally', () => {
+    expect(html('**open')).toBe('<p>**open</p>')
+    expect(html('a *b')).toBe('<p>a *b</p>')
+    expect(html('`x')).toBe('<p>`x</p>')
+  })
+  it('escapes raw html', () => {
+    const out = html('<script>alert(1)</script>')
+    expect(out).toBe('<p>&lt;script&gt;alert(1)&lt;/script&gt;</p>')
+  })
+  it('renders links and images as literal text', () => {
+    const out = html('[x](javascript:alert(1))')
+    expect(out).toBe('<p>[x](javascript:alert(1))</p>')
+    expect(out).not.toContain('<a')
+    expect(html('![img](x)')).toBe('<p>![img](x)</p>')
+  })
+  it('renders headings and fences literally', () => {
+    expect(html('# Title')).toBe('<p># Title</p>')
+    expect(html('```\ncode\n```')).toBe('<p>```<br/>code<br/>```</p>')
+  })
+  it('truncates to 4000 chars with an ellipsis', () => {
+    const out = renderToStaticMarkup(<>{renderMarkdown('a'.repeat(5000))}</>)
+    expect(out).toBe(`<p>${'a'.repeat(4000)}…</p>`)
+  })
+  it('returns nothing for empty input', () => {
+    expect(html('')).toBe('')
+  })
+})
