@@ -1,11 +1,12 @@
 import type { ReactNode } from "react"
 
 import { FOCUS } from "@/components/site/styles"
-import { plural } from "@/lib/share/format"
+import { anchorFor, plural } from "@/lib/share/format"
 import type { PBookmark, PayloadItem } from "@/lib/share/types"
 import { cn } from "@/lib/utils"
 
 import { BookmarkLink, BookmarkRow, hueIndex, initialOf } from "./BookmarkRow"
+import { OpenCollectionButton } from "./CollectionSheet"
 import { GraphView } from "./GraphView"
 
 /** A band on the page: a payload item, or a run of adjacent loose bookmarks shown together. */
@@ -34,7 +35,7 @@ export function toBands(items: PayloadItem[]): Band[] {
 }
 
 /** Anchor id for a band, from its payload key ("c:3" -> "item-c-3"). */
-export const bandId = (band: Band) => `item-${band.key.replace(/[^a-z0-9]+/gi, "-")}`
+export const bandId = (band: Band) => anchorFor(band.key)
 
 export function bandTitle(band: Band): string {
   switch (band.kind) {
@@ -120,14 +121,12 @@ function CollectionBody({ band }: { band: Extract<Band, { kind: "collection" }> 
         ))}
       </div>
       {all.length > ROWS_SHOWN ? (
-        // Opens the collection sheet once Task 4 adds it.
-        <button
-          type="button"
-          data-open-collection={band.key}
+        <OpenCollectionButton
+          itemKey={band.key}
           className={cn("mt-3 inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-sm font-medium text-primary transition-colors hover:bg-primary/10", FOCUS)}
         >
           See all {all.length} in the collection
-        </button>
+        </OpenCollectionButton>
       ) : null}
     </>
   )
@@ -255,21 +254,19 @@ export function ShareBand({ item, index, total, curator }: { item: Band; index: 
           </div>
           {item.kind === "collection" ? (
             <div className="flex flex-wrap items-center gap-2">
-              {/* Opens the collection sheet once Task 4 adds it. */}
-              <button
-                type="button"
-                data-open-collection={item.key}
+              <OpenCollectionButton
+                itemKey={item.key}
                 className={cn("inline-flex h-9 items-center gap-1.5 rounded-full border border-border px-4 text-sm font-medium transition-colors hover:bg-accent", FOCUS)}
               >
                 Open collection
                 {ico(<path d="M9 6l6 6-6 6" />)}
-              </button>
+              </OpenCollectionButton>
             </div>
           ) : null}
         </div>
       </div>
       <div className={cn(full ? "px-3 sm:px-6" : wrap, "mt-6 sm:mt-8")}>
-        {item.kind === "graph" ? <GraphView graph={item.graph} /> : null}
+        {item.kind === "graph" ? <GraphView graph={item.graph} itemKey={item.key} /> : null}
         {item.kind === "collection" ? <CollectionBody band={item} /> : null}
         {item.kind === "bookmarks" ? <BookmarksBody bookmarks={item.bookmarks} /> : null}
         {item.kind === "bookmark" ? <BookmarkCard bookmark={item.bookmark} curator={curator} /> : null}

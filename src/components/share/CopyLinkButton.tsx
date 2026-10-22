@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react"
 
-export function CopyLinkButton({ className }: { className: string }) {
+/** Copies the page URL; with `hash`, the URL of that anchor on the page instead. */
+export function CopyLinkButton({ className, hash }: { className: string; hash?: string }) {
   const [copied, setCopied] = useState(false)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -14,7 +15,9 @@ export function CopyLinkButton({ className }: { className: string }) {
 
   async function copy() {
     try {
-      await navigator.clipboard.writeText(window.location.href)
+      const url = new URL(window.location.href)
+      if (hash) url.hash = hash
+      await navigator.clipboard.writeText(url.href)
       setCopied(true)
       if (timer.current) clearTimeout(timer.current)
       timer.current = setTimeout(() => setCopied(false), 2000)

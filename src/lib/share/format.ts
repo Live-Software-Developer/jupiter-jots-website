@@ -23,3 +23,6 @@ export function safeUrl(url: string): string | null {
 }
 
 export const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`
+
+/** Anchor id for a payload item's band, from its key; nested keys resolve to their top item ("g:1/n:a" -> "item-g-1"). */
+export const anchorFor = (key: string) => `item-${key.split('/')[0].replace(/[^a-z0-9]+/gi, '-')}`
