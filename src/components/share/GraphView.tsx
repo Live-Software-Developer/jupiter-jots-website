@@ -9,6 +9,8 @@ import { cn } from "@/lib/utils"
 
 import { BookmarkLink, hueFor, initialOf } from "./BookmarkRow"
 import { collectionTint, useCollectionSheet } from "./CollectionSheet"
+import { GLYPH, ico } from "./icons"
+import { Modal } from "./Modal"
 
 // Read-only port of the extension's graph view (design: graph-view). Board and Canvas show the
 // same nodes; Canvas places them at their saved x/y and zooms with a CSS transform.
@@ -21,26 +23,13 @@ interface Wire {
   d: string
 }
 
-const ZOOM_MIN = 0.5
-const ZOOM_MAX = 1.5
+// Same range as the extension's canvas; it opens fitted to the width, never above 100%.
+export const ZOOM_MIN = 0.3
+export const ZOOM_MAX = 1.6
 const ZOOM_STEP = 0.1
+const clampZoom = (z: number) => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, +z.toFixed(2)))
 
-const ico = (d: ReactNode, className = "size-4", strokeWidth = 1.7) => (
-  <svg
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth={strokeWidth}
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-    aria-hidden="true"
-  >
-    {d}
-  </svg>
-)
-
-const I = {
+const I: Record<string, ReactNode> = {
   board: (
     <>
       <rect x="3.5" y="4" width="5" height="16" rx="1.5" />
@@ -48,20 +37,12 @@ const I = {
       <rect x="15.5" y="4" width="5" height="13" rx="1.5" />
     </>
   ),
-  canvas: (
-    <>
-      <circle cx="6" cy="7" r="2.5" />
-      <circle cx="18" cy="6" r="2.5" />
-      <circle cx="13" cy="18" r="2.5" />
-      <path d="M8.4 7.6 15.6 6.4M7.6 9 11.6 16M17 8.4 14.2 15.8" />
-    </>
-  ),
+  canvas: GLYPH.graph,
   plus: <path d="M12 5v14M5 12h14" />,
   minus: <path d="M5 12h14" />,
   expand: <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />,
   shrink: <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" />,
   check: <path d="M5 12.5l4.5 4.5L19 7" />,
-  folder: <path d="M3 7.5A1.5 1.5 0 0 1 4.5 6H9l2 2.5h8.5A1.5 1.5 0 0 1 21 10v7.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z" />,
   info: (
     <>
       <circle cx="12" cy="12" r="8.5" />
@@ -82,10 +63,10 @@ function NodeCard({ node, itemKey }: { node: PGraphNode; itemKey: string }) {
       <div className="relative pb-3">
         <span className="pointer-events-none absolute inset-x-2 -bottom-1.5 h-3 rounded-b-xl border border-t-0 border-border bg-card/70" aria-hidden="true" />
         <span className="pointer-events-none absolute inset-x-4 -bottom-3 h-3 rounded-b-xl border border-t-0 border-border bg-card/40" aria-hidden="true" />
-        <button type="button" aria-haspopup="dialog" onClick={() => open(`${itemKey}/n:${node.id}`)} className={cn(CARD, FOCUS_FLAT)}>
+        <button type="button" aria-haspopup="dialog" onClick={(e) => open(`${itemKey}/n:${node.id}`, e.currentTarget)} className={cn(CARD, FOCUS_FLAT)}>
           <span className="flex items-center gap-2 text-xs text-muted-foreground">
             <span className={cn("grid size-5 shrink-0 place-items-center rounded", collectionTint(c.hue))} aria-hidden="true">
-              {ico(I.folder, "size-3")}
+              {ico(GLYPH.folder, "size-3")}
             </span>
             <span className="min-w-0 truncate">Collection</span>
           </span>
@@ -93,7 +74,7 @@ function NodeCard({ node, itemKey }: { node: PGraphNode; itemKey: string }) {
           {c.note ? <span className="mt-1 line-clamp-2 block text-xs leading-relaxed text-muted-foreground">{c.note}</span> : null}
           <span className="mt-2.5 flex items-center gap-1.5 text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-1">
-              {ico(I.folder, "size-3.5")}
+              {ico(GLYPH.folder, "size-3.5")}
               {c.bookmarks.length} {c.bookmarks.length === 1 ? "link" : "links"}
             </span>
             <span className="ml-auto font-medium text-primary">Open</span>
@@ -135,27 +116,33 @@ function NodeCard({ node, itemKey }: { node: PGraphNode; itemKey: string }) {
   )
 }
 
+/** Arrowheads use an explicit `currentColor` fill (not `context-stroke`), one marker per tone. */
 function Wires({ wires, hot }: { wires: Wire[]; hot: string | null }) {
   const mk = `${useId().replace(/[^a-z0-9]/gi, "")}-tip`
+  const marker = (id: string, className: string) => (
+    <marker id={id} viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L8 4L0 8Z" fill="currentColor" className={className} />
+    </marker>
+  )
   return (
     <svg className="pointer-events-none absolute inset-0 size-full overflow-visible text-muted-foreground/60" aria-hidden="true" data-wires>
       <defs>
-        <marker id={mk} viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-          <path d="M0 0L8 4L0 8Z" fill="context-stroke" />
-        </marker>
+        {marker(mk, "opacity-70")}
+        {marker(`${mk}-hot`, "text-primary")}
       </defs>
       {wires.map((w) => {
         const on = hot !== null && (w.from === hot || w.to === hot)
         return (
           <path
             key={w.key}
+            data-wire={w.key}
             d={w.d}
             className={cn("transition-colors", on ? "text-primary" : "opacity-70")}
             stroke="currentColor"
             strokeWidth={1.5}
             fill="none"
             strokeLinecap="round"
-            markerEnd={`url(#${mk})`}
+            markerEnd={`url(#${on ? `${mk}-hot` : mk})`}
           />
         )
       })}
@@ -163,8 +150,8 @@ function Wires({ wires, hot }: { wires: Wire[]; hot: string | null }) {
   )
 }
 
-/** Wires between the surface's `[data-gid]` cards, re-measured whenever the surface resizes. */
-function useWires(graph: PGraph, deps: unknown[]) {
+/** Wires between the surface's `[data-gid]` cards, re-measured whenever the surface or any card resizes. */
+function useWires(graph: PGraph) {
   const surface = useRef<HTMLDivElement>(null)
   const [wires, setWires] = useState<Wire[]>([])
 
@@ -200,12 +187,12 @@ function useWires(graph: PGraph, deps: unknown[]) {
     if (!s || typeof ResizeObserver === "undefined") return () => void (live = false)
     const ro = new ResizeObserver(redraw)
     ro.observe(s)
+    for (const card of s.querySelectorAll("[data-gid]")) ro.observe(card)
     return () => {
       live = false
       ro.disconnect()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [redraw, ...deps])
+  }, [redraw])
 
   return { surface, wires }
 }
@@ -230,7 +217,7 @@ function Board({ graph, itemKey, full, hot, setHot }: ViewProps) {
   const cols = useMemo(() => boardColumns(graph), [graph])
   const byId = useMemo(() => new Map(graph.nodes.map((n) => [n.id, n])), [graph])
   const derived = cols.length > 0 && cols[0].derived
-  const { surface, wires } = useWires(graph, [full])
+  const { surface, wires } = useWires(graph)
 
   return (
     <>
@@ -283,22 +270,37 @@ function Board({ graph, itemKey, full, hot, setHot }: ViewProps) {
   )
 }
 
-function Canvas({ graph, itemKey, full, hot, setHot, scale }: ViewProps & { scale: number }) {
-  const { surface, wires } = useWires(graph, [full])
-  const w = Math.max(1100, ...graph.nodes.map((n) => n.x + NODE_W + 80))
-  const h = Math.max(520, ...graph.nodes.map((n) => n.y + 220))
+/** Canvas size: every node plus a margin, never smaller than the design's 1100 × 520. */
+export const canvasSize = (graph: PGraph) => ({
+  w: Math.max(1100, ...graph.nodes.map((n) => n.x + NODE_W + 80)),
+  h: Math.max(520, ...graph.nodes.map((n) => n.y + 220)),
+})
+
+function Canvas({ graph, itemKey, full, hot, setHot, scale, onFit }: ViewProps & { scale: number | null; onFit(z: number): void }) {
+  const { surface, wires } = useWires(graph)
+  const pane = useRef<HTMLDivElement>(null)
+  const { w, h } = canvasSize(graph)
   const bands = bandOf(graph)
   const stepIndex = new Map(graph.steps.map((s, i) => [s.id, i]))
+  const z = scale ?? 1
+
+  // First time the canvas shows: fit the graph's width, capped at 100%. Unmeasured (0) stays at 100%.
+  useLayoutEffect(() => {
+    if (scale !== null) return
+    const width = pane.current?.clientWidth ?? 0
+    onFit(width > 0 ? clampZoom(Math.min(1, width / w)) : 1)
+  }, [scale, onFit, w])
 
   return (
     <div
+      ref={pane}
       className={cn(
         "overflow-auto overscroll-contain bg-muted/20 bg-[radial-gradient(circle,var(--border)_0.0625rem,transparent_0.0625rem)] [background-size:1.25rem_1.25rem] [scrollbar-color:var(--border)_transparent] [scrollbar-width:thin]",
         full ? "min-h-0 flex-1" : "h-[28rem] sm:h-[34rem]",
       )}
     >
-      <div style={{ width: w * scale, height: h * scale }}>
-        <div ref={surface} data-surface className="relative origin-top-left" style={{ width: w, height: h, transform: `scale(${scale})` }}>
+      <div style={{ width: w * z, height: h * z }}>
+        <div ref={surface} data-surface className="relative origin-top-left" style={{ width: w, height: h, transform: `scale(${z})` }}>
           {bands.map((band) => {
             const i = stepIndex.get(band.stepId) ?? 0
             return (
@@ -315,7 +317,7 @@ function Canvas({ graph, itemKey, full, hot, setHot, scale }: ViewProps & { scal
           })}
           <Wires wires={wires} hot={hot} />
           {graph.nodes.map((n) => (
-            <div key={n.id} data-node={n.id} data-gid={n.id} className="absolute" style={{ left: n.x, top: n.y, width: NODE_W }} {...hotProps(n.id, setHot)}>
+            <div key={n.id} data-gid={n.id} className="absolute" style={{ left: n.x, top: n.y, width: NODE_W }} {...hotProps(n.id, setHot)}>
               <NodeCard node={n} itemKey={itemKey} />
             </div>
           ))}
@@ -329,33 +331,37 @@ const TOOL = cn("grid size-8 place-items-center rounded-md text-muted-foreground
 
 /**
  * A shared graph, read-only: Board/Canvas toggle (starting at the graph's own mode), zoom on the
- * canvas, full screen (Esc leaves it), wires that light up on hover, collection nodes that open
- * their sheet (`<itemKey>/n:<nodeId>`) and bookmark nodes that open in a new tab.
+ * canvas, full screen in a native modal dialog (Esc leaves it), wires that light up on hover,
+ * collection nodes that open their sheet (`<itemKey>/n:<nodeId>`) and bookmark nodes that open
+ * in a new tab.
  */
 export function GraphView({ graph, itemKey }: { graph: PGraph; itemKey: string }) {
   const [mode, setMode] = useState<Mode>(graph.mode === "canvas" ? "canvas" : "board")
-  const [scale, setScale] = useState(1)
+  const [scale, setScale] = useState<number | null>(null)
   const [full, setFull] = useState(false)
   const [hot, setHot] = useState<string | null>(null)
+  const [placeholder, setPlaceholder] = useState(0)
+  const shell = useRef<HTMLDivElement>(null)
+  const dialog = useRef<HTMLDialogElement>(null)
+  const toggle = useRef<HTMLButtonElement>(null)
+  const wasFull = useRef(false)
 
+  // Leaving full screen remounts the inline view; give its toggle button focus back.
   useEffect(() => {
-    if (!full) return
-    const root = document.documentElement
-    const overflow = root.style.overflow
-    root.style.overflow = "hidden"
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !e.defaultPrevented) setFull(false)
-    }
-    document.addEventListener("keydown", onKey)
-    return () => {
-      document.removeEventListener("keydown", onKey)
-      root.style.overflow = overflow
-    }
+    if (wasFull.current && !full) toggle.current?.focus()
+    wasFull.current = full
   }, [full])
 
-  const zoom = (d: number) => setScale((s) => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, +(s + d).toFixed(2))))
+  const zoom = (d: number) => setScale((s) => clampZoom((s ?? 1) + d))
+  const onFit = useCallback((z: number) => setScale(z), [])
   const hasLinks = graph.links.length > 0
   const hasBookmarks = graph.nodes.some((n) => n.ref.kind === "bookmark")
+
+  const enterFull = () => {
+    // Hold the band's height while the graph lives in the top layer, so the page doesn't jump.
+    setPlaceholder(shell.current?.offsetHeight ?? 0)
+    setFull(true)
+  }
 
   const seg = (m: Mode, label: string) => {
     const on = mode === m
@@ -377,13 +383,11 @@ export function GraphView({ graph, itemKey }: { graph: PGraph; itemKey: string }
   }
 
   const view = { graph, itemKey, full, hot, setHot }
-  return (
+  const body = (
     <div
+      ref={shell}
       data-graph-shell
-      className={cn(
-        "text-card-foreground",
-        full ? "fixed inset-0 z-50 flex flex-col bg-card" : "overflow-hidden rounded-2xl border border-border bg-card",
-      )}
+      className={cn("text-card-foreground", full ? "flex size-full flex-col bg-card" : "overflow-hidden rounded-2xl border border-border bg-card")}
     >
       <div className="flex flex-wrap items-center gap-2 border-b border-border px-3 py-2">
         {full ? <p className="mr-1 min-w-0 truncate text-sm font-medium">{graph.name}</p> : null}
@@ -420,19 +424,35 @@ export function GraphView({ graph, itemKey }: { graph: PGraph; itemKey: string }
                 {ico(I.minus)}
               </button>
               <span className="w-11 text-center text-xs tabular-nums text-muted-foreground" aria-live="polite">
-                {Math.round(scale * 100)}%
+                {Math.round((scale ?? 1) * 100)}%
               </span>
               <button type="button" aria-label="Zoom in" onClick={() => zoom(ZOOM_STEP)} className={TOOL}>
                 {ico(I.plus)}
               </button>
             </span>
           ) : null}
-          <button type="button" aria-label={full ? "Exit full screen" : "Full screen"} onClick={() => setFull((f) => !f)} className={TOOL}>
+          <button
+            ref={toggle}
+            type="button"
+            aria-label={full ? "Exit full screen" : "Full screen"}
+            onClick={full ? () => dialog.current?.close() : enterFull}
+            className={TOOL}
+          >
             {ico(full ? I.shrink : I.expand)}
           </button>
         </span>
       </div>
-      {mode === "board" ? <Board {...view} /> : <Canvas {...view} scale={scale} />}
+      {mode === "board" ? <Board {...view} /> : <Canvas {...view} scale={scale} onFit={onFit} />}
     </div>
+  )
+
+  if (!full) return body
+  return (
+    <>
+      <div style={{ height: placeholder }} aria-hidden="true" />
+      <Modal dialogRef={dialog} initialFocus={toggle} onClose={() => setFull(false)} aria-label={graph.name}>
+        {body}
+      </Modal>
+    </>
   )
 }

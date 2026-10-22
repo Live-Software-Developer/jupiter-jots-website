@@ -8,6 +8,7 @@ import { ShareHero } from "@/components/share/ShareHero"
 import { ShareSidebar } from "@/components/share/ShareSidebar"
 import { ShareUnavailable } from "@/components/share/ShareUnavailable"
 import { getShare } from "@/lib/share/api"
+import { sheetEntries } from "@/lib/share/collections"
 import { plural } from "@/lib/share/format"
 import type { PublicShare, SharePayload, ShareResult } from "@/lib/share/types"
 import { SITE } from "@/lib/site"
@@ -99,7 +100,7 @@ async function ShareContent({ params }: { params: Params }) {
   const curator = payload.curator.name || share.curator_name
 
   return (
-    <CollectionSheetProvider items={payload.items} curator={curator}>
+    <CollectionSheetProvider collections={sheetEntries(payload.items)} curator={curator}>
       <main>
         <ShareHero share={share} payload={payload} />
         {bands.map((band, i) => (

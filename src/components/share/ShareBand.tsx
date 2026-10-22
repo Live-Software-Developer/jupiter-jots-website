@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils"
 import { BookmarkLink, BookmarkRow, hueIndex, initialOf } from "./BookmarkRow"
 import { OpenCollectionButton } from "./CollectionSheet"
 import { GraphView } from "./GraphView"
+import { GLYPH, ico } from "./icons"
 
 /** A band on the page: a payload item, or a run of adjacent loose bookmarks shown together. */
 export type Band = PayloadItem | { key: string; kind: "bookmarks"; bookmarks: PBookmark[] }
@@ -64,46 +65,22 @@ export function bandCount(band: Band): number {
   }
 }
 
-const ico = (d: ReactNode, className = "size-4") => (
-  <svg
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.7"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-    aria-hidden="true"
-  >
-    {d}
-  </svg>
-)
-
-const BOOKMARK_PATH = <path d="M7 4h10v16l-5-3.5L7 20z" />
-
 /** Label, icon and tone per band kind, shared with the hero's "In this share" index. */
 export const BAND_KIND: Record<BandKind, { label: string; icon: ReactNode; text: string; tile: string }> = {
   collection: {
     label: "Collection",
-    icon: <path d="M3 7.5A1.5 1.5 0 0 1 4.5 6H9l2 2.5h8.5A1.5 1.5 0 0 1 21 10v7.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z" />,
+    icon: GLYPH.folder,
     text: "text-chart-5",
     tile: "bg-chart-5/15 text-chart-5",
   },
   graph: {
     label: "Graph",
-    icon: (
-      <>
-        <circle cx="6" cy="7" r="2.5" />
-        <circle cx="18" cy="6" r="2.5" />
-        <circle cx="13" cy="18" r="2.5" />
-        <path d="M8.4 7.6 15.6 6.4M7.6 9 11.6 16M17 8.4 14.2 15.8" />
-      </>
-    ),
+    icon: GLYPH.graph,
     text: "text-chart-1",
     tile: "bg-chart-1/15 text-chart-1",
   },
-  bookmarks: { label: "Bookmarks", icon: BOOKMARK_PATH, text: "text-chart-2", tile: "bg-chart-2/15 text-chart-2" },
-  bookmark: { label: "Bookmark", icon: BOOKMARK_PATH, text: "text-chart-2", tile: "bg-chart-2/15 text-chart-2" },
+  bookmarks: { label: "Bookmarks", icon: GLYPH.bookmark, text: "text-chart-2", tile: "bg-chart-2/15 text-chart-2" },
+  bookmark: { label: "Bookmark", icon: GLYPH.bookmark, text: "text-chart-2", tile: "bg-chart-2/15 text-chart-2" },
 }
 
 export const bandIcon = (kind: BandKind, className?: string) => ico(BAND_KIND[kind].icon, className)
@@ -189,7 +166,7 @@ function BookmarkCard({ bookmark, curator }: { bookmark: PBookmark; curator?: st
         ) : null}
         <span className="mt-auto inline-flex items-center gap-1.5 pt-6 text-sm font-medium text-primary">
           Open {bookmark.domain}
-          {ico(<path d="M7 17 17 7M9 7h8v8" />, "size-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5")}
+          {ico(GLYPH.external, "size-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5")}
         </span>
       </div>
     </BookmarkLink>
@@ -259,7 +236,7 @@ export function ShareBand({ item, index, total, curator }: { item: Band; index: 
                 className={cn("inline-flex h-9 items-center gap-1.5 rounded-full border border-border px-4 text-sm font-medium transition-colors hover:bg-accent", FOCUS)}
               >
                 Open collection
-                {ico(<path d="M9 6l6 6-6 6" />)}
+                {ico(GLYPH.chevronRight)}
               </OpenCollectionButton>
             </div>
           ) : null}
