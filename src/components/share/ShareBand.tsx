@@ -2,11 +2,13 @@ import type { ReactNode } from "react"
 
 import { FOCUS } from "@/components/site/styles"
 import { anchorFor, plural } from "@/lib/share/format"
+import { runKey } from "@/lib/share/targets"
 import type { PBookmark, PayloadItem } from "@/lib/share/types"
 import { cn } from "@/lib/utils"
 
 import { BookmarkLink, BookmarkRow, hueIndex, initialOf } from "./BookmarkRow"
 import { OpenCollectionButton } from "./CollectionSheet"
+import { BandCommentsLink } from "./Discussion"
 import { GraphView } from "./GraphView"
 import { GLYPH, ico } from "./icons"
 
@@ -37,6 +39,9 @@ export function toBands(items: PayloadItem[]): Band[] {
 
 /** Anchor id for a band, from its payload key ("c:3" -> "item-c-3"). */
 export const bandId = (band: Band) => anchorFor(band.key)
+
+/** The discussion filter for a band: its key, or every bookmark of a run of loose bookmarks. */
+export const bandFilterKey = (band: Band) => (band.kind === "bookmarks" ? runKey(band.key) : band.key)
 
 export function bandTitle(band: Band): string {
   switch (band.kind) {
@@ -229,8 +234,12 @@ export function ShareBand({ item, index, total, curator }: { item: Band; index: 
             <h2 className="mt-2 font-serif text-3xl leading-tight tracking-tight break-words text-balance sm:text-4xl">{heading}</h2>
             {note ? <p className="mt-2 max-w-2xl text-base leading-relaxed text-pretty text-muted-foreground">{note}</p> : null}
           </div>
-          {item.kind === "collection" ? (
-            <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 empty:hidden">
+            <BandCommentsLink
+              filter={bandFilterKey(item)}
+              className={cn("inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground", FOCUS)}
+            />
+            {item.kind === "collection" ? (
               <OpenCollectionButton
                 itemKey={item.key}
                 className={cn("inline-flex h-9 items-center gap-1.5 rounded-full border border-border px-4 text-sm font-medium transition-colors hover:bg-accent", FOCUS)}
@@ -238,8 +247,8 @@ export function ShareBand({ item, index, total, curator }: { item: Band; index: 
                 Open collection
                 {ico(GLYPH.chevronRight)}
               </OpenCollectionButton>
-            </div>
-          ) : null}
+            ) : null}
+          </div>
         </div>
       </div>
       <div className={cn(full ? "px-3 sm:px-6" : wrap, "mt-6 sm:mt-8")}>

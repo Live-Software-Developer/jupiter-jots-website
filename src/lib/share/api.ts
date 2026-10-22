@@ -45,6 +45,19 @@ export async function getShare(slug: string): Promise<ShareResult> {
   }
 }
 
+/**
+ * umbral's 400 puts field errors at the top level next to `code`
+ * (`{"code":"validation_error","body":["…"],"non_field_errors":["…"]}`); collect them.
+ */
+function fieldErrors(data: unknown): Record<string, string[]> | undefined {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return undefined
+  const out: Record<string, string[]> = {}
+  for (const [k, v] of Object.entries(data)) {
+    if (k !== 'code' && Array.isArray(v) && v.every((m) => typeof m === 'string')) out[k] = v
+  }
+  return Object.keys(out).length ? out : undefined
+}
+
 async function call<T>(path: string, method: 'GET' | 'POST', body?: unknown): Promise<ApiResult<T>> {
   try {
     const headers: Record<string, string> = { 'X-Visitor-Key': visitorKey() }
@@ -56,8 +69,7 @@ async function call<T>(path: string, method: 'GET' | 'POST', body?: unknown): Pr
     })
     const data = await res.json().catch(() => ({}))
     if (res.ok) return { ok: true, data: data as T }
-    const fields = data && typeof data === 'object' && 'fields' in data ? data.fields : undefined
-    return { ok: false, status: res.status, code: data?.code ?? 'error', fields }
+    return { ok: false, status: res.status, code: data?.code ?? 'error', fields: fieldErrors(data) }
   } catch {
     return { ok: false, status: 0, code: 'network' }
   }

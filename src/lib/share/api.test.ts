@@ -68,6 +68,13 @@ describe('visitor calls', () => {
       ok: false, status: 429, code: 'throttled', fields: undefined,
     })
   })
+  it('postComment collects umbral field errors from the top level', async () => {
+    fetchMock.mockResolvedValue(json(400, { code: 'validation_error', body: ['body must be 1-4000 characters.'], non_field_errors: ['No.'] }))
+    expect(await postComment('abc', { author_name: 'A', body: '', item_key: '' })).toEqual({
+      ok: false, status: 400, code: 'validation_error',
+      fields: { body: ['body must be 1-4000 characters.'], non_field_errors: ['No.'] },
+    })
+  })
   it('getComments, vote and report send the key', async () => {
     fetchMock.mockResolvedValue(json(200, { comments: [], count: 0 }))
     await getComments('abc')

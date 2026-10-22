@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { cache, Suspense } from "react"
 
 import { CollectionSheetProvider } from "@/components/share/CollectionSheet"
+import { Discussion, DiscussionProvider } from "@/components/share/Discussion"
 import { ShareBadge } from "@/components/share/Share"
 import { ShareBand, toBands } from "@/components/share/ShareBand"
 import { ShareHero } from "@/components/share/ShareHero"
@@ -9,7 +10,7 @@ import { ShareSidebar } from "@/components/share/ShareSidebar"
 import { ShareUnavailable } from "@/components/share/ShareUnavailable"
 import { getShare } from "@/lib/share/api"
 import { sheetEntries } from "@/lib/share/collections"
-import { plural } from "@/lib/share/format"
+import { commentTargets } from "@/lib/share/targets"
 import type { PublicShare, SharePayload, ShareResult } from "@/lib/share/types"
 import { SITE } from "@/lib/site"
 
@@ -100,38 +101,32 @@ async function ShareContent({ params }: { params: Params }) {
   const curator = payload.curator.name || share.curator_name
 
   return (
-    <CollectionSheetProvider collections={sheetEntries(payload.items)} curator={curator}>
-      <main>
-        <ShareHero share={share} payload={payload} />
-        {bands.map((band, i) => (
-          <ShareBand key={band.key} item={band} index={i} total={bands.length} curator={curator} />
-        ))}
-        <div className="border-t border-border py-10 sm:py-14">
-          <div className="mx-auto grid w-full max-w-6xl gap-10 px-3 sm:px-6 lg:grid-cols-12 lg:gap-12">
-            <div className="min-w-0 lg:col-span-8">
-              <DiscussionSummary share={share} />
-            </div>
-            <div className="lg:col-span-4">
-              <ShareSidebar share={share} bands={bands} />
+    <DiscussionProvider
+      slug={share.slug}
+      mode={share.comment_mode}
+      locked={share.locked}
+      count={share.comment_count}
+      targets={commentTargets(payload.items)}
+    >
+      <CollectionSheetProvider collections={sheetEntries(payload.items)} curator={curator}>
+        <main>
+          <ShareHero share={share} payload={payload} />
+          {bands.map((band, i) => (
+            <ShareBand key={band.key} item={band} index={i} total={bands.length} curator={curator} />
+          ))}
+          <div className="border-t border-border py-10 sm:py-14">
+            <div className="mx-auto grid w-full max-w-6xl gap-10 px-3 sm:px-6 lg:grid-cols-12 lg:gap-12">
+              <div className="min-w-0 lg:col-span-8">
+                <Discussion />
+              </div>
+              <div className="lg:col-span-4">
+                <ShareSidebar share={share} bands={bands} />
+              </div>
             </div>
           </div>
-        </div>
-      </main>
-    </CollectionSheetProvider>
-  )
-}
-
-/** Discussion heading and count; the threaded Discussion (Task 5) takes this slot. */
-function DiscussionSummary({ share }: { share: PublicShare }) {
-  return (
-    <section id="discussion" className="scroll-mt-20" aria-labelledby="discussion-title">
-      <h2 id="discussion-title" className="font-serif text-3xl leading-tight tracking-tight">
-        Discussion
-      </h2>
-      <p className="mt-2 text-sm text-muted-foreground">
-        {share.comment_mode === "off" ? "Comments are turned off for this share." : plural(share.comment_count, "comment")}
-      </p>
-    </section>
+        </main>
+      </CollectionSheetProvider>
+    </DiscussionProvider>
   )
 }
 
