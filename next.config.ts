@@ -21,10 +21,8 @@ const nextConfig: NextConfig = {
       // The design's routes, in case anyone shares a link from the design surface.
       { source: "/site", destination: "/", permanent: true },
       { source: "/site-:page(privacy|terms|faq|guide|about|changelog|support)", destination: "/:page", permanent: true },
-      { source: "/site-share-public", destination: "/share/public", permanent: true },
-      { source: "/site-share-bookmark", destination: "/share/bookmark", permanent: true },
-      { source: "/site-share-private-unlocked", destination: "/share/private/unlocked", permanent: true },
-      { source: "/site-share-private", destination: "/share/private", permanent: true },
+      // Share designs have no real counterpart (shares live at /s/[slug]); send them home.
+      { source: "/site-share-:page", destination: "/", permanent: true },
     ]
   },
   turbopack: {
