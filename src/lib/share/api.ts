@@ -2,7 +2,8 @@ import type { ApiResult, CommentList, NewComment, PublicComment, PublicShare, Sh
 
 const FALLBACK = 'http://127.0.0.1:8000'
 
-function base(): string {
+/** The backend base URL, without a trailing slash: `JJ_API_URL` on the server, `NEXT_PUBLIC_JJ_API_URL` in the browser. */
+export function apiBase(): string {
   const url =
     typeof window === 'undefined'
       ? process.env.JJ_API_URL ?? process.env.NEXT_PUBLIC_JJ_API_URL
@@ -33,7 +34,7 @@ export function visitorKey(): string {
 
 export async function getShare(slug: string): Promise<ShareResult> {
   try {
-    const res = await fetch(`${base()}/api/sharing/s/${encodeURIComponent(slug)}`, { cache: 'no-store' })
+    const res = await fetch(`${apiBase()}/api/sharing/s/${encodeURIComponent(slug)}`, { cache: 'no-store' })
     if (res.status === 404) return { status: 'missing' }
     if (res.status === 410) return { status: 'gone' }
     if (!res.ok) return { status: 'error' }
@@ -62,7 +63,7 @@ async function call<T>(path: string, method: 'GET' | 'POST', body?: unknown): Pr
   try {
     const headers: Record<string, string> = { 'X-Visitor-Key': visitorKey() }
     if (body !== undefined) headers['Content-Type'] = 'application/json'
-    const res = await fetch(`${base()}${path}`, {
+    const res = await fetch(`${apiBase()}${path}`, {
       method,
       headers,
       body: body === undefined ? undefined : JSON.stringify(body),

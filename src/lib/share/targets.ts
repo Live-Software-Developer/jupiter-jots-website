@@ -65,21 +65,34 @@ export function commentTargets(items: PayloadItem[]): CommentTargets {
 /** The filter key for a band of adjacent bookmarks that starts at `firstKey`. */
 export const runKey = (firstKey: string) => `run:${firstKey}`
 
+/**
+ * key -> label for every postable key, built once per targets object (it crosses from the server
+ * as plain data, so the map is built lazily on first lookup).
+ */
+const labelMaps = new WeakMap<CommentTargets, Map<string, string>>()
+function labelsOf(t: CommentTargets): Map<string, string> {
+  let m = labelMaps.get(t)
+  if (!m) {
+    m = new Map([['', WHOLE_SHARE]])
+    for (const g of t.groups) {
+      if (!m.has(g.item.key)) m.set(g.item.key, g.item.label)
+      for (const n of g.nested) if (!m.has(n.key)) m.set(n.key, n.label)
+    }
+    labelMaps.set(t, m)
+  }
+  return m
+}
+
+const runOf = (t: CommentTargets, key: string) => (Object.hasOwn(t.runs, key) ? t.runs[key] : undefined)
+
 /** Label for a comment's key or a filter key; unknown keys read as "this share". */
 export function targetLabel(t: CommentTargets, key: string): string {
-  if (key === '') return WHOLE_SHARE
-  if (t.runs[key]) return t.runs[key].label
-  for (const g of t.groups) {
-    if (g.item.key === key) return g.item.label
-    const hit = g.nested.find((n) => n.key === key)
-    if (hit) return hit.label
-  }
-  return UNKNOWN_TARGET
+  return runOf(t, key)?.label ?? labelsOf(t).get(key) ?? UNKNOWN_TARGET
 }
 
 /** Whether `key` is a real target (something the composer can post on). */
 export function isTarget(t: CommentTargets, key: string): boolean {
-  return key === '' || t.groups.some((g) => g.item.key === key || g.nested.some((n) => n.key === key))
+  return labelsOf(t).has(key)
 }
 
 /**
@@ -88,6 +101,6 @@ export function isTarget(t: CommentTargets, key: string): boolean {
  * The whole share ("") covers only comments on the whole share.
  */
 export function inScope(t: CommentTargets, filter: string, itemKey: string): boolean {
-  const covers = t.runs[filter]?.keys ?? [filter]
+  const covers = runOf(t, filter)?.keys ?? [filter]
   return covers.some((k) => itemKey === k || (k !== '' && itemKey.startsWith(`${k}/`)))
 }

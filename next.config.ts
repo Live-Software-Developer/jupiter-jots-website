@@ -8,9 +8,6 @@ const nextConfig: NextConfig = {
   output: "standalone",
   pageExtensions: ["ts", "tsx", "md", "mdx"],
   poweredByHeader: false,
-  // Next's gzip buffers streamed responses, which stalls the proxied /realtime/sse event stream
-  // (see rewrites). Compression is left to the proxy in front of the node server.
-  compress: false,
   images: {
     // 85 for the product screenshots (small UI text), 75 is Next's default.
     qualities: [75, 85],
@@ -27,13 +24,6 @@ const nextConfig: NextConfig = {
       // Share designs have no real counterpart (shares live at /s/[slug]); send them home.
       { source: "/site-share-:page", destination: "/", permanent: true },
     ]
-  },
-  async rewrites() {
-    // umbral's realtime client.js (loaded from the API) opens `/realtime/worker.js` (a SharedWorker,
-    // which must be same-origin) and `/realtime/sse` relative to the PAGE's origin, so those paths
-    // are proxied to the backend.
-    const api = (process.env.NEXT_PUBLIC_JJ_API_URL || "http://127.0.0.1:8000").replace(/\/+$/, "")
-    return [{ source: "/realtime/:path*", destination: `${api}/realtime/:path*` }]
   },
   turbopack: {
     rules: {

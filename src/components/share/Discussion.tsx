@@ -1,363 +1,48 @@
 "use client"
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useId,
-  useMemo,
-  useReducer,
-  useRef,
-  useState,
-  useSyncExternalStore,
-  type FormEvent,
-  type ReactNode,
-} from "react"
+import { useCallback, useId, useMemo, useState, type FormEvent, type ReactNode } from "react"
 
 import { FOCUS_FLAT } from "@/components/site/styles"
-import { getComments, postComment, report as reportApi, vote as voteApi } from "@/lib/share/api"
 import { initialsOf, plural } from "@/lib/share/format"
 import { renderMarkdown } from "@/lib/share/markdown"
-import { inScope, isTarget, targetLabel, WHOLE_SHARE, type CommentTargets } from "@/lib/share/targets"
-import type { ApiResult, CommentMode, HiddenComment, PublicComment } from "@/lib/share/types"
+import { isTarget, targetLabel, WHOLE_SHARE } from "@/lib/share/targets"
+import type { ApiResult } from "@/lib/share/types"
 import { cn } from "@/lib/utils"
 
 import { HUE_TINT, hueIndex } from "./BookmarkRow"
 import { CollectionCommentsSlot } from "./CollectionSheet"
-import { ico } from "./icons"
-import { useLiveComments } from "./useLiveComments"
+import {
+  buildThreads,
+  DiscussionStoreProvider,
+  isStub,
+  useRequiredStore,
+  useStore,
+  type Closed,
+  type Entry,
+  type Shown,
+  type StoreProps,
+  type Thread,
+} from "./discussionStore"
+import { GLYPH, ico } from "./icons"
 
-// ---------------------------------------------------------------------------------------------
-// Store
-
-/** The encrypted part of a comment. Private shares (Task 6) pass a codec that decrypts/encrypts it. */
-export interface CommentText {
-  author_name: string
-  body: string
-}
-export interface CommentCodec {
-  decode(c: CommentText): Promise<CommentText>
-  encode(c: CommentText): Promise<CommentText>
-}
-const IDENTITY: CommentCodec = { decode: async (c) => c, encode: async (c) => c }
-
-type Shown = PublicComment & { voted?: boolean; reported?: boolean; unreadable?: boolean }
-type Stub = HiddenComment & { item_key?: string }
-type Entry = Shown | Stub
-const isStub = (e: Entry): e is Stub => "hidden" in e && e.hidden === true
-
-type Sort = "top" | "new"
-type Closed = "off" | "locked" | null
-
-interface State {
-  byId: Map<number, Entry>
-  status: "loading" | "ok" | "error"
-}
-type Action =
-  | { type: "load"; comments: Entry[] }
-  | { type: "failed" }
-  | { type: "upsert"; comment: Shown }
-  | { type: "hide"; id: number }
-  | { type: "patch"; id: number; patch: Partial<Pick<Shown, "votes" | "voted" | "reported">> }
-
-function reducer(state: State, action: Action): State {
-  switch (action.type) {
-    case "load": {
-      const byId = new Map<number, Entry>()
-      for (const c of action.comments) {
-        const prev = state.byId.get(c.id)
-        byId.set(c.id, prev && !isStub(prev) && !isStub(c) ? { ...c, reported: prev.reported } : c)
-      }
-      return { byId, status: "ok" }
-    }
-    case "failed":
-      return state.status === "ok" ? state : { ...state, status: "error" }
-    case "upsert": {
-      const { comment } = action
-      const prev = state.byId.get(comment.id)
-      const base = prev && !isStub(prev) ? prev : undefined
-      const mine = comment.mine ?? base?.mine ?? false
-      // The public projection carries visible comments only; a held one is shown to its author alone.
-      if (comment.status !== "visible" && !(comment.status === "held" && mine)) return state
-      const byId = new Map(state.byId)
-      byId.set(comment.id, { ...base, ...comment, mine, voted: comment.voted ?? base?.voted, reported: base?.reported })
-      return { ...state, byId }
-    }
-    case "hide": {
-      const prev = state.byId.get(action.id)
-      if (!prev || isStub(prev)) return state
-      const byId = new Map(state.byId)
-      byId.set(prev.id, { id: prev.id, parent_id: prev.parent_id, hidden: true, item_key: prev.item_key })
-      return { ...state, byId }
-    }
-    case "patch": {
-      const prev = state.byId.get(action.id)
-      if (!prev || isStub(prev)) return state
-      const byId = new Map(state.byId)
-      byId.set(prev.id, { ...prev, ...action.patch })
-      return { ...state, byId }
-    }
-  }
-}
-
-const isRecord = (x: unknown): x is Record<string, unknown> => !!x && typeof x === "object" && !Array.isArray(x)
-const hasId = (x: unknown): x is { id: number } => isRecord(x) && typeof x.id === "number"
-const isComment = (x: unknown): x is PublicComment =>
-  hasId(x) && typeof (x as Record<string, unknown>).body === "string" && typeof (x as Record<string, unknown>).author_name === "string"
-
-async function decodeWith(codec: CommentCodec, c: PublicComment): Promise<Shown> {
-  try {
-    const t = await codec.decode({ author_name: c.author_name, body: c.body })
-    return { ...c, author_name: t.author_name, body: t.body }
-  } catch {
-    return { ...c, author_name: "Unknown", body: "", unreadable: true }
-  }
-}
-
-export interface PostInput {
-  author_name: string
-  body: string
-  item_key: string
-  parent_id?: number
-}
-
-interface DiscussionStore {
-  targets: CommentTargets
-  audience: "link" | "password"
-  mode: CommentMode
-  closed: Closed
-  status: State["status"]
-  entries: Entry[]
-  byId: Map<number, Entry>
-  filter: string | null
-  setFilter(f: string | null): void
-  sort: Sort
-  setSort(s: Sort): void
-  name: string
-  setName(n: string): void
-  count(filter: string | null): number
-  reload(): void
-  post(input: PostInput): Promise<ApiResult<unknown>>
-  toggleVote(id: number): Promise<ApiResult<unknown>>
-  report(id: number): Promise<ApiResult<unknown>>
-}
-
-const Store = createContext<DiscussionStore | null>(null)
-const useStore = () => useContext(Store)
-
-function useRequiredStore(): DiscussionStore {
-  const s = useStore()
-  if (!s) throw new Error("Discussion components must sit inside <DiscussionProvider>")
-  return s
-}
-
-const NAME_KEY = "jj.name"
-const noSubscribe = () => () => {}
-function readSavedName(): string {
-  try {
-    return localStorage.getItem(NAME_KEY) ?? ""
-  } catch {
-    return "" // Storage blocked: the name is simply not remembered.
-  }
-}
+export type { CommentCodec, CommentText } from "./discussionStore"
 
 /**
- * Holds a share's comments for the whole page: the Discussion section, the sidebar and band
- * links that set the item filter, and the comments inside collection sheets (it fills
- * `CollectionCommentsSlot`, so it must sit above `CollectionSheetProvider`).
- *
- * Every incoming comment (list, live event) goes through one promise queue, so a slow
- * `codec.decode` cannot reorder events and live events that arrive during a fetch apply after it.
+ * Holds a share's comments for the whole page (see DiscussionStoreProvider): the Discussion
+ * section, the sidebar and band links that set the item filter, and the comments inside
+ * collection sheets. It fills `CollectionCommentsSlot`, so it must sit above `CollectionSheetProvider`.
  */
-export function DiscussionProvider({
-  slug,
-  mode,
-  locked,
-  count: initialCount,
-  targets,
-  audience = "link",
-  codec = IDENTITY,
-  children,
-}: {
-  slug: string
-  mode: CommentMode
-  locked: boolean
-  /** The share's visible comment count, shown until the list arrives. */
-  count: number
-  targets: CommentTargets
-  audience?: "link" | "password"
-  codec?: CommentCodec
-  children: ReactNode
-}) {
-  const [state, dispatch] = useReducer(reducer, { byId: new Map(), status: "loading" })
-  const [closed, setClosed] = useState<Closed>(mode === "off" ? "off" : locked ? "locked" : null)
-  const [filter, setFilter] = useState<string | null>(null)
-  const [sort, setSort] = useState<Sort>("top")
-  // What the visitor typed this visit; until then the name remembered on this device.
-  const [typedName, setName] = useState<string | null>(null)
-  const savedName = useSyncExternalStore(noSubscribe, readSavedName, () => "")
-  const name = typedName ?? savedName
-
-  const codecRef = useRef(codec)
-  useEffect(() => {
-    codecRef.current = codec
-  })
-
-  const queue = useRef<Promise<void>>(Promise.resolve())
-  const enqueue = useCallback((job: () => Promise<void>) => {
-    queue.current = queue.current.then(job).catch(() => {})
-  }, [])
-
-  const reload = useCallback(
-    () =>
-      enqueue(async () => {
-        const res = await getComments(slug)
-        if (!res.ok || !Array.isArray(res.data?.comments)) return dispatch({ type: "failed" })
-        const comments = await Promise.all(
-          res.data.comments.filter(hasId).map((c) => ("hidden" in c && c.hidden ? (c as Stub) : isComment(c) ? decodeWith(codecRef.current, c) : null)),
-        )
-        dispatch({ type: "load", comments: comments.filter((c): c is Entry => c !== null) })
-      }),
-    [enqueue, slug],
-  )
-
-  useEffect(() => {
-    reload()
-  }, [reload])
-
-
-  const upsertLive = useCallback(
-    (d: unknown) => {
-      if (!isComment(d)) return
-      enqueue(async () => dispatch({ type: "upsert", comment: await decodeWith(codecRef.current, d) }))
-    },
-    [enqueue],
-  )
-  useLiveComments(
-    slug,
-    {
-      comment: upsertLive,
-      comment_updated: upsertLive,
-      comment_hidden: (d) => {
-        if (hasId(d)) enqueue(async () => dispatch({ type: "hide", id: d.id }))
-      },
-    },
-    reload,
-  )
-
-  const post = useCallback(
-    async (input: PostInput): Promise<ApiResult<unknown>> => {
-      let text: CommentText
-      try {
-        text = await codecRef.current.encode({ author_name: input.author_name, body: input.body })
-      } catch {
-        return { ok: false, status: 0, code: "encode_failed" }
-      }
-      const res = await postComment(slug, { ...text, item_key: input.item_key, ...(input.parent_id != null ? { parent_id: input.parent_id } : {}) })
-      if (res.ok) {
-        if (isComment(res.data)) {
-          // We know the plaintext; no need to decode our own comment.
-          dispatch({ type: "upsert", comment: { ...res.data, author_name: input.author_name, body: input.body, mine: true } })
-        }
-        try {
-          localStorage.setItem(NAME_KEY, input.author_name)
-        } catch {
-          // Not remembered; fine.
-        }
-      } else if (res.status === 403 && (res.code === "comments_off" || res.code === "thread_locked")) {
-        setClosed(res.code === "comments_off" ? "off" : "locked")
-      }
-      return res
-    },
-    [slug],
-  )
-
-  const toggleVote = useCallback(async (id: number) => {
-    const res = await voteApi(id)
-    if (res.ok) dispatch({ type: "patch", id, patch: { votes: res.data.votes, voted: res.data.voted } })
-    return res
-  }, [])
-
-  const report = useCallback(async (id: number) => {
-    const res = await reportApi(id)
-    if (res.ok) dispatch({ type: "patch", id, patch: { reported: true } })
-    return res
-  }, [])
-
-  const entries = useMemo(() => [...state.byId.values()], [state.byId])
-  const count = useCallback(
-    (f: string | null) => {
-      if (state.status !== "ok") return f === null ? initialCount : 0
-      return entries.filter((e) => !isStub(e) && e.status === "visible" && (f === null || inScope(targets, f, e.item_key))).length
-    },
-    [entries, initialCount, state.status, targets],
-  )
-
-  const store = useMemo<DiscussionStore>(
-    () => ({
-      targets,
-      audience,
-      mode,
-      closed,
-      status: state.status,
-      entries,
-      byId: state.byId,
-      filter,
-      setFilter,
-      sort,
-      setSort,
-      name,
-      setName,
-      count,
-      reload,
-      post,
-      toggleVote,
-      report,
-    }),
-    [targets, audience, mode, closed, state.status, state.byId, entries, filter, sort, name, count, reload, post, toggleVote, report],
-  )
-
+export function DiscussionProvider({ children, ...props }: StoreProps) {
   const slot = useCallback((itemKey: string) => <ItemDiscussion itemKey={itemKey} />, [])
-
   return (
-    <Store.Provider value={store}>
+    <DiscussionStoreProvider {...props}>
       <CollectionCommentsSlot.Provider value={slot}>{children}</CollectionCommentsSlot.Provider>
-    </Store.Provider>
+    </DiscussionStoreProvider>
   )
 }
 
 // ---------------------------------------------------------------------------------------------
 // Threads
-
-interface Thread {
-  top: Entry
-  replies: Entry[]
-}
-
-const visibleTo = (t: CommentTargets, filter: string | null, e: Entry) =>
-  filter === null || (e.item_key !== undefined && inScope(t, filter, e.item_key))
-
-/** Top-level comments with their replies, one level deep. A reply whose parent is unknown shows as top-level. */
-function buildThreads(entries: Entry[], byId: Map<number, Entry>, t: CommentTargets, filter: string | null, sort: Sort): Thread[] {
-  const replies = new Map<number, Entry[]>()
-  const tops: Entry[] = []
-  for (const e of entries) {
-    const parent = e.parent_id != null ? byId.get(e.parent_id) : undefined
-    if (parent && parent.parent_id == null) {
-      const list = replies.get(parent.id) ?? []
-      list.push(e)
-      replies.set(parent.id, list)
-    } else tops.push(e)
-  }
-  const pinned = (e: Entry) => (!isStub(e) && e.pinned ? 1 : 0)
-  const votes = (e: Entry) => (isStub(e) ? 0 : e.votes)
-  // Ids grow with creation time, so they order by time without parsing dates.
-  tops.sort((a, b) => pinned(b) - pinned(a) || (sort === "top" ? votes(b) - votes(a) || a.id - b.id : b.id - a.id))
-  return tops
-    .map((top) => ({ top, replies: (replies.get(top.id) ?? []).sort((a, b) => a.id - b.id) }))
-    .filter((th) => visibleTo(t, filter, th.top) || th.replies.some((r) => visibleTo(t, filter, r)))
-}
 
 const REPLIES_SHOWN = 3
 
@@ -445,37 +130,20 @@ function timeAgo(iso: string): string {
   return new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric" }).format(t)
 }
 
-const I = {
-  pin: <path d="M9 4h6l-1 5 3 3v2H7v-2l3-3zM12 14v6" />,
-  eyeOff: (
-    <path d="M3 3l18 18M10.6 6.1A9.8 9.8 0 0 1 12 6c6 0 9.5 6 9.5 6a17 17 0 0 1-3 3.7M6.6 7.6C4 9.3 2.5 12 2.5 12S6 18 12 18c1.6 0 3-.4 4.3-1" />
-  ),
-  up: <path d="M12 19V5M6 11l6-6 6 6" />,
-  flag: <path d="M5 21V4M5 4h11l-2 4 2 4H5" />,
-  clock: (
-    <>
-      <circle cx="12" cy="12" r="8.5" />
-      <path d="M12 7.5V12l3 2" />
-    </>
-  ),
-  lock: (
-    <>
-      <rect x="5" y="10.5" width="14" height="9.5" rx="2" />
-      <path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 7 0v3" />
-    </>
-  ),
-  chat: <path d="M5 5.5h14v10H9.5L5 19z" />,
-  close: <path d="M7 7l10 10M17 7 7 17" />,
+const THROTTLED = "You're commenting too fast, try again in a minute"
+
+/** Copy for a failed post ("post") or vote/report ("action"). */
+function errorText(res: Extract<ApiResult<unknown>, { ok: false }>, what: "post" | "action"): string {
+  if (res.status === 429) return what === "post" ? THROTTLED : "Too many tries. Try again in a minute."
+  if (res.code === "encode_failed") return "Couldn't prepare your comment. Try again."
+  if (res.status === 0) return "Couldn't reach the server. Check your connection and try again."
+  if (res.code === "comments_off") return "Comments were just turned off for this share."
+  if (res.code === "thread_locked") return "The curator just locked this thread."
+  if (res.status === 404 || res.status === 410) return "This share is no longer available."
+  return what === "post" ? "Couldn't post your comment. Try again." : "That didn't work. Try again."
 }
 
 const ACT = cn("inline-flex items-center gap-1 rounded transition-colors hover:text-foreground disabled:opacity-60", FOCUS_FLAT)
-
-function actionError(res: ApiResult<unknown>): string | null {
-  if (res.ok) return null
-  if (res.status === 429) return "Too many tries. Try again in a minute."
-  if (res.status === 0) return "Couldn't reach the server."
-  return "That didn't work. Try again."
-}
 
 function CommentView({ entry, filter, reply = false, onReply }: { entry: Entry; filter: string | null; reply?: boolean; onReply?: () => void }) {
   const s = useRequiredStore()
@@ -486,7 +154,7 @@ function CommentView({ entry, filter, reply = false, onReply }: { entry: Entry; 
     return (
       <div data-comment-id={entry.id} className="py-3">
         <p className="flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
-          {ico(I.eyeOff, "size-3.5")}
+          {ico(GLYPH.eyeOff, "size-3.5")}
           Hidden by the curator
         </p>
       </div>
@@ -498,7 +166,7 @@ function CommentView({ entry, filter, reply = false, onReply }: { entry: Entry; 
     setError(null)
     const res = await fn()
     setBusy(null)
-    setError(actionError(res))
+    setError(res.ok ? null : errorText(res, "action"))
   }
   const context = !reply && entry.item_key !== "" && entry.item_key !== filter ? targetLabel(s.targets, entry.item_key) : null
 
@@ -509,7 +177,7 @@ function CommentView({ entry, filter, reply = false, onReply }: { entry: Entry; 
     >
       {entry.pinned && !reply ? (
         <p className="mb-2 inline-flex items-center gap-1.5 text-xs font-medium text-primary">
-          {ico(I.pin, "size-3.5")}
+          {ico(GLYPH.pin, "size-3.5")}
           Pinned by the curator
         </p>
       ) : null}
@@ -525,7 +193,7 @@ function CommentView({ entry, filter, reply = false, onReply }: { entry: Entry; 
             <span className="text-sm font-medium break-words">{entry.author_name}</span>
             {held ? (
               <span className="inline-flex items-center gap-1 rounded-full bg-chart-3/10 px-2 py-0.5 text-xs font-medium text-foreground">
-                {ico(I.clock, "size-3.5")}
+                {ico(GLYPH.clock, "size-3.5")}
                 Waiting for approval
               </span>
             ) : null}
@@ -554,7 +222,7 @@ function CommentView({ entry, filter, reply = false, onReply }: { entry: Entry; 
                 onClick={() => run("vote", () => s.toggleVote(entry.id))}
                 className={cn(ACT, "tabular-nums hover:text-primary", entry.voted && "text-primary")}
               >
-                {ico(I.up, "size-3.5")}
+                {ico(GLYPH.up, "size-3.5")}
                 Helpful
                 {entry.votes > 0 ? <span>· {entry.votes}</span> : null}
               </button>
@@ -571,7 +239,7 @@ function CommentView({ entry, filter, reply = false, onReply }: { entry: Entry; 
                     onClick={() => run("report", () => s.report(entry.id))}
                     className={ACT}
                   >
-                    {ico(I.flag, "size-3.5")}
+                    {ico(GLYPH.flag, "size-3.5")}
                     {entry.reported ? "Reported" : "Report"}
                   </button>
                 </span>
@@ -591,18 +259,6 @@ function CommentView({ entry, filter, reply = false, onReply }: { entry: Entry; 
 
 // ---------------------------------------------------------------------------------------------
 // Composer
-
-const THROTTLED = "You're commenting too fast, try again in a minute"
-
-function postError(res: Extract<ApiResult<unknown>, { ok: false }>): string {
-  if (res.status === 429) return THROTTLED
-  if (res.code === "comments_off") return "Comments were just turned off for this share."
-  if (res.code === "thread_locked") return "The curator just locked this thread."
-  if (res.status === 404 || res.status === 410) return "This share is no longer available."
-  if (res.status === 0 && res.code === "encode_failed") return "Couldn't prepare your comment. Try again."
-  if (res.status === 0) return "Couldn't reach the server. Check your connection and try again."
-  return "Couldn't post your comment. Try again."
-}
 
 const FIELD = cn(
   "w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:outline-none aria-[invalid=true]:border-destructive",
@@ -656,10 +312,10 @@ function Composer({ itemKey, parent, onDone }: { itemKey?: string; parent?: Show
         else other ??= msgs[0] ?? null
       }
       setFields(f)
-      if (other || !Object.keys(f).length) setNotice(other ?? postError(res))
+      if (other || !Object.keys(f).length) setNotice(other ?? errorText(res, "post"))
       return
     }
-    setNotice(postError(res))
+    setNotice(errorText(res, "post"))
   }
 
   const err = (k: "author_name" | "body") => (fields[k] ? `${id}-${k}-error` : undefined)
@@ -782,7 +438,7 @@ function ClosedNotice({ closed }: { closed: Closed }) {
   if (!closed) return null
   return (
     <p className="mt-5 flex items-center gap-2 rounded-xl border border-border px-4 py-3 text-sm text-muted-foreground">
-      {ico(I.lock)}
+      {ico(GLYPH.lock)}
       {closed === "off" ? "Comments are turned off for this share." : "The curator locked this thread. Existing comments stay; new ones are closed."}
     </p>
   )
@@ -827,7 +483,7 @@ export function Discussion() {
               onClick={() => s.setFilter(null)}
               className={cn("grid size-4 shrink-0 place-items-center rounded-full hover:bg-primary/20", FOCUS_FLAT)}
             >
-              {ico(I.close, "size-3")}
+              {ico(GLYPH.close, "size-3")}
             </button>
           </span>
         </p>
@@ -848,7 +504,7 @@ function ItemDiscussion({ itemKey }: { itemKey: string }) {
   return (
     <section aria-label={`Comments on ${label}`} className="mt-4 border-t border-border px-4 pt-4 pb-6 sm:px-5">
       <h3 className="text-sm font-medium">{plural(s.count(itemKey), "comment")}</h3>
-      {s.closed ? <ClosedNotice closed={s.closed} /> : null}
+      <ClosedNotice closed={s.closed} />
       <Composer itemKey={itemKey} />
       <ThreadList filter={itemKey} label={`Comments on ${label}`} />
     </section>
@@ -856,8 +512,8 @@ function ItemDiscussion({ itemKey }: { itemKey: string }) {
 }
 
 /**
- * A link that shows the discussion filtered to one item (`null` = everything), for the
- * sidebar rows. Outside a DiscussionProvider it is a plain link to the discussion.
+ * A link that shows the discussion filtered to one item (`null` = everything), for sidebar rows
+ * and band headers. Outside a DiscussionProvider it is a plain link to the discussion.
  */
 export function ItemFilterLink({
   filter,
@@ -875,7 +531,7 @@ export function ItemFilterLink({
   const s = useStore()
   const on = !!s && s.filter === filter
   return (
-    <a href="#discussion" aria-current={on} onClick={() => s?.setFilter(filter)} className={cn(className, on ? activeClassName : inactiveClassName)}>
+    <a href="#discussion" aria-current={on ? "true" : undefined} onClick={() => s?.setFilter(filter)} className={cn(className, on ? activeClassName : inactiveClassName)}>
       {children}
     </a>
   )
@@ -895,9 +551,9 @@ export function BandCommentsLink({ filter, className }: { filter: string; classN
   const n = s.count(filter)
   if (s.closed && !n) return null
   return (
-    <a href="#discussion" onClick={() => s.setFilter(filter)} className={className}>
-      {ico(I.chat)}
+    <ItemFilterLink filter={filter} className={className}>
+      {ico(GLYPH.chat)}
       {n ? plural(n, "comment") : "Comment"}
-    </a>
+    </ItemFilterLink>
   )
 }

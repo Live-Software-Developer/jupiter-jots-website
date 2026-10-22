@@ -2,11 +2,7 @@
 
 import { useEffect, useRef } from "react"
 
-/** The slice of umbral's realtime client (`/realtime/client.js`) we use. */
-interface UmbralRealtime {
-  subscribe(groups: string, handlers: Record<string, (data: unknown) => void>): { unsubscribe(): void }
-}
-type UmbralWindow = Window & { umbral?: { realtime?: UmbralRealtime } }
+import { apiBase } from "@/lib/share/api"
 
 export interface LiveHandlers {
   comment(data: unknown): void
@@ -15,54 +11,19 @@ export interface LiveHandlers {
 }
 
 const POLL_MS = 30_000
-const SCRIPT_TIMEOUT_MS = 10_000
-
-const realtime = () => (window as UmbralWindow).umbral?.realtime
-
-function scriptSrc(): string {
-  const base = (process.env.NEXT_PUBLIC_JJ_API_URL || "http://127.0.0.1:8000").replace(/\/+$/, "")
-  return `${base}/realtime/client.js`
-}
-
-let loading: Promise<UmbralRealtime> | null = null
+const EVENTS = new Set<string>(["comment", "comment_updated", "comment_hidden"])
 
 /**
- * Loads umbral's realtime client once per page. A failed or timed-out load is forgotten (and
- * its tag removed) so a later mount can try again.
- */
-function loadRealtime(): Promise<UmbralRealtime> {
-  const ready = realtime()
-  if (ready?.subscribe) return Promise.resolve(ready)
-  if (loading) return loading
-  loading = new Promise<UmbralRealtime>((resolve, reject) => {
-    const script = document.createElement("script")
-    script.src = scriptSrc()
-    script.async = true
-    script.dataset.umbralRealtime = ""
-    const fail = () => {
-      clearTimeout(timer)
-      script.remove()
-      loading = null
-      reject(new Error("realtime client unavailable"))
-    }
-    const timer = setTimeout(fail, SCRIPT_TIMEOUT_MS)
-    script.onload = () => {
-      clearTimeout(timer)
-      const rt = realtime()
-      if (rt?.subscribe) resolve(rt)
-      else fail()
-    }
-    script.onerror = fail
-    document.head.append(script)
-  })
-  return loading
-}
-
-/**
- * Live comment events for one share: subscribes to `public:share:{slug}` through umbral's
- * realtime client. If the client cannot be loaded, calls `poll` every 30 s instead. Handlers
- * and `poll` are read through refs, so passing new functions each render does not resubscribe.
- * The effect's cleanup cancels a pending load, so StrictMode's double mount subscribes once.
+ * Live comment events for one share over a direct, cross-origin EventSource to the API's
+ * `/realtime/sse?groups=public:share:{slug}`. umbral sends every event as `event: u` with data
+ * `{c: channel, e: event name, d: data}`; envelopes for other channels are ignored.
+ *
+ * The browser reconnects on its own after a transient error (readyState CONNECTING), and on
+ * that reconnect `poll` runs once to catch up on anything the server's replay buffer missed.
+ * Only when EventSource is missing or the stream is closed for good (readyState CLOSED, e.g. a
+ * refused handshake) does `poll` run every 30 s instead. Handlers and `poll` are read through
+ * refs, so new functions each render do not reopen the stream; StrictMode's extra mount closes
+ * its stream in cleanup, leaving one open.
  */
 export function useLiveComments(slug: string, handlers: LiveHandlers, poll: () => void) {
   const handlersRef = useRef(handlers)
@@ -73,29 +34,46 @@ export function useLiveComments(slug: string, handlers: LiveHandlers, poll: () =
   })
 
   useEffect(() => {
-    let cancelled = false
-    let unsubscribe: (() => void) | null = null
     let timer: ReturnType<typeof setInterval> | null = null
+    const startPolling = () => {
+      timer ??= setInterval(() => pollRef.current(), POLL_MS)
+    }
+    if (typeof EventSource === "undefined") {
+      startPolling()
+      return () => {
+        if (timer) clearInterval(timer)
+      }
+    }
 
-    loadRealtime().then(
-      (rt) => {
-        if (cancelled) return
-        const sub = rt.subscribe(`public:share:${slug}`, {
-          comment: (d) => handlersRef.current.comment(d),
-          comment_updated: (d) => handlersRef.current.comment_updated(d),
-          comment_hidden: (d) => handlersRef.current.comment_hidden(d),
-        })
-        unsubscribe = () => sub.unsubscribe()
-      },
-      () => {
-        if (cancelled) return
-        timer = setInterval(() => pollRef.current(), POLL_MS)
-      },
-    )
+    const group = `public:share:${slug}`
+    const es = new EventSource(`${apiBase()}/realtime/sse?groups=${encodeURIComponent(group)}`)
+    let dropped = false
+    es.addEventListener("u", (ev) => {
+      let env: unknown
+      try {
+        env = JSON.parse((ev as MessageEvent<string>).data)
+      } catch {
+        return
+      }
+      if (!env || typeof env !== "object") return
+      const { c, e, d } = env as { c?: unknown; e?: unknown; d?: unknown }
+      if (c !== group || typeof e !== "string" || !EVENTS.has(e)) return
+      handlersRef.current[e as keyof LiveHandlers](d)
+    })
+    es.onopen = () => {
+      if (!dropped) return
+      dropped = false
+      pollRef.current()
+    }
+    es.onerror = () => {
+      if (es.readyState === EventSource.CLOSED) {
+        es.close()
+        startPolling()
+      } else dropped = true
+    }
 
     return () => {
-      cancelled = true
-      unsubscribe?.()
+      es.close()
       if (timer) clearInterval(timer)
     }
   }, [slug])

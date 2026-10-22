@@ -44,6 +44,8 @@ describe('commentTargets', () => {
     expect(targetLabel(t, 'g:4/n:k')).toBe('Deep')
     expect(targetLabel(t, 'g:4/n:k/b:9')).toBe('Nine')
     expect(targetLabel(t, 'c:99')).toBe('this share')
+    expect(targetLabel(t, 'constructor')).toBe('this share')
+    expect(inScope(t, 'constructor', 'b:1')).toBe(false)
   })
   it('groups adjacent bookmarks into a run', () => {
     expect(t.runs[runKey('b:1')]).toEqual({ label: 'Shared bookmarks', keys: ['b:1', 'b:2'] })

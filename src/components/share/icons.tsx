@@ -37,4 +37,23 @@ export const GLYPH = {
   ),
   chevronRight: <path d="M9 6l6 6-6 6" />,
   external: <path d="M7 17 17 7M9 7h8v8" />,
+  pin: <path d="M9 4h6l-1 5 3 3v2H7v-2l3-3zM12 14v6" />,
+  eyeOff: (
+    <path d="M3 3l18 18M10.6 6.1A9.8 9.8 0 0 1 12 6c6 0 9.5 6 9.5 6a17 17 0 0 1-3 3.7M6.6 7.6C4 9.3 2.5 12 2.5 12S6 18 12 18c1.6 0 3-.4 4.3-1" />
+  ),
+  up: <path d="M12 19V5M6 11l6-6 6 6" />,
+  flag: <path d="M5 21V4M5 4h11l-2 4 2 4H5" />,
+  clock: (
+    <>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 7.5V12l3 2" />
+    </>
+  ),
+  lock: (
+    <>
+      <rect x="5" y="10.5" width="14" height="9.5" rx="2" />
+      <path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 7 0v3" />
+    </>
+  ),
+  chat: <path d="M5 5.5h14v10H9.5L5 19z" />,
 }

@@ -8,6 +8,7 @@ import { CollectionCommentsSlot } from './CollectionSheet'
 import { BandCommentsLink, Discussion, DiscussionProvider, ItemFilterLink, type CommentCodec } from './Discussion'
 
 vi.mock('@/lib/share/api', () => ({
+  apiBase: () => 'http://127.0.0.1:8000',
   getComments: vi.fn(),
   postComment: vi.fn(),
   vote: vi.fn(),
@@ -65,11 +66,45 @@ const c = (extra: Partial<PublicComment> = {}): PublicComment => ({
 })
 const list = (comments: CommentList['comments']) => ({ ok: true as const, data: { comments, count: comments.length } })
 
-type Handlers = Record<string, (data: unknown) => void>
-let subscriptions: { groups: string; handlers: Handlers; unsubscribe: ReturnType<typeof vi.fn> }[]
-const live = (event: string, data: unknown) =>
+const GROUP = 'public:share:abcdefghij'
+
+/** Stands in for the browser's EventSource: records instances, lets tests emit umbral `u` envelopes and errors. */
+class FakeEventSource {
+  static CONNECTING = 0
+  static OPEN = 1
+  static CLOSED = 2
+  static instances: FakeEventSource[] = []
+  readyState = 0
+  closed = false
+  onopen: ((e: Event) => void) | null = null
+  onerror: ((e: Event) => void) | null = null
+  private listeners: Record<string, ((e: MessageEvent) => void)[]> = {}
+  constructor(public url: string) {
+    FakeEventSource.instances.push(this)
+  }
+  addEventListener(type: string, fn: (e: MessageEvent) => void) {
+    ;(this.listeners[type] ??= []).push(fn)
+  }
+  close() {
+    this.closed = true
+    this.readyState = 2
+  }
+  emit(type: string, data: unknown) {
+    for (const fn of this.listeners[type] ?? []) fn(new MessageEvent(type, { data: typeof data === 'string' ? data : JSON.stringify(data) }))
+  }
+  open() {
+    this.readyState = 1
+    this.onopen?.(new Event('open'))
+  }
+  fail(readyState: number) {
+    this.readyState = readyState
+    this.onerror?.(new Event('error'))
+  }
+}
+const streams = () => FakeEventSource.instances.filter((s) => !s.closed)
+const live = (event: string, data: unknown, channel = GROUP) =>
   act(async () => {
-    for (const s of subscriptions) s.handlers[event]?.(data)
+    for (const s of streams()) s.emit('u', { c: channel, e: event, d: data })
   })
 
 let root: Root | null = null
@@ -116,26 +151,17 @@ async function submit(scope = host as Element) {
 
 beforeEach(() => {
   seq = 0
-  subscriptions = []
   localStorage.clear()
   vi.clearAllMocks()
   getMock.mockResolvedValue(list([]))
-  ;(window as unknown as { umbral?: unknown }).umbral = {
-    realtime: {
-      subscribe: vi.fn((groups: string, handlers: Handlers) => {
-        const s = { groups, handlers, unsubscribe: vi.fn() }
-        subscriptions.push(s)
-        return { unsubscribe: s.unsubscribe }
-      }),
-    },
-  }
+  FakeEventSource.instances = []
+  vi.stubGlobal('EventSource', FakeEventSource)
 })
 afterEach(() => {
   act(() => root?.unmount())
   root = null
   host?.remove()
-  document.querySelectorAll('script[data-umbral-realtime]').forEach((s) => s.remove())
-  delete (window as unknown as { umbral?: unknown }).umbral
+  vi.unstubAllGlobals()
   vi.useRealTimers()
 })
 
@@ -199,9 +225,17 @@ describe('threads', () => {
 })
 
 describe('live events', () => {
-  it('subscribes to the share group', async () => {
+  it('opens one EventSource on the API for the share group', async () => {
     await render(ui())
-    expect(subscriptions.map((s) => s.groups)).toEqual(['public:share:abcdefghij'])
+    expect(streams().map((s) => s.url)).toEqual(['http://127.0.0.1:8000/realtime/sse?groups=public%3Ashare%3Aabcdefghij'])
+  })
+
+  it('ignores events for other groups, unknown events and bad envelopes', async () => {
+    await render(ui())
+    await live('comment', c({ body: 'Elsewhere' }), 'public:share:other00000')
+    await live('surprise', c({ body: 'Unknown event' }))
+    await act(async () => streams()[0].emit('u', 'not json'))
+    expect($('[data-comment-id]')).toBeNull()
   })
 
   it('a comment_hidden event replaces the comment with a stub; unknown ids are ignored', async () => {
@@ -243,23 +277,55 @@ describe('live events', () => {
     expect(commentEl(held.id)!.textContent).not.toContain('Waiting for approval')
   })
 
-  it('subscribes once under StrictMode and unsubscribes on unmount', async () => {
-    await render(<StrictMode>{ui()}</StrictMode>)
-    const active = subscriptions.filter((s) => s.unsubscribe.mock.calls.length === 0)
-    expect(active).toHaveLength(1)
-    act(() => root!.unmount())
-    root = null
-    expect(subscriptions.every((s) => s.unsubscribe.mock.calls.length === 1)).toBe(true)
+  it('un-hides a hidden comment when comment_updated brings it back', async () => {
+    const a = c({ body: 'Restored' })
+    getMock.mockResolvedValue(list([{ id: a.id, parent_id: null, hidden: true }]))
+    await render(ui())
+    expect(commentEl(a.id)!.textContent).toContain('Hidden by the curator')
+    await live('comment_updated', a)
+    expect(commentEl(a.id)!.textContent).toContain('Restored')
   })
 
-  it('loads the realtime script once and polls every 30 s when it fails', async () => {
-    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'setTimeout', 'clearTimeout'] })
-    delete (window as unknown as { umbral?: unknown }).umbral
+  it('nests an approved held reply under its parent, in id order', async () => {
+    const parent = c({ body: 'Parent' })
+    const first = c({ parent_id: parent.id, body: 'First reply' })
+    const held = c({ parent_id: parent.id, body: 'Held reply' })
+    const last = c({ parent_id: parent.id, body: 'Last reply' })
+    getMock.mockResolvedValue(list([parent, first, last]))
     await render(ui())
-    const scripts = document.querySelectorAll('script[data-umbral-realtime]')
-    expect(scripts).toHaveLength(1)
-    expect((scripts[0] as HTMLScriptElement).src).toMatch(/\/realtime\/client\.js$/)
-    await act(async () => scripts[0].dispatchEvent(new Event('error')))
+    await live('comment_updated', held)
+    const replies = [...commentEl(parent.id)!.closest('li')!.querySelectorAll(':scope ul [data-comment-id]')].map((e) => Number(e.getAttribute('data-comment-id')))
+    expect(replies).toEqual([first.id, held.id, last.id])
+  })
+
+  it('opens one stream under StrictMode and closes it on unmount', async () => {
+    await render(<StrictMode>{ui()}</StrictMode>)
+    expect(streams()).toHaveLength(1)
+    act(() => root!.unmount())
+    root = null
+    expect(streams()).toHaveLength(0)
+  })
+
+  it('a transient error leaves reconnecting to the browser, then resyncs once on reopen', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] })
+    await render(ui())
+    const es = streams()[0]
+    es.open()
+    await act(async () => es.fail(FakeEventSource.CONNECTING))
+    await act(async () => vi.advanceTimersByTime(90_000))
+    expect(getMock).toHaveBeenCalledTimes(1)
+    await act(async () => es.open())
+    await flush()
+    expect(getMock).toHaveBeenCalledTimes(2)
+    await act(async () => vi.advanceTimersByTime(90_000))
+    expect(getMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('polls every 30 s once the stream is closed for good, and stops on unmount', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] })
+    await render(ui())
+    await act(async () => streams()[0].fail(FakeEventSource.CLOSED))
+    expect(streams()).toHaveLength(0)
     expect(getMock).toHaveBeenCalledTimes(1)
     getMock.mockResolvedValue(list([c({ body: 'Polled in' })]))
     await act(async () => vi.advanceTimersByTime(30_000))
@@ -270,6 +336,46 @@ describe('live events', () => {
     root = null
     await act(async () => vi.advanceTimersByTime(60_000))
     expect(getMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('polls when there is no EventSource', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] })
+    vi.stubGlobal('EventSource', undefined)
+    await render(ui())
+    await act(async () => vi.advanceTimersByTime(30_000))
+    await flush()
+    expect(getMock).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('loading', () => {
+  it('shows an error with retry when the list fails, then loads on retry', async () => {
+    getMock.mockRejectedValueOnce(new Error('boom'))
+    await render(ui())
+    expect(host.textContent).toContain("Comments couldn't be loaded.")
+    getMock.mockResolvedValue(list([c({ body: 'Back' })]))
+    await act(async () => button('Try again')!.click())
+    await flush()
+    expect(host.textContent).toContain('Back')
+  })
+
+  it('keeps the visitor’s own post when a refetch was already in flight', async () => {
+    let release!: (v: Awaited<ReturnType<typeof getComments>>) => void
+    getMock.mockResolvedValueOnce(list([]))
+    postMock.mockImplementation(async (_slug, body) => ({ ok: true, data: c({ ...body, status: 'held', mine: true }) }))
+    await render(ui({ mode: 'held' }))
+    // A reconnect resync starts a refetch whose snapshot predates the post (no held comment of ours).
+    getMock.mockReturnValueOnce(new Promise((r) => (release = r)))
+    await act(async () => {
+      streams()[0].fail(FakeEventSource.CONNECTING)
+      streams()[0].open()
+    })
+    expect(getMock).toHaveBeenCalledTimes(2)
+    await fill('Kim', 'Mine, held')
+    await submit()
+    await act(async () => release(list([])))
+    await flush()
+    expect(host.textContent).toContain('Mine, held')
   })
 })
 
