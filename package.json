@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "test": "vitest run",
     "lint": "eslint",
     "og": "python3 og/build.py",
     "bundle": "next build && cp -r public .next/standalone/ && cp -r .next/static .next/standalone/.next/ && mkdir -p .next/standalone/deploy && cp deploy/ecosystem.config.cjs .next/standalone/deploy/",
@@ -33,8 +34,10 @@
     "@types/react-dom": "19.3.0",
     "eslint": "9.39.5",
     "eslint-config-next": "16.4.2",
+    "jsdom": "^30.1.3",
     "tailwindcss": "4.3.3",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "vitest": "^5.0.5"
   },
   "packageManager": "pnpm@10.30.3"
 }

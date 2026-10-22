@@ -1,0 +1,8 @@
+{
+  "password": "maple-otter-93",
+  "salt_b64": "AAECAwQFBgcICQoLDA0ODw==",
+  "kdf_iters": 310000,
+  "iv_b64": "AAAAAAAAAAAAAAAA",
+  "plaintext": "{\"hello\":\"world\"}",
+  "cipher": "AAAAAAAAAAAAAAAAlLed0gyh56cx+xab1XMQ9aEnLeigIUvR7nUVpd7THlza"
+}
