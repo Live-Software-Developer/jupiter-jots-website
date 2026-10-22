@@ -110,3 +110,20 @@
 - [ ] **Step 3: Implement.**
 - [ ] **Step 4: Run** `pnpm test && pnpm build`, expect PASS. Manual end-to-end with a private share created by the extension.
 - [ ] **Step 5: Commit** `feat(share): end-to-end encrypted private shares`
+
+### Task 7: Privacy policy and terms for sharing
+
+**Files:**
+- Modify: `src/content/privacy.mdx`, `src/content/terms.mdx`, `src/content/faq.mdx` (one Q&A), `src/content/changelog.mdx` (entry)
+
+**Required statements (decided by the user, 2026-10-22):**
+- No email or account is collected. Identity is a 12-character code generated on the user's device; the server stores only a keyed hash of a key derived from it and cannot recover the code. Losing the code means losing control of existing shares.
+- Bookmarks stay on the device. **Shares** are stored in two places: in the user's own space (the extension) and on Jupiter Jots servers so they are reachable by link and by the user's other devices.
+- Public shares: their contents are stored readable on the server. Private shares: contents and their comments are encrypted in the browser with the share password; the server stores only ciphertext plus the title, curator name and item counts shown on the lock screen.
+- Comments and replies (name, text, time) are sent to and stored on the server, are visible to anyone who can open the share, can be hidden or deleted by the share's owner, and are deleted when the share is deleted. Visitors are identified by a random key kept in their browser, stored server-side only as a hash, used for "remember my name", votes, reports and rate limits.
+- What the owner controls: revoke, expiry, view limit, comment mode, moderation. What happens on revoke/expiry: the link stops working; data is deleted when the owner deletes the share.
+- Terms: owners are responsible for what they share; prohibited content; how to report a share (`/support`); we may remove reported shares that break the terms.
+
+- [ ] **Step 1:** Draft the sections in plain language matching the existing pages' tone; keep each statement above verbatim in substance.
+- [ ] **Step 2:** `pnpm build` passes; read both pages rendered at `/privacy` and `/terms`.
+- [ ] **Step 3: Commit** `docs(site): privacy and terms cover shares, codes and comments`
