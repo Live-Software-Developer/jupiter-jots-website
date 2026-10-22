@@ -163,7 +163,7 @@ function CollectionSheet({ entry, curator, onClose }: { entry: SheetEntry; curat
         </div>
         <div className="flex shrink-0 items-center gap-2 border-t border-border px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-5">
           <Link href="/#get" className={cn(btnPrimary("md"), "flex-1 sm:flex-none")}>
-            Save this collection
+            Get Jupiter Jots
           </Link>
           <CopyLinkButton hash={anchorFor(entry.key)} className={cn(btnSecondary("md"), "px-4")} />
         </div>

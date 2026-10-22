@@ -26,7 +26,6 @@ const GLOBE = (
 export function ShareHero({ share, payload, action }: { share: PublicShare; payload: SharePayload; action?: ReactNode }) {
   const priv = share.visibility === "private"
   const bands = toBands(payload.items)
-  const lone = bands.length === 1 && bands[0].kind === "bookmark"
   const curator = payload.curator.name || share.curator_name
   const updated = formatDate(share.updated_at)
   const expires = formatDate(share.expires_at)
@@ -81,9 +80,9 @@ export function ShareHero({ share, payload, action }: { share: PublicShare; payl
         </div>
         <div className="lg:col-span-4 lg:pt-10">
           <div className="rounded-2xl bg-primary/[0.07] p-5 ring-1 ring-primary/15">
-            <p className="text-sm font-medium">{lone ? "Save this bookmark" : "Keep this share"}</p>
+            <p className="text-sm font-medium">Like this share?</p>
             <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-              Save it to your own Jupiter Jots library — graphs and collections included. Free, and it stays on your device.
+              Make collections and graphs like this one with Jupiter Jots. Free, and your library stays on your device.
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
               <Link
@@ -94,7 +93,7 @@ export function ShareHero({ share, payload, action }: { share: PublicShare; payl
                 )}
               >
                 <PlusIcon />
-                Save to my library
+                Get Jupiter Jots
               </Link>
               <CopyLinkButton
                 className={cn(

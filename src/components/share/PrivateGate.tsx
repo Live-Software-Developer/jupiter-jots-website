@@ -186,7 +186,7 @@ export function PrivateGate({ share }: { share: PublicShare }) {
           <h1 className="mt-6 font-serif text-3xl leading-tight tracking-tight break-words text-balance">{share.title}</h1>
           {askable ? (
             <p className="mt-2 text-sm text-muted-foreground">
-              Enter the password {who} sent you. It unlocks in your browser — the server never sees what’s inside.
+              Enter the password {who} sent you. It unlocks in your browser — our server stores it encrypted and can’t read it.
             </p>
           ) : null}
 

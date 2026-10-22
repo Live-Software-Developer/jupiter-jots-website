@@ -44,7 +44,7 @@ export default function HomePage() {
               <span className="block">Save the page.</span> <span className="block">Keep the reason.</span>
             </h1>
             <p className="mt-6 max-w-md text-lg leading-relaxed text-muted-foreground">
-              A bookmark manager that saves any page in one click, with a note on why it mattered. Bookmark the tabs you mean to read, give them a reason, then close them. Free, and it stays on your device.
+              A bookmark manager that saves any page in one click, with a note on why it mattered. Bookmark the tabs you mean to read, give them a reason, then close them. Free, and your library stays on your device.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <StoreLink className={btnPrimary("lg")}>
@@ -76,7 +76,7 @@ export default function HomePage() {
             ["One click", "Save the tab you are on from the toolbar, a right-click or Alt+Shift+S."],
             ["A note for future you", "Write why you saved it. Search finds it by that note later."],
             ["Collections that nest", "Folders inside folders, with tags, favourites and an archive."],
-            ["Yours alone", "No account and no server. Your library lives in your browser."],
+            ["Yours alone", "No account. Your library lives in your browser; only what you share is stored on our server."],
           ]}
         />
       </section>
@@ -180,7 +180,7 @@ export default function HomePage() {
         <div className="mx-auto grid w-full max-w-6xl gap-10 px-4 sm:px-6 lg:grid-cols-12">
           <div className="lg:col-span-4">
             <h2 id="priv-h" className={H2}>
-              There is no Jupiter Jots server
+              Your library stays in your browser
             </h2>
             <Link href="/privacy" className={`mt-4 inline-block ${textLink}`}>
               Read the privacy policy
@@ -193,6 +193,10 @@ export default function HomePage() {
               ["No account, no tracking", "Nothing to sign up for. No analytics, no ads."],
               ["Free", "Every feature on this page costs nothing."],
               ["Not synced yet", "Move your library between computers with export or a backup file."],
+              [
+                "Shares live on our server",
+                "Items you share, and comments on them, are stored on our server so the link works. Owners can delete a share from the extension.",
+              ],
             ]}
           />
         </div>

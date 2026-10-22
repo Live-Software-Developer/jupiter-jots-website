@@ -17,9 +17,9 @@ export const toc = [
 
 <Summary>
 
-- Everything you save stays in your browser on this device. We never receive it.
+- Your library stays in your browser on this device. We never receive it, except what you put in a share.
 - The one exception is a share you choose to make: it is stored on our server so its link works.
-- Private shares are encrypted in your browser. We can’t read them or their comments.
+- Private shares are encrypted in your browser. We can’t read their contents or comments.
 - There is no account and no email. No analytics, no advertising and no tracking. Nothing is sold.
 - Share pages set one functional cookie, `jj_visitor`, and no other cookies.
 - Pages are read only when you save them. Chrome bookmarks are read only when you import them.
@@ -41,6 +41,8 @@ This policy covers the Jupiter Jots extension for Chrome, version 2.0.0 and late
 <Prose>
 
 **From your library, nothing.** Jupiter Jots has no account and asks for no email. The extension contains no analytics, telemetry, advertising or crash-reporting code, and it does not track the sites you visit.
+
+**From shares and share pages:** what you share, comments people post, and a hashed visitor key. See [When you share](#sharing) and [Visiting and commenting](#visitors).
 
 We never see your bookmarks, notes, tags, collections, settings or how you use the extension, unless you put them in a share. Sharing is the only feature that sends anything to our server, and only what you choose to share, as described in [When you share](#sharing). We do not sell or hand on anything we receive.
 
@@ -99,7 +101,7 @@ Your bookmarks stay on your device. A **share** is the exception. When you creat
 </Prose>
 <Defs>
 <Def term="Public shares">Their contents are stored readable on our server and shown to anyone with the link: the title and intro, your curator name, and the bookmarks, collections and graphs you add. For each bookmark that is its address, title, site, tags, note (unless you leave notes out) and whether you have opened it.</Def>
-<Def term="Private shares">Their contents and their comments are encrypted in your browser with the share password before they leave it. The server stores only that ciphertext, plus the title, curator name and item counts (such as “1 graph · 2 collections”) shown on the lock screen. The password never reaches us in a form we can read, so we can’t open a private share or recover its password.</Def>
+<Def term="Private shares">Their contents and their comments are encrypted in your browser with the share password before they leave it. Our server can’t read its contents or comments. It can see the title, your curator name and the item counts (such as “1 graph · 2 collections”) shown on the lock screen, the share’s settings, and which item each comment is on. It also stores the values your browser needs to turn the password into a key. The password never reaches us in a form we can read, so we can’t recover it.</Def>
 <Def term="Settings">For every share we also store its settings (public or private, comment mode, expiry, view limit, keep live), a view count, when it was created, changed or revoked, and a fingerprint of its contents that tells your devices when it has changed.</Def>
 <Def term="Your list of shares">So your other devices can manage a share, the extension also stores with it the list of what is in it and, for a private share, its password. Both are encrypted on your device with a key from your code that never leaves it, so we can’t read them.</Def>
 </Defs>
@@ -122,11 +124,31 @@ Share pages have no analytics, advertising or tracking. This is what they store 
 
 </Prose>
 <Defs>
-<Def term="Visitor key">The first time you open a share page, your browser makes a random key. It is kept in your browser’s local storage and in one first-party cookie, `jj_visitor`, which lasts a year. It is sent to our server with your requests, and the server stores it only as a hash (SHA-256). It is used to count a view once per visitor per day, to record your votes and reports so each counts once, to show you your own comments while they wait for approval, and to limit how fast comments and votes can be sent. It is not used for advertising and does not follow you to other sites.</Def>
+<Def term="Visitor key">
+
+The first time you open a share page, your browser makes a random key. It is kept in your browser’s local storage and in one first-party cookie, `jj_visitor`, which lasts a year. It is sent to our server with your requests, and the server stores it only as a hash (SHA-256). It is used to:
+
+- count a view, usually once per visitor per day
+- record your votes and reports, so each counts once
+- show you your own comments while they wait for approval
+- limit how fast comments and votes can be sent
+
+It is not used for advertising and does not follow you to other sites.
+
+</Def>
 <Def term="Your name">If you comment, the name you type is remembered in your browser on that device, so you don’t have to type it again. It is not remembered on private shares.</Def>
-<Def term="Comments">Comments and replies (your name, what you write, and when) are sent to and stored on our server, with the hashed visitor key and the part of the share they are about. They are visible to anyone who can open the share. While a comment waits for approval, only you and the owner see it. The owner can hide or delete comments, and they are deleted when the share is deleted. On a private share, the name and text are encrypted in your browser with the share password.</Def>
+<Def term="Comments">
+
+Comments and replies are stored on our server, with the hashed visitor key. Each one holds:
+
+- your name, what you write, and when
+- the part of the share it is about
+
+They are visible to anyone who can open the share. While a comment waits for approval, only you and the owner see it. The owner can hide or delete comments, and they are deleted when the share is deleted. On a private share, the name and text are encrypted in your browser with the share password.
+
+</Def>
 <Def term="Votes and reports">Marking a comment helpful, or reporting it to the share’s owner, stores the hashed visitor key against that comment.</Def>
-<Def term="IP address">Used only to limit how often comments, votes and first shares from a new code can come from one address. It is kept only in the server’s memory for that check and is not saved to our database.</Def>
+<Def term="IP address">Used only to limit how often comments, votes and first shares from a new code can come from one address. It is not saved to our database.</Def>
 </Defs>
 </Section>
 
@@ -138,8 +160,9 @@ From the extension you control each share you make:
 </Prose>
 <Defs>
 <Def term="Revoke">Stops the link working straight away.</Def>
+<Def term="Delete">Removes the share from our server, with all of its comments, votes and reports.</Def>
 <Def term="Expiry">A date after which the link stops working.</Def>
-<Def term="View limit">The number of views after which the link stops working. A visitor counts once a day.</Def>
+<Def term="View limit">The number of views after which the link stops working. A visitor usually counts once a day.</Def>
 <Def term="Comment mode">Open, approve first, or off.</Def>
 <Def term="Moderation">Pin, hide or delete comments, and lock the discussion.</Def>
 <Def term="Blocked words">On public shares, comments containing a word you block wait for your approval. The list is stored on our server with your code’s record.</Def>
@@ -176,7 +199,7 @@ Your library exists only on your device, so **uninstalling Jupiter Jots or clear
 
 To keep a copy, use **Export** or **Back up** on the Import & export page. A JSON backup can be imported again on any computer. You can also delete single bookmarks, empty the trash or clear the activity log at any time.
 
-Shares are the exception: uninstalling does not remove them from our server. Revoke a share to stop its link. To have a share and its comments deleted from our server, contact us through [Support](/support) with its link. Visitors can clear the `jj_visitor` cookie and the site’s storage in their browser at any time.
+Shares are the exception: uninstalling does not remove them from our server. Revoke a share to stop its link. To remove a share and its comments from our server, delete it from the extension’s Shares page (or ask us through [Support](/support) with its link). Visitors can clear the `jj_visitor` cookie and the site’s storage in their browser at any time.
 
 </Prose>
 </Section>

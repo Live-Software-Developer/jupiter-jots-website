@@ -38,7 +38,7 @@ export function Def({ term, aside, strong = false, wide = false, children }: {
         {term}
         {aside && <span className="font-normal text-muted-foreground"> {aside}</span>}
       </dt>
-      <dd className={cn("leading-7 text-muted-foreground", wide ? "sm:col-span-9" : "sm:col-span-8")}>{children}</dd>
+      <dd className={cn("leading-7 text-muted-foreground [&_p+p]:mt-3 [&_p+ul]:mt-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ul+p]:mt-2", wide ? "sm:col-span-9" : "sm:col-span-8")}>{children}</dd>
     </div>
   )
 }

@@ -16,7 +16,7 @@ export default function PrivacyPage() {
   return (
     <DocLayout
       title="Privacy policy"
-      lede="Jupiter Jots keeps your library on your own computer. There is no account and no tracking. Only what you choose to share reaches our server."
+      lede="Jupiter Jots keeps your library on your own computer. There is no account and no tracking. Only what you choose to share, and comments on shares, reach our server."
       meta="Effective 18 October 2026. Last updated 23 October 2026."
       toc={toc}
     >
