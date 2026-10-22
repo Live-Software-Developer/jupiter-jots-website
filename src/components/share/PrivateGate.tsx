@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react"
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type FormEvent, type ReactNode } from "react"
 
 import { FOCUS, FOCUS_FLAT } from "@/components/site/styles"
 import { visitorKey } from "@/lib/share/api"
@@ -12,10 +12,13 @@ import type { PublicShare, SharePayload } from "@/lib/share/types"
 import { cn } from "@/lib/utils"
 
 import type { CommentCodec } from "./Discussion"
+import { LockIcon } from "./icons"
 import { ShareView } from "./ShareView"
 
 /** Below this PBKDF2 count a share is refused rather than unlocked (the spec's floor; shares use their own count). */
 const MIN_KDF_ITERS = 100_000
+/** Above this (about 6.5× the 310000 default) a share is refused too: a crafted count would spin forever. */
+const MAX_KDF_ITERS = 2_000_000
 const MAX_TRIES = 5
 const COOLDOWN_MS = 3000
 
@@ -45,6 +48,10 @@ function saltOf(share: PublicShare): Uint8Array | null {
   }
 }
 
+/** WebCrypto (`crypto.subtle`) exists only in secure contexts: https, or localhost. */
+const hasWebCrypto = () => typeof globalThis.crypto?.subtle?.deriveKey === "function"
+const noSubscribe = () => () => {}
+
 type Phase = { kind: "locked" } | { kind: "damaged" } | { kind: "open"; key: CryptoKey; payload: SharePayload }
 
 /**
@@ -65,7 +72,11 @@ export function PrivateGate({ share }: { share: PublicShare }) {
   const input = useRef<HTMLInputElement>(null)
 
   const salt = useMemo(() => saltOf(share), [share])
-  const unsafe = !salt || !Number.isInteger(share.kdf_iters) || share.kdf_iters < MIN_KDF_ITERS
+  const unsafe =
+    !salt || !Number.isInteger(share.kdf_iters) || share.kdf_iters < MIN_KDF_ITERS || share.kdf_iters > MAX_KDF_ITERS
+
+  // The server render always has WebCrypto; a page served over plain http does not.
+  const insecure = useSyncExternalStore(noSubscribe, () => !hasWebCrypto(), () => false)
 
   useEffect(() => {
     // Sets the jj_visitor cookie before the visitor reloads, so the server forwards it and the view dedupes.
@@ -91,6 +102,8 @@ export function PrivateGate({ share }: { share: PublicShare }) {
       setPhase(payload ? { kind: "open", key: k, payload } : { kind: "damaged" })
     } catch (err) {
       if (!(err instanceof WrongPassword)) {
+        // The form goes away, so the typed password must not linger in state.
+        setPassword("")
         setPhase({ kind: "damaged" })
         return
       }
@@ -143,7 +156,7 @@ export function PrivateGate({ share }: { share: PublicShare }) {
   const curator = share.curator_name
   const who = curator.split(/\s+/)[0] || "the person who shared it"
   const expires = formatDate(share.expires_at)
-  const askable = !unsafe && phase.kind === "locked"
+  const askable = !unsafe && !insecure && phase.kind === "locked"
   const chips = share.summary
     .split("·")
     .map((s) => s.trim())
@@ -195,64 +208,66 @@ export function PrivateGate({ share }: { share: PublicShare }) {
             <Notice title="This share can’t be opened safely">
               It was locked with settings too weak to trust, so it won’t be unlocked here. Ask {who} to share it again.
             </Notice>
+          ) : insecure ? (
+            <Notice title="This page needs a secure (https) connection to unlock">
+              Your browser only unlocks private shares over https. Open the link again with https:// at the start.
+            </Notice>
           ) : phase.kind === "damaged" ? (
             <Notice title="This share looks damaged">
               The password may be right, but what’s inside can’t be read. Ask {who} to share it again.
             </Notice>
           ) : (
-            <>
-              {/* No action or input name: without JS, submitting must never put the password in a URL. */}
-              <form className="mt-6" onSubmit={unlock} aria-busy={busy}>
-                <label htmlFor="private-share-password" className="text-sm font-medium">
-                  Password
-                </label>
-                <div
-                  className={cn(
-                    "mt-2 flex items-center gap-2 rounded-xl border bg-background px-3 focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/30",
-                    wrong ? "border-destructive" : "border-input",
-                  )}
-                >
-                  <input
-                    ref={input}
-                    id="private-share-password"
-                    type={show ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    autoComplete="off"
-                    autoCapitalize="none"
-                    autoCorrect="off"
-                    spellCheck={false}
-                    required
-                    aria-invalid={wrong || undefined}
-                    aria-describedby={wrong ? "private-share-error" : undefined}
-                    className="h-11 min-w-0 flex-1 bg-transparent text-base text-foreground focus:outline-none sm:text-sm"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShow((v) => !v)}
-                    aria-pressed={show}
-                    aria-controls="private-share-password"
-                    className={cn("rounded px-1 text-xs font-medium text-muted-foreground hover:text-foreground", FOCUS_FLAT)}
-                  >
-                    {show ? "Hide" : "Show"}
-                  </button>
-                </div>
-                <p id="private-share-error" aria-live="polite" className="mt-2 text-sm text-destructive empty:hidden">
-                  {wrong ? (cooling ? "That password didn’t work. Too many tries — wait a few seconds." : "That password didn’t work. Check it against the message it came in.") : ""}
-                </p>
+            // No action or input name: without JS, submitting must never put the password in a URL.
+            <form className="mt-6" onSubmit={unlock} aria-busy={busy}>
+              <label htmlFor="private-share-password" className="text-sm font-medium">
+                Password
+              </label>
+              <div
+                className={cn(
+                  "mt-2 flex items-center gap-2 rounded-xl border bg-background px-3 focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/30",
+                  wrong ? "border-destructive" : "border-input",
+                )}
+              >
+                <input
+                  ref={input}
+                  id="private-share-password"
+                  type={show ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="off"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  required
+                  aria-invalid={wrong || undefined}
+                  aria-describedby={wrong ? "private-share-error" : undefined}
+                  className="h-11 min-w-0 flex-1 bg-transparent text-base text-foreground focus:outline-none sm:text-sm"
+                />
                 <button
-                  type="submit"
-                  disabled={busy || cooling}
-                  className={cn(
-                    "mt-4 flex h-11 w-full items-center justify-center rounded-full bg-primary text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60",
-                    FOCUS,
-                    "focus-visible:ring-offset-card",
-                  )}
+                  type="button"
+                  onClick={() => setShow((v) => !v)}
+                  aria-pressed={show}
+                  aria-controls="private-share-password"
+                  className={cn("rounded px-1 text-xs font-medium text-muted-foreground hover:text-foreground", FOCUS_FLAT)}
                 >
-                  {busy ? "Unlocking…" : "Unlock share"}
+                  {show ? "Hide" : "Show"}
                 </button>
-              </form>
-            </>
+              </div>
+              <p id="private-share-error" aria-live="polite" className="mt-2 text-sm text-destructive empty:hidden">
+                {wrong ? (cooling ? "That password didn’t work. Too many tries — wait a few seconds." : "That password didn’t work. Check it against the message it came in.") : ""}
+              </p>
+              <button
+                type="submit"
+                disabled={busy || cooling}
+                className={cn(
+                  "mt-4 flex h-11 w-full items-center justify-center rounded-full bg-primary text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60",
+                  FOCUS,
+                  "focus-visible:ring-offset-card",
+                )}
+              >
+                {busy ? "Unlocking…" : "Unlock share"}
+              </button>
+            </form>
           )}
 
           <p className="mt-5 border-t border-border pt-4 text-xs leading-relaxed text-muted-foreground">
@@ -284,14 +299,5 @@ function Notice({ title, children }: { title: string; children: ReactNode }) {
       <p className="text-sm font-medium">{title}</p>
       <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{children}</p>
     </div>
-  )
-}
-
-function LockIcon({ className }: { className: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
-      <rect x="5" y="10.5" width="14" height="9.5" rx="2" />
-      <path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 7 0v3" />
-    </svg>
   )
 }

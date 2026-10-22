@@ -57,3 +57,6 @@ export const GLYPH = {
   ),
   chat: <path d="M5 5.5h14v10H9.5L5 19z" />,
 }
+
+/** The padlock used for private shares (lock card, hero badge, "Lock again"). */
+export const LockIcon = ({ className = "size-4" }: { className?: string }) => ico(GLYPH.lock, className)

@@ -209,6 +209,7 @@ describe('unlocking', () => {
     }
     await tryPassword('wrong-4')
     expect(unlockButton().disabled).toBe(true)
+    expect(text()).toContain('That password didn’t work. Too many tries — wait a few seconds.')
     expect(passwordInput().value).toBe('wrong-4')
     await act(async () => vi.advanceTimersByTime(2999))
     expect(unlockButton().disabled).toBe(true)
@@ -232,10 +233,31 @@ describe('unlocking', () => {
     expect(text()).toContain('This share looks damaged')
   })
 
-  it('refuses a share whose kdf_iters is below 100000', async () => {
-    await render(await makeShare({ kdf_iters: 99_999 }))
+  it.each([
+    ['kdf_iters below 100000', { kdf_iters: 99_999 }],
+    ['kdf_iters above 2000000', { kdf_iters: 2_000_001 }],
+    ['a non-integer kdf_iters', { kdf_iters: 100_000.5 }],
+    ['a salt that is not base64', { salt: 'not base64 at all!' }],
+    ['a salt shorter than 16 bytes', { salt: b64encode(new Uint8Array(8)) }],
+  ])('refuses a share with %s', async (_what, extra: Partial<PublicShare>) => {
+    await render(await makeShare(extra))
     expect(passwordInput()).toBeNull()
-    expect(text()).toContain('can’t be opened safely')
+    expect(text()).toContain('This share can’t be opened safely')
+  })
+
+  it('accepts kdf_iters of exactly 2000000', async () => {
+    await render(await makeShare({ kdf_iters: 2_000_000 }))
+    expect(passwordInput()).not.toBeNull()
+  })
+
+  it('asks for a secure connection when WebCrypto is unavailable', async () => {
+    const share = await makeShare()
+    const real = globalThis.crypto
+    vi.stubGlobal('crypto', { getRandomValues: real.getRandomValues.bind(real) })
+    await render(share)
+    expect(passwordInput()).toBeNull()
+    expect(text()).toContain('This page needs a secure (https) connection to unlock')
+    expect(text()).not.toContain('This share looks damaged')
   })
 
   it('locks again: drops the decrypted view and stores nothing', async () => {
@@ -298,6 +320,8 @@ describe('private discussion', () => {
     // Same plaintext, fresh iv: the two ciphers differ.
     expect(sent.author_name).not.toBe(sent.body)
     expect($('[data-comment-id="77"]')?.textContent).toContain('Kofi')
+    // A name typed on a private share is not left behind in plaintext on this device.
+    expect(localStorage.getItem('jj.name')).toBeNull()
   })
 })
 

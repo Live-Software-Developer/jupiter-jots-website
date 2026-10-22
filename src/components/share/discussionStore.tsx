@@ -272,17 +272,20 @@ export function DiscussionStoreProvider({ slug, mode, locked, count: initialCoun
         const data = res.data
         // Our own comment, with the plaintext we already have; queued so a refetch in flight cannot drop it.
         if (isComment(data)) enqueue(async () => dispatch({ type: "upsert", comment: { ...data, author_name: input.author_name, body: input.body, mine: true } }))
-        try {
-          localStorage.setItem(NAME_KEY, input.author_name)
-        } catch {
-          // Not remembered; fine.
+        // On a private share the name would sit in plaintext on this device: not remembered.
+        if (audience !== "password") {
+          try {
+            localStorage.setItem(NAME_KEY, input.author_name)
+          } catch {
+            // Not remembered; fine.
+          }
         }
       } else if (res.status === 403 && (res.code === "comments_off" || res.code === "thread_locked")) {
         setClosed(res.code === "comments_off" ? "off" : "locked")
       }
       return res
     },
-    [enqueue, slug],
+    [enqueue, slug, audience],
   )
 
   const toggleVote = useCallback(async (id: number) => {
