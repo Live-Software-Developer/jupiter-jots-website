@@ -12,6 +12,7 @@
     "serve": "node .next/standalone/server.js"
   },
   "dependencies": {
+    "@fontsource-variable/newsreader": "^5.3.0",
     "@mdx-js/loader": "3.1.1",
     "@mdx-js/react": "3.1.1",
     "@next/mdx": "16.4.2",

@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" width="1200" height="675">
+  <defs>
+    <linearGradient id="paper" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#faf6ec"/>
+      <stop offset="1" stop-color="#f1ead9"/>
+    </linearGradient>
+    <pattern id="grain" width="6" height="6" patternUnits="userSpaceOnUse">
+      <circle cx="1" cy="1" r="0.6" fill="#2b2418" opacity="0.05"/>
+    </pattern>
+  </defs>
+  <rect width="1200" height="675" fill="url(#paper)"/>
+  <rect width="1200" height="675" fill="url(#grain)"/>
+  <rect x="0" y="0" width="1200" height="10" fill="#c98a2e"/>
+  <g font-family="Georgia, 'Times New Roman', serif" fill="#2b2418">
+    <text x="96" y="92" font-size="21" letter-spacing="4" font-family="ui-monospace, Menlo, monospace" fill="#7a6a4f">GRUGBRAIN.DEV</text>
+    <text x="96" y="170" font-size="54" font-weight="700">The Grug Brained</text>
+    <text x="96" y="230" font-size="54" font-weight="700">Developer</text>
+    <text x="96" y="290" font-size="24" fill="#6b5d46" font-style="italic">A layman's guide to thinking like the self-aware smol brained.</text>
+    <line x1="96" y1="334" x2="1104" y2="334" stroke="#d8ccb4" stroke-width="2"/>
+    <text x="96" y="392" font-size="26" fill="#3a3123">complexity very bad</text>
+    <text x="96" y="438" font-size="22" fill="#6b5d46">grug no like big brain framework. grug like simple thing</text>
+    <text x="96" y="474" font-size="22" fill="#6b5d46">that work. grug write test, grug go home happy.</text>
+    <text x="96" y="552" font-size="21" fill="#8a7a5e" font-style="italic">12 min read · saved with a note</text>
+  </g>
+  <g transform="translate(960 500)">
+    <circle cx="0" cy="0" r="86" fill="#e7dcc4"/>
+    <circle cx="-28" cy="-18" r="7" fill="#2b2418"/>
+    <circle cx="28" cy="-18" r="7" fill="#2b2418"/>
+    <path d="M-32 26 Q0 52 32 26" fill="none" stroke="#2b2418" stroke-width="6" stroke-linecap="round"/>
+    <path d="M-58 -52 Q-34 -74 -8 -60" fill="none" stroke="#2b2418" stroke-width="5" stroke-linecap="round"/>
+    <path d="M58 -52 Q34 -74 8 -60" fill="none" stroke="#2b2418" stroke-width="5" stroke-linecap="round"/>
+  </g>
+</svg>

@@ -42,6 +42,14 @@ IMAGES = [
      "Your library stays on your computer. No account, no server, no tracking.", None),
     ("terms", "/terms", "Terms of use",
      "The rules for using Jupiter Jots, in plain language.", None),
+    ("share-public", "/share/public", "Weekend reading: systems, type & the web",
+     "A public collection shared with Jupiter Jots, with a note on why each bookmark earned its place.", None),
+    ("share-bookmark", "/share/bookmark", "The Grug Brained Developer",
+     "A public bookmark shared with Jupiter Jots, with the note on why Ada saved it.", None),
+    ("share-private", "/share/private", "This share is protected.",
+     "A private Jupiter Jots collection, opened with a password.", None),
+    ("share-private-unlocked", "/share/private/unlocked", "Private share unlocked",
+     "A private collection shared with Jupiter Jots, open for this visit.", None),
 ]
 
 

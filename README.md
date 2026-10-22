@@ -26,21 +26,25 @@ Already set: the Chrome Web Store listing (`STORE_URL`, every "Add to Chrome" li
 
 | Route | Source | Design route |
 |---|---|---|
-| `/` | `src/app/page.tsx` | `/site` |
+| `/` | `src/app/(site)/page.tsx` | `/site` |
 | `/guide` | `src/content/guide.mdx` | `/site-guide` |
 | `/faq` | `src/content/faq.mdx` | `/site-faq` |
 | `/changelog` | `src/content/changelog.mdx` | `/site-changelog` |
 | `/about` | `src/content/about.mdx` | `/site-about` |
-| `/support` | `src/app/support/page.tsx` | `/site-support` |
+| `/support` | `src/app/(site)/support/page.tsx` | `/site-support` |
 | `/privacy` | `src/content/privacy.mdx` | `/site-privacy` |
 | `/terms` | `src/content/terms.mdx` | `/site-terms` |
+| `/share/public` | `src/app/(share)/share/public/page.tsx` | `/site-share-public` |
+| `/share/bookmark` | `src/app/(share)/share/bookmark/page.tsx` | `/site-share-bookmark` |
+| `/share/private` | `src/app/(share)/share/private/page.tsx` | `/site-share-private` |
+| `/share/private/unlocked` | `src/app/(share)/share/private/unlocked/page.tsx` | `/site-share-private-unlocked` |
 | 404 | `src/app/not-found.tsx` | (same style as the content pages) |
 
-Also `sitemap.xml`, `robots.txt`, `manifest.webmanifest`, `favicon.ico`, `icon.svg`, `apple-icon.png`. The design's old paths (`/site`, `/site-privacy`...) redirect permanently to the new ones (`next.config.ts`).
+Also `sitemap.xml`, `robots.txt`, `manifest.webmanifest`, `favicon.ico`, `icon.svg`, `apple-icon.png`. The design's old paths (`/site`, `/site-privacy`..., including `/site-share-*`) redirect permanently to the new ones (`next.config.ts`). The share pages are `noindex` and deliberately stay out of `sitemap.xml`; they also use their own slim chrome (`src/app/(share)/layout.tsx`), not the marketing header and footer.
 
 ## Where things are
 
-- `src/components/site/*`: the design's components as React. Server components except `NavLinks`, `MobileMenu` (native modal `<dialog>`), `Toc` (scroll-spy), `Faq` (accordion item), `ThemeToggle` and `ThemeProvider`.
+- `src/components/site/*`: the design's marketing components as React; `src/components/share/*` is the share-page set (topbar, footer, badges, rows, curator, CTA). Server components except `NavLinks`, `MobileMenu` (native modal `<dialog>`), `Toc` (scroll-spy), `Faq` (accordion item), `ThemeToggle` and `ThemeProvider`.
   - `SiteHeader`, `SiteFooter`, `Platforms` + `PlatformLogo` (brand SVGs inlined from the design, in `platform-logos.ts`), `PageIntro`, `Section`, `Prose` (also `Summary`, `Defs`/`Def`, `Kbd`, `Placeholder`), `Toc`, `Release`, `Shot`, `BrandLogo`.
 - `src/content/*.mdx`: long-form copy. Each file exports its `toc`. MDX pages can use `<Section>`, `<Prose>`, `<Summary>`, `<Defs>`, `<Def>`, `<Kbd>`, `<Faq>`, `<SupportEmail />` and `<GoverningLaw />` without imports (`src/mdx-components.tsx`).
 - `public/shots/*.webp`: real extension screenshots from the TaskFlow design surface at 2x. `next/image` serves resized copies; the hero pair is preloaded. Retake them there when the extension UI changes and update sizes in `Shot.tsx`.
@@ -55,7 +59,7 @@ Also `sitemap.xml`, `robots.txt`, `manifest.webmanifest`, `favicon.ico`, `icon.s
 
 ## SEO
 
-Every page builds its metadata with `pageMetadata()` (`src/lib/seo.ts`): absolute title, description, keywords, canonical, Open Graph and Twitter with its own image. Home metadata is in `src/app/home-seo.ts` (also the layout default). The layout adds Organization, WebSite and SoftwareApplication JSON-LD. A new page needs a row in `IMAGES` in `og/build.py` and an entry in `src/app/sitemap.ts`.
+Every page builds its metadata with `pageMetadata()` (`src/lib/seo.ts`): absolute title, description, keywords, canonical, Open Graph and Twitter with its own image. Home metadata is in `src/app/home-seo.ts` (also the layout default). The layout adds Organization, WebSite and SoftwareApplication JSON-LD. A new indexable page needs a row in `IMAGES` in `og/build.py` and an entry in `src/app/sitemap.ts`. The share pages use `pageMetadata()` for Open Graph images but set `robots: { index: false }`.
 
 ## Deploy
 

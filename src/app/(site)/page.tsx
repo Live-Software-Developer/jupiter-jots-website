@@ -37,13 +37,14 @@ export default function HomePage() {
       <section className="overflow-x-clip" aria-labelledby="hero-h">
         <div className="mx-auto grid w-full max-w-6xl gap-12 px-4 pt-14 sm:px-6 sm:pt-20 lg:grid-cols-12 lg:items-center lg:gap-12 lg:pt-24">
           <div className="lg:col-span-5">
+            <p className="mb-4 text-sm font-semibold tracking-[0.08em] text-primary uppercase">Save your RAM!</p>
             {/* One sentence per line, as in the design. Geist is wider than the design surface's
                 font, so the size steps down in the narrow lg column to keep each line whole. */}
             <h1 id="hero-h" className="text-5xl leading-none font-semibold tracking-tighter text-balance sm:text-6xl lg:text-5xl xl:text-[3.5rem]">
               <span className="block">Save the page.</span> <span className="block">Keep the reason.</span>
             </h1>
             <p className="mt-6 max-w-md text-lg leading-relaxed text-muted-foreground">
-              A bookmark manager that saves any page in one click, with a note on why it mattered. Free, and it stays on your device.
+              A bookmark manager that saves any page in one click, with a note on why it mattered. Bookmark the tabs you mean to read, give them a reason, then close them. Free, and it stays on your device.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <StoreLink className={btnPrimary("lg")}>
