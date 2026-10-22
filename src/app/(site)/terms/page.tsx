@@ -17,7 +17,7 @@ export default function TermsPage() {
     <DocLayout
       title="Terms of use"
       lede="The rules for using Jupiter Jots, in plain language. It is free, your data is yours, and it comes as it is."
-      meta="Effective 18 October 2026. Last updated 18 October 2026."
+      meta="Effective 18 October 2026. Last updated 23 October 2026."
       toc={toc}
     >
       <Terms />

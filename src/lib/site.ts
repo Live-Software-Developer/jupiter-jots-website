@@ -22,5 +22,5 @@ export const SITE = {
   name: "Jupiter Jots",
   tagline: "Save the page. Keep the reason.",
   description:
-    "Jupiter Jots is a free bookmark manager for Chrome that saves any page in one click, with a note on why it mattered. No account, no server: your library stays on your device.",
+    "Jupiter Jots is a free bookmark manager for Chrome that saves any page in one click, with a note on why it mattered. No account: your library stays on your device, and only what you choose to share is stored on our server.",
 }

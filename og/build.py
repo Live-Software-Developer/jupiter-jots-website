@@ -39,7 +39,7 @@ IMAGES = [
     ("support", "/support", "Support",
      "Find an answer, report a problem, or contact us.", None),
     ("privacy", "/privacy", "Privacy policy",
-     "Your library stays on your computer. No account, no server, no tracking.", None),
+     "Your library stays on your computer. Shares and their comments are stored on our server.", None),
     ("terms", "/terms", "Terms of use",
      "The rules for using Jupiter Jots, in plain language.", None),
 ]
