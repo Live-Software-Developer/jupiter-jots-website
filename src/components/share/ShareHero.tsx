@@ -2,22 +2,15 @@ import Link from "next/link"
 import type { ReactNode } from "react"
 
 import { CopyLinkButton } from "@/components/share/CopyLinkButton"
-import { PlusIcon } from "@/components/share/Share"
+import { PlusIcon } from "@/components/site/icons"
 import { FOCUS } from "@/components/site/styles"
 import { formatDate, initialsOf } from "@/lib/share/format"
 import { renderMarkdown } from "@/lib/share/markdown"
 import type { PublicShare, SharePayload } from "@/lib/share/types"
 import { cn } from "@/lib/utils"
 
-import { ico, LockIcon } from "./icons"
+import { GLYPH, ico, LockIcon } from "./icons"
 import { BAND_KIND, bandCount, bandIcon, bandId, bandTitle, toBands } from "./ShareBand"
-
-const GLOBE = (
-  <>
-    <circle cx="12" cy="12" r="9" />
-    <path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18" />
-  </>
-)
 
 /**
  * Header for every share (design: share-hero), with the "In this share" index once there are 2+ bands.
@@ -41,7 +34,7 @@ export function ShareHero({ share, payload, action }: { share: PublicShare; payl
                 priv ? "text-chart-3" : "text-muted-foreground",
               )}
             >
-              {priv ? <LockIcon className="size-3.5" /> : ico(GLOBE, "size-3.5")}
+              {priv ? <LockIcon className="size-3.5" /> : ico(GLYPH.globe, "size-3.5")}
               {priv ? "Private · unlocked" : "Public link"}
             </span>
             {action}
@@ -132,18 +125,7 @@ export function ShareHero({ share, payload, action }: { share: PublicShare; payl
                         <span className="tabular-nums">{String(i + 1).padStart(2, "0")}</span> · {kind.label} · {n} {unit}
                       </span>
                     </span>
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.7"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="size-4 text-muted-foreground/60 transition-transform group-hover:translate-y-0.5"
-                      aria-hidden="true"
-                    >
-                      <path d="M12 5v14M6 13l6 6 6-6" />
-                    </svg>
+                    {ico(GLYPH.arrowDown, "size-4 text-muted-foreground/60 transition-transform group-hover:translate-y-0.5")}
                   </a>
                 </li>
               )

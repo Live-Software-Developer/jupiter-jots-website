@@ -1,11 +1,12 @@
 "use client"
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState, useSyncExternalStore, type ReactNode } from "react"
+import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState, type ReactNode } from "react"
 
 import { getComments, postComment, report as reportApi, vote as voteApi } from "@/lib/share/api"
 import { inScope, type CommentTargets } from "@/lib/share/targets"
 import type { ApiResult, CommentMode, HiddenComment, PublicComment } from "@/lib/share/types"
 
+import { useClientValue } from "./useClientValue"
 import { useLiveComments } from "./useLiveComments"
 
 /** The encrypted part of a comment. Private shares (Task 6) pass a codec that decrypts/encrypts it. */
@@ -172,7 +173,6 @@ export function useRequiredStore(): DiscussionStore {
 }
 
 const NAME_KEY = "jj.name"
-const noSubscribe = () => () => {}
 function readSavedName(): string {
   try {
     return localStorage.getItem(NAME_KEY) ?? ""
@@ -206,7 +206,7 @@ export function DiscussionStoreProvider({ slug, mode, locked, count: initialCoun
   const [sort, setSort] = useState<Sort>("top")
   // What the visitor typed this visit; until then the name remembered on this device.
   const [typedName, setName] = useState<string | null>(null)
-  const savedName = useSyncExternalStore(noSubscribe, readSavedName, () => "")
+  const savedName = useClientValue(readSavedName, "")
   const name = typedName ?? savedName
 
   const codecRef = useRef(codec)

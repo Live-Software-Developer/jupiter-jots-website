@@ -5,6 +5,8 @@ import { safeUrl } from "@/lib/share/format"
 import type { PBookmark } from "@/lib/share/types"
 import { cn } from "@/lib/utils"
 
+import { GLYPH, ico } from "./icons"
+
 /** Tints for the five chart hues; a collection's `hue` (1-5) indexes this directly. */
 export const HUE_TINT = [
   "bg-chart-1/15 text-chart-1",
@@ -12,6 +14,15 @@ export const HUE_TINT = [
   "bg-chart-3/15 text-chart-3",
   "bg-chart-4/15 text-chart-4",
   "bg-chart-5/15 text-chart-5",
+] as const
+
+/** The lone-bookmark card's panel and tile, in the same five hues as HUE_TINT. Written out in full so Tailwind sees every class. */
+export const CARD_TINT = [
+  { panel: "bg-chart-1/10", tile: "bg-chart-1/20 text-chart-1" },
+  { panel: "bg-chart-2/10", tile: "bg-chart-2/20 text-chart-2" },
+  { panel: "bg-chart-3/10", tile: "bg-chart-3/20 text-chart-3" },
+  { panel: "bg-chart-4/10", tile: "bg-chart-4/20 text-chart-4" },
+  { panel: "bg-chart-5/10", tile: "bg-chart-5/20 text-chart-5" },
 ] as const
 
 /** A stable hue pick from any string: a bookmark's domain (payload bookmarks carry no colour) or a commenter's name. */
@@ -23,7 +34,7 @@ export function hueIndex(seed: string): number {
 
 export const hueFor = (domain: string) => HUE_TINT[hueIndex(domain)]
 
-export const initialOf = (domain: string) => (domain.replace(/^www\./, "")[0] || "?").toUpperCase()
+export const domainInitial = (domain: string) => (domain.replace(/^www\./, "")[0] || "?").toUpperCase()
 
 /** A link to the bookmark when its URL is http(s), plain content otherwise. */
 export function BookmarkLink({ url, className, children }: { url: string; className: string; children: ReactNode }) {
@@ -42,7 +53,7 @@ export function BookmarkRow({ bookmark }: { bookmark: PBookmark }) {
     <div data-bookmark-row className="group px-4 py-4 transition-colors hover:bg-accent/40 sm:px-5">
       <BookmarkLink url={bookmark.url} className={cn("flex items-start gap-3.5 rounded-lg sm:gap-4", FOCUS_FLAT)}>
         <span className={cn("grid size-9 shrink-0 place-items-center rounded-lg text-sm font-semibold", hueFor(bookmark.domain))} aria-hidden="true">
-          {initialOf(bookmark.domain)}
+          {domainInitial(bookmark.domain)}
         </span>
         <span className="min-w-0 flex-1">
           <span className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
@@ -60,18 +71,7 @@ export function BookmarkRow({ bookmark }: { bookmark: PBookmark }) {
             </span>
           ) : null}
         </span>
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.7"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="mt-1.5 size-4 shrink-0 text-muted-foreground/50 transition-colors group-hover:text-foreground"
-          aria-hidden="true"
-        >
-          <path d="M7 17 17 7M9 7h8v8" />
-        </svg>
+        {ico(GLYPH.external, "mt-1.5 size-4 shrink-0 text-muted-foreground/50 transition-colors group-hover:text-foreground")}
       </BookmarkLink>
     </div>
   )

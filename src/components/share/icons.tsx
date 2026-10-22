@@ -56,6 +56,13 @@ export const GLYPH = {
     </>
   ),
   chat: <path d="M5 5.5h14v10H9.5L5 19z" />,
+  globe: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18" />
+    </>
+  ),
+  arrowDown: <path d="M12 5v14M6 13l6 6 6-6" />,
 }
 
 /** The padlock used for private shares (lock card, hero badge, "Lock again"). */

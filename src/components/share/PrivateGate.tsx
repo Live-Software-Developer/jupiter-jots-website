@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type FormEvent, type ReactNode } from "react"
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react"
 
 import { FOCUS, FOCUS_FLAT } from "@/components/site/styles"
 import { visitorKey } from "@/lib/share/api"
@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils"
 import type { CommentCodec } from "./Discussion"
 import { LockIcon } from "./icons"
 import { ShareView } from "./ShareView"
+import { useClientValue } from "./useClientValue"
 
 /** Below this PBKDF2 count a share is refused rather than unlocked (the spec's floor; shares use their own count). */
 const MIN_KDF_ITERS = 100_000
@@ -50,7 +51,6 @@ function saltOf(share: PublicShare): Uint8Array | null {
 
 /** WebCrypto (`crypto.subtle`) exists only in secure contexts: https, or localhost. */
 const hasWebCrypto = () => typeof globalThis.crypto?.subtle?.deriveKey === "function"
-const noSubscribe = () => () => {}
 
 type Phase = { kind: "locked" } | { kind: "damaged" } | { kind: "open"; key: CryptoKey; payload: SharePayload }
 
@@ -76,7 +76,7 @@ export function PrivateGate({ share }: { share: PublicShare }) {
     !salt || !Number.isInteger(share.kdf_iters) || share.kdf_iters < MIN_KDF_ITERS || share.kdf_iters > MAX_KDF_ITERS
 
   // The server render always has WebCrypto; a page served over plain http does not.
-  const insecure = useSyncExternalStore(noSubscribe, () => !hasWebCrypto(), () => false)
+  const insecure = useClientValue(() => !hasWebCrypto(), false)
 
   useEffect(() => {
     // Sets the jj_visitor cookie before the visitor reloads, so the server forwards it and the view dedupes.

@@ -6,7 +6,7 @@ import { bookmarkLabel, collectionLabel, graphLabel, runKey } from "@/lib/share/
 import type { PBookmark, PayloadItem } from "@/lib/share/types"
 import { cn } from "@/lib/utils"
 
-import { BookmarkLink, BookmarkRow, hueIndex, initialOf } from "./BookmarkRow"
+import { BookmarkLink, BookmarkRow, CARD_TINT, domainInitial, hueIndex } from "./BookmarkRow"
 import { OpenCollectionButton } from "./CollectionSheet"
 import { BandCommentsLink } from "./Discussion"
 import { GraphView } from "./GraphView"
@@ -126,15 +126,6 @@ function BookmarksBody({ bookmarks }: { bookmarks: PBookmark[] }) {
   )
 }
 
-// Written out in full so Tailwind sees every class.
-const CARD_TINT = [
-  { panel: "bg-chart-1/10", tile: "bg-chart-1/20 text-chart-1" },
-  { panel: "bg-chart-2/10", tile: "bg-chart-2/20 text-chart-2" },
-  { panel: "bg-chart-3/10", tile: "bg-chart-3/20 text-chart-3" },
-  { panel: "bg-chart-4/10", tile: "bg-chart-4/20 text-chart-4" },
-  { panel: "bg-chart-5/10", tile: "bg-chart-5/20 text-chart-5" },
-]
-
 /** A lone bookmark gets the large card from the bookmark share design. */
 function BookmarkCard({ bookmark, curator }: { bookmark: PBookmark; curator?: string }) {
   const tint = CARD_TINT[hueIndex(bookmark.domain)]
@@ -148,7 +139,7 @@ function BookmarkCard({ bookmark, curator }: { bookmark: PBookmark; curator?: st
     >
       <div className={cn("relative grid min-h-48 place-items-center md:col-span-2 md:min-h-72", tint.panel)}>
         <span className={cn("grid size-20 place-items-center rounded-3xl font-serif text-4xl", tint.tile)} aria-hidden="true">
-          {initialOf(bookmark.domain)}
+          {domainInitial(bookmark.domain)}
         </span>
         <span className="absolute bottom-3 left-3 rounded-full bg-background/80 px-2.5 py-1 text-xs text-muted-foreground backdrop-blur">{bookmark.domain}</span>
       </div>

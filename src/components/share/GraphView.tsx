@@ -7,7 +7,7 @@ import { bandOf, boardColumns, computePath, NODE_W, type Box } from "@/lib/share
 import type { PGraph, PGraphNode } from "@/lib/share/types"
 import { cn } from "@/lib/utils"
 
-import { BookmarkLink, hueFor, initialOf } from "./BookmarkRow"
+import { BookmarkLink, domainInitial, hueFor } from "./BookmarkRow"
 import { collectionTint, useCollectionSheet } from "./CollectionSheet"
 import { GLYPH, ico } from "./icons"
 import { Modal } from "./Modal"
@@ -89,7 +89,7 @@ function NodeCard({ node, itemKey }: { node: PGraphNode; itemKey: string }) {
     <BookmarkLink url={b.url} className={cn(CARD, FOCUS_FLAT)}>
       <span className="flex items-center gap-2 text-xs text-muted-foreground">
         <span className={cn("grid size-5 shrink-0 place-items-center rounded text-xs font-semibold", hueFor(b.domain))} aria-hidden="true">
-          {initialOf(b.domain)}
+          {domainInitial(b.domain)}
         </span>
         <span className="min-w-0 truncate">{domain}</span>
         {b.read ? (
