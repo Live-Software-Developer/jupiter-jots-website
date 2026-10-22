@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { getComments, getShare, postComment, report, visitorKey, vote } from './api'
+import { getComments, getShare, postComment, report, VISITOR_COOKIE, visitorKey, vote } from './api'
 
 const json = (status: number, body: unknown) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } })
@@ -9,6 +9,7 @@ beforeEach(() => {
   fetchMock = vi.fn()
   vi.stubGlobal('fetch', fetchMock)
   localStorage.clear()
+  document.cookie = `${VISITOR_COOKIE}=; Max-Age=0; Path=/`
 })
 afterEach(() => vi.unstubAllGlobals())
 
@@ -38,10 +39,16 @@ describe('getShare', () => {
       expect(await getShare('x')).toEqual({ status: 'error' })
     }
   })
-  it('sends no visitor header', async () => {
+  it('sends no visitor header without a valid key', async () => {
     fetchMock.mockResolvedValue(json(200, {}))
     await getShare('x')
-    expect(new Headers(fetchMock.mock.calls[0][1]?.headers).has('X-Visitor-Key')).toBe(false)
+    await getShare('x', 'not-a-key')
+    for (const c of fetchMock.mock.calls) expect(new Headers(c[1]?.headers).has('X-Visitor-Key')).toBe(false)
+  })
+  it('forwards a valid visitor key', async () => {
+    fetchMock.mockResolvedValue(json(200, {}))
+    await getShare('x', 'a'.repeat(32))
+    expect(new Headers(fetchMock.mock.calls[0][1]?.headers).get('X-Visitor-Key')).toBe('a'.repeat(32))
   })
 })
 
@@ -51,6 +58,18 @@ describe('visitor calls', () => {
     expect(k).toMatch(/^[0-9a-f]{32}$/)
     expect(localStorage.getItem('jj.visitor')).toBe(k)
     expect(visitorKey()).toBe(k)
+  })
+  it('visitorKey mirrors itself into the jj_visitor cookie', () => {
+    const k = visitorKey()
+    expect(document.cookie).toContain(`${VISITOR_COOKIE}=${k}`)
+  })
+  it('visitorKey adopts the cookie when localStorage is empty, and localStorage wins otherwise', () => {
+    document.cookie = `${VISITOR_COOKIE}=${'b'.repeat(32)}; Path=/`
+    expect(visitorKey()).toBe('b'.repeat(32))
+    expect(localStorage.getItem('jj.visitor')).toBe('b'.repeat(32))
+    localStorage.setItem('jj.visitor', 'c'.repeat(32))
+    expect(visitorKey()).toBe('c'.repeat(32))
+    expect(document.cookie).toContain(`${VISITOR_COOKIE}=${'c'.repeat(32)}`)
   })
   it('postComment sends X-Visitor-Key and body', async () => {
     fetchMock.mockResolvedValue(json(201, { id: 1 }))

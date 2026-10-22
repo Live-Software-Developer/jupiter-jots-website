@@ -53,7 +53,7 @@ export function ShareSidebar({ share, bands }: { share: PublicShare; bands: Band
       <dl className="space-y-2 rounded-2xl border border-border p-4 text-xs">
         <div className="flex justify-between gap-3">
           <dt className="text-muted-foreground">Visibility</dt>
-          <dd className="text-right">{share.visibility === "private" ? "Private link" : "Public link"}</dd>
+          <dd className="text-right">{share.visibility === "private" ? "Private · password" : "Public link"}</dd>
         </div>
         {shared ? (
           <div className="flex justify-between gap-3">

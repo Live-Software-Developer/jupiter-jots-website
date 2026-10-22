@@ -1,17 +1,13 @@
 import type { Metadata } from "next"
+import { cookies } from "next/headers"
 import { cache, Suspense } from "react"
 
-import { CollectionSheetProvider } from "@/components/share/CollectionSheet"
-import { Discussion, DiscussionProvider } from "@/components/share/Discussion"
-import { ShareBadge } from "@/components/share/Share"
-import { ShareBand, toBands } from "@/components/share/ShareBand"
-import { ShareHero } from "@/components/share/ShareHero"
-import { ShareSidebar } from "@/components/share/ShareSidebar"
+import { PrivateGate } from "@/components/share/PrivateGate"
 import { ShareUnavailable } from "@/components/share/ShareUnavailable"
-import { getShare } from "@/lib/share/api"
-import { sheetEntries } from "@/lib/share/collections"
-import { commentTargets } from "@/lib/share/targets"
-import type { PublicShare, SharePayload, ShareResult } from "@/lib/share/types"
+import { ShareView } from "@/components/share/ShareView"
+import { getShare, VISITOR_COOKIE } from "@/lib/share/api"
+import { parsePayload } from "@/lib/share/payload"
+import type { ShareResult } from "@/lib/share/types"
 import { SITE } from "@/lib/site"
 
 type Params = Promise<{ slug: string }>
@@ -19,27 +15,16 @@ type Params = Promise<{ slug: string }>
 /** Slugs are 10 chars of [a-z0-9]; anything else is not worth a request. */
 const SLUG = /^[a-z0-9]{10}$/
 
-/** One fetch per request, shared by generateMetadata and the page. */
-const loadShare = cache(
-  (slug: string): Promise<ShareResult> => (SLUG.test(slug) ? getShare(slug) : Promise.resolve({ status: "missing" })),
-)
-
-/** A public share's payload, or null when it is not valid v1 JSON. Items of unknown kinds are dropped. */
-function parsePayload(share: PublicShare): SharePayload | null {
-  try {
-    const p = JSON.parse(share.payload) as SharePayload
-    if (!p || p.v !== 1 || !Array.isArray(p.items)) return null
-    const items = p.items.filter(
-      (i) =>
-        (i?.kind === "bookmark" && i.bookmark) ||
-        (i?.kind === "collection" && Array.isArray(i.collection?.bookmarks)) ||
-        (i?.kind === "graph" && [i.graph?.nodes, i.graph?.steps, i.graph?.links].every(Array.isArray)),
-    )
-    return { ...p, curator: p.curator ?? { name: "" }, items }
-  } catch {
-    return null
-  }
-}
+/**
+ * One fetch per request, shared by generateMetadata and the page. It forwards the visitor's
+ * `jj_visitor` cookie (set by visitorKey() in the browser) so a reload does not count another
+ * view. Reading cookies makes this request-time work; the page runs it inside its Suspense boundary.
+ */
+const loadShare = cache(async (slug: string): Promise<ShareResult> => {
+  if (!SLUG.test(slug)) return { status: "missing" }
+  const visitor = (await cookies()).get(VISITOR_COOKIE)?.value
+  return getShare(slug, visitor)
+})
 
 const ROBOTS = { index: false, follow: false }
 
@@ -93,56 +78,13 @@ async function ShareContent({ params }: { params: Params }) {
   if (res.status !== "ok") return <ShareUnavailable reason={res.status} slug={slug} />
 
   const { share } = res
-  if (share.visibility === "private") return <PrivateLock share={share} />
+  // The lock card is server-rendered from the plaintext fields; the payload stays ciphertext
+  // until the visitor's browser decrypts it.
+  if (share.visibility === "private") return <PrivateGate share={share} />
 
-  const payload = parsePayload(share)
+  const payload = parsePayload(share.payload)
   if (!payload) return <ShareUnavailable reason="error" slug={slug} />
-  const bands = toBands(payload.items)
-  const curator = payload.curator.name || share.curator_name
-
-  return (
-    <DiscussionProvider
-      slug={share.slug}
-      mode={share.comment_mode}
-      locked={share.locked}
-      count={share.comment_count}
-      targets={commentTargets(payload.items)}
-    >
-      <CollectionSheetProvider collections={sheetEntries(payload.items)} curator={curator}>
-        <main>
-          <ShareHero share={share} payload={payload} />
-          {bands.map((band, i) => (
-            <ShareBand key={band.key} item={band} index={i} total={bands.length} curator={curator} />
-          ))}
-          <div className="border-t border-border py-10 sm:py-14">
-            <div className="mx-auto grid w-full max-w-6xl gap-10 px-3 sm:px-6 lg:grid-cols-12 lg:gap-12">
-              <div className="min-w-0 lg:col-span-8">
-                <Discussion />
-              </div>
-              <div className="lg:col-span-4">
-                <ShareSidebar share={share} bands={bands} />
-              </div>
-            </div>
-          </div>
-        </main>
-      </CollectionSheetProvider>
-    </DiscussionProvider>
-  )
-}
-
-/** Server-rendered lock card from the plaintext fields; the PrivateGate (Task 6) adds the password form and decryption. */
-function PrivateLock({ share }: { share: PublicShare }) {
-  return (
-    <main className="mx-auto w-full max-w-2xl px-4 py-16 sm:px-6 sm:py-24">
-      <ShareBadge tone="private" />
-      <h1 className="mt-5 font-serif text-4xl leading-tight font-normal tracking-tight break-words text-balance sm:text-5xl">{share.title}</h1>
-      {share.curator_name ? <p className="mt-3 text-sm text-muted-foreground">Shared by {share.curator_name}</p> : null}
-      {share.summary ? <p className="mt-1 text-sm text-muted-foreground">{share.summary}</p> : null}
-      <p className="mt-6 text-base leading-relaxed text-pretty text-muted-foreground">
-        This share is protected with a password. Ask the person who sent the link for it.
-      </p>
-    </main>
-  )
+  return <ShareView share={share} payload={payload} />
 }
 
 function ShareSkeleton() {

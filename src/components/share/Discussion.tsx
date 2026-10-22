@@ -211,7 +211,7 @@ function CommentView({ entry, filter, reply = false, onReply }: { entry: Entry; 
             </button>
           ) : null}
           <div className="mt-1.5 space-y-2 text-sm leading-relaxed break-words text-pretty text-foreground/90">
-            {entry.unreadable ? <p className="text-muted-foreground italic">This comment couldn't be read.</p> : renderMarkdown(entry.body)}
+            {entry.unreadable ? <p className="text-muted-foreground italic">Couldn't read this comment.</p> : renderMarkdown(entry.body)}
           </div>
           {held ? null : (
             <div className="mt-2.5 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">

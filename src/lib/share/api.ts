@@ -13,28 +13,74 @@ export function apiBase(): string {
 
 let memoryKey: string | null = null
 
+/** First-party cookie holding the visitor key, so server renders can forward it (views dedupe per key). */
+export const VISITOR_COOKIE = 'jj_visitor'
+const STORAGE_KEY = 'jj.visitor'
+const YEAR = 365 * 24 * 3600
+
+/** A visitor key is 32 lowercase hex characters. */
+export const isVisitorKey = (k: unknown): k is string => typeof k === 'string' && /^[0-9a-f]{32}$/.test(k)
+
 function randomHex32(): string {
   const b = crypto.getRandomValues(new Uint8Array(16))
   return Array.from(b, (x) => x.toString(16).padStart(2, '0')).join('')
 }
 
-/** Client-side only. Persisted in localStorage, in-memory fallback. */
-export function visitorKey(): string {
+function readCookie(): string | null {
   try {
-    const stored = localStorage.getItem('jj.visitor')
-    if (stored && /^[0-9a-f]{32}$/.test(stored)) return stored
-    const k = memoryKey ?? randomHex32()
-    memoryKey = k
-    localStorage.setItem('jj.visitor', k)
-    return k
+    const m = document.cookie.match(new RegExp(`(?:^|;\\s*)${VISITOR_COOKIE}=([^;]*)`))
+    return m ? m[1] : null
   } catch {
-    return (memoryKey ??= randomHex32())
+    return null
   }
 }
 
-export async function getShare(slug: string): Promise<ShareResult> {
+function writeCookie(k: string) {
   try {
-    const res = await fetch(`${apiBase()}/api/sharing/s/${encodeURIComponent(slug)}`, { cache: 'no-store' })
+    const secure = location.protocol === 'https:' ? '; Secure' : ''
+    document.cookie = `${VISITOR_COOKIE}=${k}; Max-Age=${YEAR}; Path=/; SameSite=Lax${secure}`
+  } catch {
+    // Cookies blocked: server renders just go without the key.
+  }
+}
+
+function readStorage(): string | null {
+  try {
+    return localStorage.getItem(STORAGE_KEY)
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Client-side only; the one place the visitor key is chosen and persisted. Kept in
+ * localStorage `jj.visitor` and the `jj_visitor` cookie (read by server renders), in sync;
+ * localStorage wins when both hold a valid key. In-memory fallback when storage is blocked.
+ */
+export function visitorKey(): string {
+  const stored = readStorage()
+  const cookie = readCookie()
+  const k = isVisitorKey(stored) ? stored : isVisitorKey(cookie) ? cookie : (memoryKey ??= randomHex32())
+  memoryKey = k
+  if (stored !== k) {
+    try {
+      localStorage.setItem(STORAGE_KEY, k)
+    } catch {
+      // Storage blocked: the cookie and memory still hold it.
+    }
+  }
+  if (cookie !== k) writeCookie(k)
+  return k
+}
+
+/**
+ * Server side: pass the visitor's `jj_visitor` cookie as `visitor` so the backend counts the
+ * view once per visitor per day. An invalid or missing key is not sent.
+ */
+export async function getShare(slug: string, visitor?: string | null): Promise<ShareResult> {
+  try {
+    const headers: Record<string, string> = isVisitorKey(visitor) ? { 'X-Visitor-Key': visitor } : {}
+    const res = await fetch(`${apiBase()}/api/sharing/s/${encodeURIComponent(slug)}`, { cache: 'no-store', headers })
     if (res.status === 404) return { status: 'missing' }
     if (res.status === 410) return { status: 'gone' }
     if (!res.ok) return { status: 'error' }

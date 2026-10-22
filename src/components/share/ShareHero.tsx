@@ -1,4 +1,5 @@
 import Link from "next/link"
+import type { ReactNode } from "react"
 
 import { CopyLinkButton } from "@/components/share/CopyLinkButton"
 import { PlusIcon } from "@/components/share/Share"
@@ -23,8 +24,11 @@ const LOCK = (
   </>
 )
 
-/** Header for every share (design: share-hero), with the "In this share" index once there are 2+ bands. */
-export function ShareHero({ share, payload }: { share: PublicShare; payload: SharePayload }) {
+/**
+ * Header for every share (design: share-hero), with the "In this share" index once there are 2+ bands.
+ * `action` sits next to the badge (an unlocked private share's "Lock again").
+ */
+export function ShareHero({ share, payload, action }: { share: PublicShare; payload: SharePayload; action?: ReactNode }) {
   const priv = share.visibility === "private"
   const bands = toBands(payload.items)
   const lone = bands.length === 1 && bands[0].kind === "bookmark"
@@ -36,26 +40,29 @@ export function ShareHero({ share, payload }: { share: PublicShare; payload: Sha
     <div className="mx-auto w-full max-w-6xl px-3 pt-8 pb-10 sm:px-6 sm:pt-12 lg:pt-16">
       <div className="grid gap-8 lg:grid-cols-12 lg:gap-12">
         <div className="min-w-0 lg:col-span-8">
-          <span
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded-full border border-border px-2.5 py-1 text-xs font-medium",
-              priv ? "text-chart-3" : "text-muted-foreground",
-            )}
-          >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.7"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="size-3.5"
-              aria-hidden="true"
+          <div className="flex flex-wrap items-center gap-2">
+            <span
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full border border-border px-2.5 py-1 text-xs font-medium",
+                priv ? "text-chart-3" : "text-muted-foreground",
+              )}
             >
-              {priv ? LOCK : GLOBE}
-            </svg>
-            {priv ? "Private · unlocked" : "Public link"}
-          </span>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="size-3.5"
+                aria-hidden="true"
+              >
+                {priv ? LOCK : GLOBE}
+              </svg>
+              {priv ? "Private · unlocked" : "Public link"}
+            </span>
+            {action}
+          </div>
           <h1 className="mt-5 font-serif text-4xl leading-[1.05] font-normal tracking-tight break-words text-balance sm:text-5xl lg:text-6xl">
             {payload.title || share.title}
           </h1>
