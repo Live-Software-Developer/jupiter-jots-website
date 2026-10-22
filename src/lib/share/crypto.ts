@@ -6,6 +6,13 @@ export class WrongPassword extends Error {
   }
 }
 
+export class BadCipher extends Error {
+  constructor(detail = 'malformed cipher') {
+    super(detail)
+    this.name = 'BadCipher'
+  }
+}
+
 const enc = new TextEncoder()
 const dec = new TextDecoder()
 
@@ -33,20 +40,28 @@ export async function deriveKey(password: string, salt: Uint8Array, iterations: 
 }
 
 export async function decryptJson<T = unknown>(key: CryptoKey, cipher: string): Promise<T> {
+  let raw: Uint8Array<ArrayBuffer>
   try {
-    const raw = b64decode(cipher)
-    const plain = await crypto.subtle.decrypt(
-      { name: 'AES-GCM', iv: raw.slice(0, 12) },
-      key,
-      raw.slice(12),
-    )
-    return JSON.parse(dec.decode(plain)) as T
+    raw = b64decode(cipher)
+  } catch {
+    throw new BadCipher('invalid base64')
+  }
+  if (raw.length < 13) throw new BadCipher('cipher too short')
+  let plain: ArrayBuffer
+  try {
+    plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: raw.slice(0, 12) }, key, raw.slice(12))
   } catch {
     throw new WrongPassword()
+  }
+  try {
+    return JSON.parse(dec.decode(plain)) as T
+  } catch {
+    throw new BadCipher('plaintext is not JSON')
   }
 }
 
 export async function encryptJson(key: CryptoKey, value: unknown, iv?: Uint8Array): Promise<string> {
+  if (iv && iv.length !== 12) throw new Error('iv must be 12 bytes')
   const ivBytes = (iv ?? crypto.getRandomValues(new Uint8Array(12))) as BufferSource
   const ct = new Uint8Array(
     await crypto.subtle.encrypt({ name: 'AES-GCM', iv: ivBytes }, key, enc.encode(JSON.stringify(value))),
