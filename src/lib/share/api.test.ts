@@ -32,6 +32,12 @@ describe('getShare', () => {
     fetchMock.mockResolvedValue(json(500, {}))
     expect(await getShare('x')).toEqual({ status: 'error' })
   })
+  it('maps a 200 with a non-object body to error', async () => {
+    for (const body of [null, 'text', 42, [1]]) {
+      fetchMock.mockResolvedValue(json(200, body))
+      expect(await getShare('x')).toEqual({ status: 'error' })
+    }
+  })
   it('sends no visitor header', async () => {
     fetchMock.mockResolvedValue(json(200, {}))
     await getShare('x')

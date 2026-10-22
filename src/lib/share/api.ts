@@ -37,7 +37,9 @@ export async function getShare(slug: string): Promise<ShareResult> {
     if (res.status === 404) return { status: 'missing' }
     if (res.status === 410) return { status: 'gone' }
     if (!res.ok) return { status: 'error' }
-    return { status: 'ok', share: (await res.json()) as PublicShare }
+    const body: unknown = await res.json()
+    if (!body || typeof body !== 'object' || Array.isArray(body)) return { status: 'error' }
+    return { status: 'ok', share: body as PublicShare }
   } catch {
     return { status: 'error' }
   }

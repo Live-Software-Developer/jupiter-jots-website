@@ -1,5 +1,4 @@
 import type { Metadata } from "next"
-import { notFound } from "next/navigation"
 import { cache, Suspense } from "react"
 
 import { ShareBadge } from "@/components/share/Share"
@@ -88,7 +87,6 @@ export default function SharePage({ params }: { params: Params }) {
 async function ShareContent({ params }: { params: Params }) {
   const { slug } = await params
   const res = await loadShare(slug)
-  if (res.status === "missing") notFound()
   if (res.status !== "ok") return <ShareUnavailable reason={res.status} slug={slug} />
 
   const { share } = res

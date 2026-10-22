@@ -3,10 +3,10 @@ import Link from "next/link"
 import { CopyLinkButton } from "@/components/share/CopyLinkButton"
 import { PlusIcon } from "@/components/share/Share"
 import { FOCUS } from "@/components/site/styles"
-import { cn } from "@/lib/utils"
 import { formatDate, initialsOf } from "@/lib/share/format"
 import { renderMarkdown } from "@/lib/share/markdown"
 import type { PublicShare, SharePayload } from "@/lib/share/types"
+import { cn } from "@/lib/utils"
 
 import { BAND_KIND, bandCount, bandIcon, bandId, bandTitle, toBands } from "./ShareBand"
 

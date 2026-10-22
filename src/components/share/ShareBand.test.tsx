@@ -78,13 +78,44 @@ describe('ShareBand', () => {
     expect(section.textContent).not.toContain('01')
   })
 
-  it('never links a bookmark to a non-http URL', () => {
-    const el = render([collection(1)])
-    const evil = render([
-      { key: 'b:8', kind: 'bookmark', bookmark: bm(8, { url: 'javascript:alert(1)' }) },
-      { key: 'b:9', kind: 'bookmark', bookmark: bm(9) },
-    ])
-    expect(el.querySelector('a[href="https://example.com/10"]')).not.toBeNull()
-    expect(evil.querySelector('a[href^="javascript"]')).toBeNull()
+  describe('never links a bookmark to a non-http URL', () => {
+    const BAD = ['javascript:alert(1)', 'JavaScript:alert(1)', 'data:text/html,<b>x</b>', '  javascript:alert(1)']
+    const hrefs = (el: HTMLElement) => [...el.querySelectorAll('a')].map((a) => a.getAttribute('href'))
+    const graphOf = (url: string): PayloadItem => ({
+      key: 'g:1',
+      kind: 'graph',
+      graph: {
+        ...(graph as Extract<PayloadItem, { kind: 'graph' }>).graph,
+        nodes: [
+          { id: 'n1', stepId: 's1', x: 40, y: 64, ref: { kind: 'bookmark', bookmark: bm(1, { url }) } },
+          { id: 'n2', stepId: 's1', x: 40, y: 240, ref: { kind: 'bookmark', bookmark: bm(2) } },
+        ],
+      },
+    })
+
+    it.each(BAD)('%j in a bookmarks band: only the safe neighbour is linked', (url) => {
+      const el = render([
+        { key: 'b:8', kind: 'bookmark', bookmark: bm(8, { url }) },
+        { key: 'b:9', kind: 'bookmark', bookmark: bm(9) },
+      ])
+      expect(hrefs(el)).toEqual(['https://example.com/9'])
+      expect(el.textContent).toContain('Bookmark 8')
+    })
+
+    it.each(BAD)('%j as a lone bookmark card: no link', (url) => {
+      const el = render([{ key: 'b:8', kind: 'bookmark', bookmark: bm(8, { url }) }])
+      expect(hrefs(el)).toEqual([])
+      expect(el.querySelector('h3')?.textContent).toBe('Bookmark 8')
+    })
+
+    it.each(BAD)('%j as a graph node: only the safe node is linked', (url) => {
+      expect(hrefs(render([graphOf(url)]))).toEqual(['https://example.com/2'])
+    })
+
+    it('links safe URLs on every path', () => {
+      expect(hrefs(render([collection(1)]))).toEqual(['https://example.com/10'])
+      expect(hrefs(render([{ key: 'b:7', kind: 'bookmark', bookmark: bm(7) }]))).toEqual(['https://example.com/7'])
+      expect(hrefs(render([graphOf('http://example.com/1')]))).toEqual(['http://example.com/1', 'https://example.com/2'])
+    })
   })
 })

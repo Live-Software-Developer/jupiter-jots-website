@@ -1,9 +1,9 @@
 import Link from "next/link"
 
 import { FOCUS_FLAT } from "@/components/site/styles"
-import { cn } from "@/lib/utils"
 import { formatDate } from "@/lib/share/format"
 import type { PublicShare } from "@/lib/share/types"
+import { cn } from "@/lib/utils"
 
 import { type Band, type BandKind, bandTitle } from "./ShareBand"
 

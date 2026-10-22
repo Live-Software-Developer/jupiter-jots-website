@@ -1,7 +1,7 @@
-import { cn } from "@/lib/utils"
-import { boardColumns } from "@/lib/share/graph"
 import { plural } from "@/lib/share/format"
+import { boardColumns } from "@/lib/share/graph"
 import type { PGraph, PGraphNode } from "@/lib/share/types"
+import { cn } from "@/lib/utils"
 
 import { BookmarkLink, HUE_TINT, hueFor, initialOf } from "./BookmarkRow"
 
