@@ -19,7 +19,7 @@ export interface CommentCodec {
 }
 const IDENTITY: CommentCodec = { decode: async (c) => c, encode: async (c) => c }
 
-export type Shown = PublicComment & { voted?: boolean; reported?: boolean; unreadable?: boolean }
+export type Shown = PublicComment & { reported?: boolean; unreadable?: boolean }
 export type Stub = HiddenComment & { item_key?: string }
 export type Entry = Shown | Stub
 export const isStub = (e: Entry): e is Stub => "hidden" in e && e.hidden === true

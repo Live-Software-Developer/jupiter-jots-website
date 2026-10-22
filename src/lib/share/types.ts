@@ -74,6 +74,8 @@ export interface PublicComment {
   votes: number
   created_at: string
   mine: boolean
+  /** Whether this visitor marked it helpful; sent when the request carries a visitor key. */
+  voted?: boolean
 }
 export interface HiddenComment {
   id: number

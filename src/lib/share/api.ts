@@ -1,14 +1,32 @@
 import type { ApiResult, CommentList, NewComment, PublicComment, PublicShare, ShareResult } from './types'
 
-const FALLBACK = 'http://127.0.0.1:8000'
+/** Development only: the local backend. A production build never falls back to it. */
+const DEV_API = 'http://127.0.0.1:8000'
 
-/** The backend base URL, without a trailing slash: `JJ_API_URL` on the server, `NEXT_PUBLIC_JJ_API_URL` in the browser. */
-export function apiBase(): string {
-  const url =
-    typeof window === 'undefined'
-      ? process.env.JJ_API_URL ?? process.env.NEXT_PUBLIC_JJ_API_URL
-      : process.env.NEXT_PUBLIC_JJ_API_URL
-  return (url || FALLBACK).replace(/\/+$/, '')
+const trim = (url: string) => url.replace(/\/+$/, '')
+
+/**
+ * The backend base URL, without a trailing slash, or null when a production build has none.
+ * Browser: `NEXT_PUBLIC_JJ_API_URL` (inlined at build time). Server: `JJ_API_URL`, else
+ * `NEXT_PUBLIC_JJ_API_URL`; in production the server also needs the public one, since without
+ * it the browser could not load comments. Outside production a missing URL means `DEV_API`.
+ */
+export function apiBase(): string | null {
+  const pub = process.env.NEXT_PUBLIC_JJ_API_URL
+  const prod = process.env.NODE_ENV === 'production'
+  if (prod && !pub) return null
+  const url = typeof window === 'undefined' ? process.env.JJ_API_URL || pub : pub
+  return url ? trim(url) : DEV_API
+}
+
+let warned = false
+function warnUnconfigured() {
+  if (warned) return
+  warned = true
+  console.warn(
+    '[share] NEXT_PUBLIC_JJ_API_URL was not set when this production build ran, so share pages show "can\'t be loaded". ' +
+      'Set it (and optionally JJ_API_URL for server renders) and rebuild.',
+  )
 }
 
 let memoryKey: string | null = null
@@ -78,9 +96,14 @@ export function visitorKey(): string {
  * view once per visitor per day. An invalid or missing key is not sent.
  */
 export async function getShare(slug: string, visitor?: string | null): Promise<ShareResult> {
+  const base = apiBase()
+  if (!base) {
+    warnUnconfigured()
+    return { status: 'error' }
+  }
   try {
     const headers: Record<string, string> = isVisitorKey(visitor) ? { 'X-Visitor-Key': visitor } : {}
-    const res = await fetch(`${apiBase()}/api/sharing/s/${encodeURIComponent(slug)}`, { cache: 'no-store', headers })
+    const res = await fetch(`${base}/api/sharing/s/${encodeURIComponent(slug)}`, { cache: 'no-store', headers })
     if (res.status === 404) return { status: 'missing' }
     if (res.status === 410) return { status: 'gone' }
     if (!res.ok) return { status: 'error' }
@@ -106,10 +129,12 @@ function fieldErrors(data: unknown): Record<string, string[]> | undefined {
 }
 
 async function call<T>(path: string, method: 'GET' | 'POST', body?: unknown): Promise<ApiResult<T>> {
+  const base = apiBase()
+  if (!base) return { ok: false, status: 0, code: 'network' }
   try {
     const headers: Record<string, string> = { 'X-Visitor-Key': visitorKey() }
     if (body !== undefined) headers['Content-Type'] = 'application/json'
-    const res = await fetch(`${apiBase()}${path}`, {
+    const res = await fetch(`${base}${path}`, {
       method,
       headers,
       body: body === undefined ? undefined : JSON.stringify(body),

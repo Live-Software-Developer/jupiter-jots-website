@@ -3,7 +3,7 @@
 import { useCallback, useId, useMemo, useState, type FormEvent, type ReactNode } from "react"
 
 import { FOCUS_FLAT } from "@/components/site/styles"
-import { initialsOf, plural } from "@/lib/share/format"
+import { formatDate, initialsOf, plural } from "@/lib/share/format"
 import { renderMarkdown } from "@/lib/share/markdown"
 import { isTarget, targetLabel, WHOLE_SHARE } from "@/lib/share/targets"
 import type { ApiResult } from "@/lib/share/types"
@@ -127,7 +127,7 @@ function timeAgo(iso: string): string {
   if (s < 3600) return `${Math.floor(s / 60)} min ago`
   if (s < 86400) return `${Math.floor(s / 3600)} h ago`
   if (s < 86400 * 30) return `${Math.floor(s / 86400)} d ago`
-  return new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric" }).format(t)
+  return formatDate(iso)
 }
 
 const THROTTLED = "You're commenting too fast, try again in a minute"
@@ -308,7 +308,9 @@ function Composer({ itemKey, parent, onDone }: { itemKey?: string; parent?: Show
       const f: Record<string, string> = {}
       let other: string | null = null
       for (const [k, msgs] of Object.entries(res.fields)) {
-        if (k === "author_name" || k === "body") f[k] = msgs[0] ?? "Check this field."
+        // On a private share the server checks the ciphertext's length, so its message would make no sense here.
+        if (k === "author_name" || k === "body")
+          f[k] = s.audience === "password" ? (k === "body" ? "That comment is too long." : "That name is too long.") : (msgs[0] ?? "Check this field.")
         else other ??= msgs[0] ?? null
       }
       setFields(f)

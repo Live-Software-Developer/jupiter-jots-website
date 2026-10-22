@@ -34,6 +34,9 @@ export function useLiveComments(slug: string, handlers: LiveHandlers, poll: () =
   })
 
   useEffect(() => {
+    const base = apiBase()
+    // A production build without a backend URL never renders a share, so there is nothing to follow.
+    if (!base) return
     let timer: ReturnType<typeof setInterval> | null = null
     const startPolling = () => {
       timer ??= setInterval(() => pollRef.current(), POLL_MS)
@@ -46,7 +49,7 @@ export function useLiveComments(slug: string, handlers: LiveHandlers, poll: () =
     }
 
     const group = `public:share:${slug}`
-    const es = new EventSource(`${apiBase()}/realtime/sse?groups=${encodeURIComponent(group)}`)
+    const es = new EventSource(`${base}/realtime/sse?groups=${encodeURIComponent(group)}`)
     let dropped = false
     es.addEventListener("u", (ev) => {
       let env: unknown

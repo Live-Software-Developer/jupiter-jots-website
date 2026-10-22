@@ -26,6 +26,13 @@ describe('share crypto', () => {
     const key = await deriveKey(vec.password, b64(vec.salt_b64), vec.kdf_iters)
     await expect(decryptJson(key, 'AAAAAAAAAAAAAAAA')).rejects.toBeInstanceOf(BadCipher)
   })
+  it('a cipher shorter than IV + tag (28 bytes) is BadCipher, not WrongPassword', async () => {
+    const key = await deriveKey(vec.password, b64(vec.salt_b64), vec.kdf_iters)
+    for (const n of [13, 20, 27]) {
+      await expect(decryptJson(key, Buffer.alloc(n).toString('base64'))).rejects.toBeInstanceOf(BadCipher)
+    }
+    await expect(decryptJson(key, Buffer.alloc(28).toString('base64'))).rejects.toBeInstanceOf(WrongPassword)
+  })
   it('a tampered ciphertext byte is WrongPassword', async () => {
     const key = await deriveKey(vec.password, b64(vec.salt_b64), vec.kdf_iters)
     const raw = b64(vec.cipher)

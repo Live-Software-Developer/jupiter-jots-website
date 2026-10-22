@@ -1,4 +1,4 @@
-import type { PBookmark, PCollection, PayloadItem } from './types'
+import type { PBookmark, PCollection, PGraph, PayloadItem } from './types'
 
 /** Something a comment can be about: a payload key ("" is the whole share) and its label. */
 export interface CommentTarget {
@@ -26,8 +26,9 @@ export const WHOLE_SHARE = 'The whole share'
 /** Label for a key the payload no longer has (the item was removed from a live share). */
 export const UNKNOWN_TARGET = 'this share'
 
-const bookmarkLabel = (b: PBookmark) => b.title || b.domain || 'Untitled bookmark'
-const collectionLabel = (c: PCollection) => c.name || 'Untitled collection'
+export const bookmarkLabel = (b: PBookmark) => b.title || b.domain || 'Untitled bookmark'
+export const collectionLabel = (c: PCollection) => c.name || 'Untitled collection'
+export const graphLabel = (g: PGraph) => g.name || 'Untitled graph'
 
 export function commentTargets(items: PayloadItem[]): CommentTargets {
   const groups: TargetGroup[] = []
@@ -56,7 +57,7 @@ export function commentTargets(items: PayloadItem[]): CommentTargets {
           for (const b of n.ref.collection.bookmarks) nested.push({ key: b.key, label: bookmarkLabel(b) })
         }
       }
-      groups.push({ item: { key: item.key, label: item.graph.name || 'Untitled graph' }, nested })
+      groups.push({ item: { key: item.key, label: graphLabel(item.graph) }, nested })
     }
   }
   return { groups, runs }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
 import type { PBookmark, PayloadItem } from '@/lib/share/types'
-import { ShareBand, toBands } from './ShareBand'
+import { bandTitle, ShareBand, toBands } from './ShareBand'
 
 const bm = (id: number, extra: Partial<PBookmark> = {}): PBookmark => ({
   key: `b:${id}`,
@@ -117,5 +117,16 @@ describe('ShareBand', () => {
       expect(hrefs(render([{ key: 'b:7', kind: 'bookmark', bookmark: bm(7) }]))).toEqual(['https://example.com/7'])
       expect(hrefs(render([graphOf('http://example.com/1')]))).toEqual(['http://example.com/1', 'https://example.com/2'])
     })
+  })
+})
+
+describe('bandTitle', () => {
+  it('labels unnamed items like the composer does', () => {
+    const items: PayloadItem[] = [
+      { ...graph, graph: { ...(graph as Extract<PayloadItem, { kind: 'graph' }>).graph, name: '' } },
+      { key: 'c:9', kind: 'collection', collection: { name: '', note: '', hue: 1, bookmarks: [] } },
+      { key: 'b:7', kind: 'bookmark', bookmark: bm(7, { title: '', domain: '' }) },
+    ]
+    expect(toBands(items).map(bandTitle)).toEqual(['Untitled graph', 'Untitled collection', 'Untitled bookmark'])
   })
 })

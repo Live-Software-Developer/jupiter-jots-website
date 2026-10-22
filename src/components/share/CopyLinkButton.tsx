@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 
 /** Copies the page URL; with `hash`, the URL of that anchor on the page instead. */
-export function CopyLinkButton({ className, hash }: { className: string; hash?: string }) {
+export function CopyLinkButton({ className, hash, label = "Copy link" }: { className: string; hash?: string; label?: string }) {
   const [copied, setCopied] = useState(false)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -28,7 +28,7 @@ export function CopyLinkButton({ className, hash }: { className: string; hash?: 
 
   return (
     <button type="button" onClick={copy} className={className} aria-live="polite">
-      {copied ? "Copied" : "Copy link"}
+      {copied ? "Copied" : label}
     </button>
   )
 }

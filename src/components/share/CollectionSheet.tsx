@@ -165,7 +165,12 @@ function CollectionSheet({ entry, curator, onClose }: { entry: SheetEntry; curat
           <Link href="/#get" className={cn(btnPrimary("md"), "flex-1 sm:flex-none")}>
             Get Jupiter Jots
           </Link>
-          <CopyLinkButton hash={anchorFor(entry.key)} className={cn(btnSecondary("md"), "px-4")} />
+          {/* A graph node's sheet does not open from a link; its anchor is the graph's. */}
+          <CopyLinkButton
+            hash={anchorFor(entry.key)}
+            label={entry.key.includes("/") ? "Copy link to graph" : "Copy link"}
+            className={cn(btnSecondary("md"), "px-4")}
+          />
         </div>
       </div>
     </Modal>

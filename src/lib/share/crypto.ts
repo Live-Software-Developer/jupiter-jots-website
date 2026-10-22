@@ -46,7 +46,8 @@ export async function decryptJson<T = unknown>(key: CryptoKey, cipher: string): 
   } catch {
     throw new BadCipher('invalid base64')
   }
-  if (raw.length < 13) throw new BadCipher('cipher too short')
+  // 12-byte IV + 16-byte GCM tag, as the extension (shareCrypto.ts) checks.
+  if (raw.length < 12 + 16) throw new BadCipher('cipher too short')
   let plain: ArrayBuffer
   try {
     plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: raw.slice(0, 12) }, key, raw.slice(12))

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { getComments, getShare, postComment, report, VISITOR_COOKIE, visitorKey, vote } from './api'
+import { apiBase, getComments, getShare, postComment, report, VISITOR_COOKIE, visitorKey, vote } from './api'
 
 const json = (status: number, body: unknown) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } })
@@ -11,7 +11,11 @@ beforeEach(() => {
   localStorage.clear()
   document.cookie = `${VISITOR_COOKIE}=; Max-Age=0; Path=/`
 })
-afterEach(() => vi.unstubAllGlobals())
+afterEach(() => {
+  vi.unstubAllGlobals()
+  vi.unstubAllEnvs()
+  vi.restoreAllMocks()
+})
 
 describe('getShare', () => {
   it('maps 200 to ok', async () => {
@@ -104,5 +108,53 @@ describe('visitor calls', () => {
     for (const c of fetchMock.mock.calls)
       expect(new Headers(c[1].headers).get('X-Visitor-Key')).toBe(visitorKey())
     expect(String(fetchMock.mock.calls[1][0])).toContain('/api/sharing/comments/5/vote')
+  })
+})
+
+describe('backend URL', () => {
+  it('defaults to the local backend outside production', () => {
+    vi.stubEnv('NODE_ENV', 'development')
+    vi.stubEnv('NEXT_PUBLIC_JJ_API_URL', '')
+    vi.stubEnv('JJ_API_URL', '')
+    expect(apiBase()).toBe('http://127.0.0.1:8000')
+  })
+  it('uses NEXT_PUBLIC_JJ_API_URL in the browser, without a trailing slash', () => {
+    vi.stubEnv('NODE_ENV', 'production')
+    vi.stubEnv('NEXT_PUBLIC_JJ_API_URL', 'https://api.example.com/')
+    vi.stubEnv('JJ_API_URL', 'http://10.0.0.2:8000')
+    expect(apiBase()).toBe('https://api.example.com')
+  })
+  it('prefers JJ_API_URL on the server', () => {
+    vi.stubEnv('NODE_ENV', 'production')
+    vi.stubEnv('NEXT_PUBLIC_JJ_API_URL', 'https://api.example.com')
+    vi.stubEnv('JJ_API_URL', 'http://10.0.0.2:8000/')
+    vi.stubGlobal('window', undefined)
+    expect(apiBase()).toBe('http://10.0.0.2:8000')
+  })
+  it('has no localhost fallback in production', () => {
+    vi.stubEnv('NODE_ENV', 'production')
+    vi.stubEnv('NEXT_PUBLIC_JJ_API_URL', '')
+    vi.stubEnv('JJ_API_URL', '')
+    expect(apiBase()).toBeNull()
+    // The browser bundle has no URL, so a server-only one is not enough.
+    vi.stubEnv('JJ_API_URL', 'http://10.0.0.2:8000')
+    vi.stubGlobal('window', undefined)
+    expect(apiBase()).toBeNull()
+  })
+  it('production without a URL: getShare is an error, fetches nothing and warns once', async () => {
+    vi.stubEnv('NODE_ENV', 'production')
+    vi.stubEnv('NEXT_PUBLIC_JJ_API_URL', '')
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    expect(await getShare('abcdefghij')).toEqual({ status: 'error' })
+    expect(await getShare('abcdefghij')).toEqual({ status: 'error' })
+    expect(fetchMock).not.toHaveBeenCalled()
+    expect(warn).toHaveBeenCalledTimes(1)
+    expect(String(warn.mock.calls[0][0])).toContain('NEXT_PUBLIC_JJ_API_URL')
+  })
+  it('production without a URL: visitor calls fail as network errors without fetching', async () => {
+    vi.stubEnv('NODE_ENV', 'production')
+    vi.stubEnv('NEXT_PUBLIC_JJ_API_URL', '')
+    expect(await getComments('abc')).toEqual({ ok: false, status: 0, code: 'network' })
+    expect(fetchMock).not.toHaveBeenCalled()
   })
 })

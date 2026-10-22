@@ -118,9 +118,9 @@ async function render(ui: ReactNode) {
 }
 const flush = () => act(async () => {})
 
-function ui({ mode = 'open', locked = false, codec, children }: { mode?: CommentMode; locked?: boolean; codec?: CommentCodec; children?: ReactNode } = {}) {
+function ui({ mode = 'open', locked = false, codec, audience, children }: { mode?: CommentMode; locked?: boolean; codec?: CommentCodec; audience?: 'link' | 'password'; children?: ReactNode } = {}) {
   return (
-    <DiscussionProvider slug="abcdefghij" mode={mode} locked={locked} count={0} targets={targets} codec={codec}>
+    <DiscussionProvider slug="abcdefghij" mode={mode} locked={locked} count={0} targets={targets} codec={codec} audience={audience}>
       {children ?? <Discussion />}
     </DiscussionProvider>
   )
@@ -460,6 +460,16 @@ describe('composer', () => {
     expect(body.getAttribute('aria-invalid')).toBe('true')
     expect(document.getElementById(body.getAttribute('aria-describedby')!.split(' ')[0])?.textContent).toBe('body must be 1-4000 characters.')
     expect(body.value).toBe('x')
+  })
+
+  it('on a private share, a 400 on the ciphertext reads as too long', async () => {
+    postMock.mockResolvedValue({ ok: false, status: 400, code: 'validation_error', fields: { body: ['body must be 1-21400 characters.'], author_name: ['author_name must be 1-400 characters.'] } })
+    await render(ui({ audience: 'password' }))
+    await fill('Kim', 'x')
+    await submit()
+    const text = (sel: string) => document.getElementById(($(sel) as HTMLElement).getAttribute('aria-describedby')!.split(' ')[0])?.textContent
+    expect(text('textarea[name="body"]')).toBe('That comment is too long.')
+    expect(text('input[name="author_name"]')).toBe('That name is too long.')
   })
 
   it('replies to a thread with the parent’s item key', async () => {

@@ -14,10 +14,10 @@ export const HUE_TINT = [
   "bg-chart-5/15 text-chart-5",
 ] as const
 
-/** Payload bookmarks carry no colour, so the tile hue is a stable pick from the domain. */
-export function hueIndex(domain: string): number {
+/** A stable hue pick from any string: a bookmark's domain (payload bookmarks carry no colour) or a commenter's name. */
+export function hueIndex(seed: string): number {
   let h = 0
-  for (const ch of domain) h = (h * 31 + ch.charCodeAt(0)) >>> 0
+  for (const ch of seed) h = (h * 31 + ch.charCodeAt(0)) >>> 0
   return h % HUE_TINT.length
 }
 

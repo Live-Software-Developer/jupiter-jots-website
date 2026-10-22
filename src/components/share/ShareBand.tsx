@@ -2,7 +2,7 @@ import type { ReactNode } from "react"
 
 import { FOCUS } from "@/components/site/styles"
 import { anchorFor, plural } from "@/lib/share/format"
-import { runKey } from "@/lib/share/targets"
+import { bookmarkLabel, collectionLabel, graphLabel, runKey } from "@/lib/share/targets"
 import type { PBookmark, PayloadItem } from "@/lib/share/types"
 import { cn } from "@/lib/utils"
 
@@ -46,11 +46,11 @@ export const bandFilterKey = (band: Band) => (band.kind === "bookmarks" ? runKey
 export function bandTitle(band: Band): string {
   switch (band.kind) {
     case "graph":
-      return band.graph.name
+      return graphLabel(band.graph)
     case "collection":
-      return band.collection.name
+      return collectionLabel(band.collection)
     case "bookmark":
-      return band.bookmark.title || band.bookmark.domain
+      return bookmarkLabel(band.bookmark)
     case "bookmarks":
       return "Shared bookmarks"
   }
