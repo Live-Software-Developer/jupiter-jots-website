@@ -4,7 +4,7 @@ import Link from "next/link"
 import { createContext, useCallback, useContext, useId, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react"
 
 import { btnPrimary, btnSecondary, FOCUS_FLAT } from "@/components/site/styles"
-import type { SheetEntry } from "@/lib/share/collections"
+import { collectionCounts, type SheetEntry } from "@/lib/share/collections"
 import { anchorFor, plural } from "@/lib/share/format"
 import { MARKDOWN_CLASS, renderMarkdown } from "@/lib/share/markdown"
 import type { MarkGlyph } from "@/lib/share/payload"
@@ -143,13 +143,6 @@ function filterCollection<C extends PCollection>(c: C, q: string): C | null {
 }
 
 const countOf = (c: PCollection) => allNotes(c).length + allBookmarks(c).length
-
-/** "2 notes · 5 bookmarks", counting every level. */
-export function collectionCounts(c: PCollection): string {
-  const notes = allNotes(c).length
-  const bookmarks = plural(allBookmarks(c).length, "bookmark")
-  return notes ? `${plural(notes, "note")} · ${bookmarks}` : bookmarks
-}
 
 /** A collection's contents in its sheet: sub-collections (nested sections), then its notes and bookmarks. */
 function CollectionRows({ collection: c, depth, filtering }: { collection: PCollection; depth: number; filtering: boolean }) {

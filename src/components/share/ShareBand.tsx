@@ -1,6 +1,7 @@
 import type { ReactNode } from "react"
 
 import { FOCUS } from "@/components/site/styles"
+import { collectionCounts } from "@/lib/share/collections"
 import { anchorFor, plural } from "@/lib/share/format"
 import { MARKDOWN_CLASS, renderMarkdown } from "@/lib/share/markdown"
 import { allBookmarks, allNotes } from "@/lib/share/payload"
@@ -9,7 +10,7 @@ import type { PBookmark, PNote, PayloadItem } from "@/lib/share/types"
 import { cn } from "@/lib/utils"
 
 import { BookmarkLink, BookmarkMark, BookmarkRow, CARD_TINT, hueIndex } from "./BookmarkRow"
-import { collectionCounts, CollectionMark, OpenCollectionButton } from "./CollectionSheet"
+import { CollectionMark, OpenCollectionButton } from "./CollectionSheet"
 import { BandCommentsLink } from "./Discussion"
 import { GraphView } from "./GraphView"
 import { GLYPH, ico } from "./icons"

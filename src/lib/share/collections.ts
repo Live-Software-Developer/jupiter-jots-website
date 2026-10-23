@@ -1,4 +1,13 @@
+import { plural } from './format'
+import { allBookmarks, allNotes } from './payload'
 import type { PCollection, PGraph, PNote, PayloadItem } from './types'
+
+/** "2 notes · 5 bookmarks", counting every level. Server-safe, so bands use it too. */
+export function collectionCounts(c: PCollection): string {
+  const notes = allNotes(c).length
+  const bookmarks = plural(allBookmarks(c).length, 'bookmark')
+  return notes ? `${plural(notes, 'note')} · ${bookmarks}` : bookmarks
+}
 
 /**
  * A collection a share page can open in a sheet: a collection item ("c:3"), a graph's collection
