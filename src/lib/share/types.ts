@@ -29,14 +29,18 @@ export interface PNote {
   title: string
   body: string
   tags: string[]
-  /** What the note is about: linked bookmarks in full, linked collections by name and mark only. */
+  /** What the note is about: linked bookmarks in full, linked collections and graphs in full one level deep. */
   links?: PNoteLink[]
 }
+/**
+ * A linked collection or graph carries its contents (`collection` / `graph`, keys under
+ * `<noteKey>/c:<id>` and `<noteKey>/g:<id>`), one level deep: the notes inside it link by name
+ * only, so a share can't nest itself. Without them (older payloads, the inner level) it is a chip.
+ */
 export type PNoteLink =
   | { kind: 'bookmark'; bookmark: PBookmark }
-  | { kind: 'collection'; key: string; name: string; hue: 1 | 2 | 3 | 4 | 5; icon?: PIcon }
-  /** By name only: graphs hold notes, so a whole graph here could nest the share inside itself. */
-  | { kind: 'graph'; key: string; name: string }
+  | { kind: 'collection'; key: string; name: string; hue: 1 | 2 | 3 | 4 | 5; icon?: PIcon; collection?: PCollection }
+  | { kind: 'graph'; key: string; name: string; graph?: PGraph }
 /** A collection's icon. A glyph is a name from the extension's glyph set (`MARK_GLYPHS`). */
 export type PIcon = { type: 'glyph'; value: string } | { type: 'emoji'; value: string } | { type: 'image'; url: string }
 export interface PCollection {
@@ -45,10 +49,18 @@ export interface PCollection {
   hue: 1 | 2 | 3 | 4 | 5
   /** Optional: with none, the hue tile shows the folder glyph. */
   icon?: PIcon
+  /** Its direct bookmarks (older payloads: every bookmark nested inside too). Use `allBookmarks` for totals. */
   bookmarks: PBookmark[]
   /** Listed before the bookmarks; keys 'c:<id>/n:<id>'. Optional: older payloads have none. */
   notes?: PNote[]
+  /**
+   * Sub-collections in the curator's order, each with only its direct items. Optional: older
+   * payloads flattened them into `bookmarks` and `notes`. Bookmarks and notes at any depth keep
+   * the top item's prefix ('c:3/b:12'); a sub-collection is 'c:3/c:7'.
+   */
+  collections?: PSubCollection[]
 }
+export type PSubCollection = PCollection & { key: string }
 export interface PGraphNode {
   id: string
   stepId: string | null

@@ -83,3 +83,83 @@ describe('commentTargets', () => {
     expect(isTarget(t, 'c:99')).toBe(false)
   })
 })
+
+describe('nested targets', () => {
+  const nested: PayloadItem[] = [
+    {
+      key: 'c:3',
+      kind: 'collection',
+      collection: {
+        name: 'Web3',
+        note: '',
+        hue: 1,
+        bookmarks: [bm('c:3/b:1', 'Top')],
+        collections: [
+          {
+            key: 'c:3/c:7',
+            name: 'Near',
+            note: '',
+            hue: 2,
+            bookmarks: [bm('c:3/b:2', 'Rust cross contract calls')],
+            notes: [{ key: 'c:3/n:4', title: 'Why Near', body: '', tags: [] }],
+            collections: [{ key: 'c:3/c:8', name: 'Deeper', note: '', hue: 3, bookmarks: [bm('c:3/b:3', 'Staking')] }],
+          },
+        ],
+      },
+    },
+    {
+      key: 'n:5',
+      kind: 'note',
+      note: {
+        key: 'n:5',
+        title: 'Plan',
+        body: '',
+        tags: [],
+        links: [
+          { kind: 'collection', key: 'n:5/c:9', name: 'Linked', hue: 1, collection: { name: 'Linked', note: '', hue: 1, bookmarks: [bm('n:5/c:9/b:1', 'L1')] } },
+          {
+            kind: 'graph',
+            key: 'n:5/g:2',
+            name: 'G',
+            graph: { name: 'G', description: '', mode: 'board', steps: [], links: [], nodes: [{ id: 'x', stepId: null, x: 0, y: 0, ref: { kind: 'bookmark', bookmark: bm('n:5/g:2/n:x', 'Gx') } }] },
+          },
+          { kind: 'graph', key: 'n:5/g:3', name: 'Name only' },
+        ],
+      },
+    },
+  ]
+  const n = commentTargets(nested)
+  const flat = (i: number) => [n.groups[i].item, ...n.groups[i].nested].map((x) => [x.key, x.kind, x.depth, x.parent ?? null])
+
+  it('lists sub-collections, then their notes and bookmarks, with depth and parent', () => {
+    expect(flat(0)).toEqual([
+      ['c:3', 'collection', 0, null],
+      ['c:3/c:7', 'collection', 1, 'Web3'],
+      ['c:3/c:8', 'collection', 2, 'Near'],
+      ['c:3/b:3', 'bookmark', 3, 'Deeper'],
+      ['c:3/n:4', 'note', 2, 'Near'],
+      ['c:3/b:2', 'bookmark', 2, 'Near'],
+      ['c:3/b:1', 'bookmark', 1, 'Web3'],
+    ])
+  })
+
+  it("puts a note's linked collections and graphs under it; name-only links are not targets", () => {
+    expect(flat(1)).toEqual([
+      ['n:5', 'note', 0, null],
+      ['n:5/c:9', 'collection', 1, 'Plan'],
+      ['n:5/c:9/b:1', 'bookmark', 2, 'Linked'],
+      ['n:5/g:2', 'graph', 1, 'Plan'],
+      ['n:5/g:2/n:x', 'bookmark', 2, 'G'],
+    ])
+    expect(isTarget(n, 'n:5/g:3')).toBe(false)
+    expect(inScope(n, 'n:5', 'n:5/g:2/n:x')).toBe(true)
+  })
+
+  it('a sub-collection filter covers what is inside it, though its keys keep the top prefix', () => {
+    expect(targetLabel(n, 'c:3/c:7')).toBe('Near')
+    expect(inScope(n, 'c:3/c:7', 'c:3/b:2')).toBe(true)
+    expect(inScope(n, 'c:3/c:7', 'c:3/b:3')).toBe(true)
+    expect(inScope(n, 'c:3/c:7', 'c:3/b:1')).toBe(false)
+    expect(inScope(n, 'c:3', 'c:3/b:3')).toBe(true)
+  })
+})

@@ -1,5 +1,5 @@
 import { httpsUrl } from './format'
-import type { PBookmark, PCollection, PGraphNode, PIcon, PNote, PNoteLink, PayloadItem, SharePayload } from './types'
+import type { PBookmark, PCollection, PGraph, PGraphNode, PIcon, PNote, PNoteLink, PSubCollection, PayloadItem, SharePayload } from './types'
 
 /** The extension's collection glyphs (its `GLYPH_CHOICES`); any other glyph name is dropped. */
 export const MARK_GLYPHS = [
@@ -29,8 +29,12 @@ export function toIcon(raw: unknown): PIcon | undefined {
 /** Longest note body the page renders; anything past it is cut. */
 export const NOTE_MAX = 20_000
 
-/** A note the page can show, or null for a malformed one. */
-export function toNote(raw: unknown): PNote | null {
+/**
+ * A note the page can show, or null for a malformed one. `embed` false (a note inside a linked
+ * collection or graph) keeps its collection and graph links as name-only chips, so embedding
+ * stays one level deep whatever the payload says.
+ */
+export function toNote(raw: unknown, embed = true): PNote | null {
   const n = raw as Record<string, unknown> | null
   if (!n || typeof n !== 'object' || typeof n.key !== 'string' || !n.key || typeof n.title !== 'string' || typeof n.body !== 'string') return null
   return {
@@ -38,49 +42,104 @@ export function toNote(raw: unknown): PNote | null {
     title: n.title,
     body: n.body.length > NOTE_MAX ? n.body.slice(0, NOTE_MAX) : n.body,
     tags: Array.isArray(n.tags) ? n.tags.filter((t): t is string => typeof t === 'string') : [],
-    links: Array.isArray(n.links) ? n.links.map(toNoteLink).filter((l) => l !== null) : undefined,
+    links: Array.isArray(n.links) ? n.links.map((l) => toNoteLink(l, embed)).filter((l) => l !== null) : undefined,
   }
 }
 
-/** A note's link the page can show, or null for a malformed one. */
-function toNoteLink(raw: unknown): PNoteLink | null {
+const isHue = (h: unknown): h is PCollection['hue'] => [1, 2, 3, 4, 5].includes(h as number)
+
+/** A note's link the page can show, or null for a malformed one. Contents that fail the checks leave a name-only chip. */
+function toNoteLink(raw: unknown, embed: boolean): PNoteLink | null {
   const l = raw as Record<string, unknown> | null
   if (!l || typeof l !== 'object') return null
   if (l.kind === 'bookmark') {
-    const b = l.bookmark as Record<string, unknown> | null
-    if (!b || typeof b.key !== 'string' || typeof b.url !== 'string' || typeof b.title !== 'string') return null
-    return { kind: 'bookmark', bookmark: bookmark(b as unknown as PBookmark) }
+    const b = toBookmark(l.bookmark)
+    return b ? { kind: 'bookmark', bookmark: b } : null
   }
-  if (l.kind === 'collection' && typeof l.key === 'string' && typeof l.name === 'string' && [1, 2, 3, 4, 5].includes(l.hue as number)) {
-    return { kind: 'collection', key: l.key, name: l.name, hue: l.hue as PCollection['hue'], icon: toIcon(l.icon) }
+  if (l.kind === 'collection' && typeof l.key === 'string' && typeof l.name === 'string' && isHue(l.hue)) {
+    const c = embed ? toCollection(l.collection, 0, false) : null
+    return { kind: 'collection', key: l.key, name: l.name, hue: l.hue, icon: toIcon(l.icon), ...(c && { collection: c }) }
   }
-  if (l.kind === 'graph' && typeof l.key === 'string' && typeof l.name === 'string') return { kind: 'graph', key: l.key, name: l.name }
+  if (l.kind === 'graph' && typeof l.key === 'string' && typeof l.name === 'string') {
+    const g = embed ? toGraph(l.graph, false) : null
+    return { kind: 'graph', key: l.key, name: l.name, ...(g && { graph: g }) }
+  }
   return null
 }
 
+/** Deepest sub-collection level the page renders; anything below is dropped. */
+export const COLLECTION_DEPTH = 8
+
 // The optional fields are re-checked here so a bad one is dropped, never rendered.
 const bookmark = (b: PBookmark): PBookmark => ({ ...b, favicon: httpsUrl(b.favicon), image: httpsUrl(b.image) })
-const collection = (c: PCollection): PCollection => ({
-  ...c,
-  icon: toIcon(c.icon),
-  bookmarks: Array.isArray(c.bookmarks) ? c.bookmarks.map(bookmark) : [],
-  notes: Array.isArray(c.notes) ? c.notes.map(toNote).filter((n) => n !== null) : undefined,
-})
+function toBookmark(raw: unknown): PBookmark | null {
+  const b = raw as Record<string, unknown> | null
+  if (!b || typeof b !== 'object' || typeof b.key !== 'string' || typeof b.url !== 'string' || typeof b.title !== 'string') return null
+  return bookmark(b as unknown as PBookmark)
+}
 
-/** A graph node with its ref re-checked, or null for a malformed note node (the rest of the graph still renders). */
-function node(n: PGraphNode): PGraphNode | null {
-  switch (n.ref?.kind) {
-    case 'collection':
-      return { ...n, ref: { ...n.ref, collection: collection(n.ref.collection) } }
-    case 'bookmark':
-      return { ...n, ref: { ...n.ref, bookmark: bookmark(n.ref.bookmark) } }
+/**
+ * A collection with its sub-collections re-checked (malformed ones dropped, nothing below
+ * `COLLECTION_DEPTH`), or null when it isn't a collection. `embed` is passed to its notes.
+ */
+function toCollection(raw: unknown, depth: number, embed: boolean): PCollection | null {
+  const c = raw as Record<string, unknown> | null
+  if (!c || typeof c !== 'object' || typeof c.name !== 'string' || !Array.isArray(c.bookmarks)) return null
+  const subs =
+    depth < COLLECTION_DEPTH && Array.isArray(c.collections)
+      ? c.collections.flatMap((s): PSubCollection[] => {
+          const sub = typeof s?.key === 'string' && s.key ? toCollection(s, depth + 1, embed) : null
+          return sub ? [{ ...sub, key: s.key }] : []
+        })
+      : []
+  return {
+    name: c.name,
+    note: typeof c.note === 'string' ? c.note : '',
+    hue: isHue(c.hue) ? c.hue : 1,
+    icon: toIcon(c.icon),
+    bookmarks: c.bookmarks.map(toBookmark).filter((b) => b !== null),
+    notes: Array.isArray(c.notes) ? c.notes.map((n) => toNote(n, embed)).filter((n) => n !== null) : undefined,
+    ...(subs.length > 0 && { collections: subs }),
+  }
+}
+
+/** A graph node with its ref re-checked, or null for a malformed one (the rest of the graph still renders). */
+function node(n: PGraphNode, embed: boolean): PGraphNode | null {
+  switch (n?.ref?.kind) {
+    case 'collection': {
+      const collection = toCollection(n.ref.collection, 0, embed)
+      return collection && typeof n.ref.key === 'string' ? { ...n, ref: { ...n.ref, collection } } : null
+    }
+    case 'bookmark': {
+      const b = toBookmark(n.ref.bookmark)
+      return b ? { ...n, ref: { kind: 'bookmark', bookmark: b } } : null
+    }
     case 'note': {
-      const note = toNote(n.ref.note)
+      const note = toNote(n.ref.note, embed)
       return note ? { ...n, ref: { kind: 'note', note } } : null
     }
     default:
-      return n
+      return null
   }
+}
+
+/** A graph with its nodes re-checked; a dropped node takes its arrows with it. Null when it isn't a graph. */
+function toGraph(raw: unknown, embed: boolean): PGraph | null {
+  const g = raw as PGraph | null
+  if (!g || typeof g !== 'object' || ![g.nodes, g.steps, g.links].every(Array.isArray)) return null
+  const nodes = g.nodes.map((n) => node(n, embed)).filter((n) => n !== null)
+  const kept = new Set(nodes.map((n) => n.id))
+  return { ...g, name: typeof g.name === 'string' ? g.name : '', nodes, links: g.links.filter((l) => kept.has(l?.from) && kept.has(l?.to)) }
+}
+
+/** Every bookmark in a collection, its sub-collections' included, in page order. */
+export function allBookmarks(c: PCollection): PBookmark[] {
+  return [...c.bookmarks, ...(c.collections ?? []).flatMap(allBookmarks)]
+}
+
+/** Every note in a collection, its sub-collections' included, in page order. */
+export function allNotes(c: PCollection): PNote[] {
+  return [...(c.notes ?? []), ...(c.collections ?? []).flatMap(allNotes)]
 }
 
 function clean(i: PayloadItem): PayloadItem | null {
@@ -91,13 +150,13 @@ function clean(i: PayloadItem): PayloadItem | null {
     }
     case 'bookmark':
       return { ...i, bookmark: bookmark(i.bookmark) }
-    case 'collection':
-      return { ...i, collection: collection(i.collection) }
+    case 'collection': {
+      const collection = toCollection(i.collection, 0, true)
+      return collection ? { ...i, collection } : null
+    }
     case 'graph': {
-      const nodes = i.graph.nodes.map(node).filter((n) => n !== null)
-      const kept = new Set(nodes.map((n) => n.id))
-      // A dropped node takes its arrows with it.
-      return { ...i, graph: { ...i.graph, nodes, links: i.graph.links.filter((l) => kept.has(l.from) && kept.has(l.to)) } }
+      const graph = toGraph(i.graph, true)
+      return graph ? { ...i, graph } : null
     }
   }
 }

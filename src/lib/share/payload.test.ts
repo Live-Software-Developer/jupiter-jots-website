@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { NOTE_MAX, parsePayload, toIcon } from './payload'
-import type { PBookmark, PCollection, PGraphNode, PayloadItem } from './types'
+import { allBookmarks, allNotes, COLLECTION_DEPTH, NOTE_MAX, parsePayload, toIcon } from './payload'
+import type { PBookmark, PCollection, PGraphNode, PNoteLink, PayloadItem } from './types'
 
 const bm = (extra: Record<string, unknown> = {}) => ({
   key: 'b:1',
@@ -188,5 +188,97 @@ describe('parsePayload notes', () => {
     expect(g.graph.nodes.map((n) => n.id)).toEqual(['a', 'b'])
     expect(g.graph.nodes[0].ref).toEqual({ kind: 'note', note: { ...note({ key: 'g:1/n:a' }), links: undefined } })
     expect(g.graph.links).toEqual([{ from: 'a', to: 'b' }])
+  })
+})
+
+describe('nested collections', () => {
+  const sub = (key: string, extra: Record<string, unknown> = {}) => ({ key, ...coll({ bookmarks: [bm({ key: `${key}-b`, title: key })] }), ...extra })
+
+  it('parses an old flat payload as it was', () => {
+    const c = collectionOf(only([{ key: 'c:2', kind: 'collection', collection: coll({ bookmarks: [bm({ key: 'c:2/b:1' }), bm({ key: 'c:2/b:9' })] }) }]))
+    expect(c.collections).toBeUndefined()
+    expect(allBookmarks(c).map((b) => b.key)).toEqual(['c:2/b:1', 'c:2/b:9'])
+  })
+
+  it('keeps nested sub-collections in order, re-checks them and totals every level', () => {
+    const c = collectionOf(
+      only([
+        {
+          key: 'c:2',
+          kind: 'collection',
+          collection: coll({
+            notes: [{ key: 'c:2/n:1', title: 'N', body: '', tags: [] }],
+            collections: [
+              sub('c:2/c:4', { icon: { type: 'glyph', value: 'nope' }, collections: [sub('c:2/c:5', { notes: [{ key: 'c:2/n:2', title: 'M', body: '', tags: [] }] })] }),
+              { name: 'no key', bookmarks: [] },
+              { key: 'c:2/c:6', name: 'no bookmarks' },
+              'junk',
+              sub('c:2/c:7', { hue: 9 }),
+            ],
+          }),
+        },
+      ]),
+    )
+    expect(c.collections?.map((s) => s.key)).toEqual(['c:2/c:4', 'c:2/c:7'])
+    expect(c.collections?.[0].icon).toBeUndefined()
+    expect(c.collections?.[1].hue).toBe(1)
+    expect(c.collections?.[0].collections?.[0].key).toBe('c:2/c:5')
+    expect(allBookmarks(c).map((b) => b.title)).toEqual(['A', 'c:2/c:4', 'c:2/c:5', 'c:2/c:7'])
+    expect(allNotes(c).map((n) => n.key)).toEqual(['c:2/n:1', 'c:2/n:2'])
+  })
+
+  it(`drops levels below ${COLLECTION_DEPTH}`, () => {
+    let deep: Record<string, unknown> = sub('c:2/c:last')
+    for (let i = 20; i > 0; i--) deep = sub(`c:2/c:${i}`, { collections: [deep] })
+    const c = collectionOf(only([{ key: 'c:2', kind: 'collection', collection: coll({ collections: [deep] }) }]))
+    let depth = 0
+    for (let s = c.collections?.[0]; s; s = s.collections?.[0]) depth++
+    expect(depth).toBe(COLLECTION_DEPTH)
+  })
+})
+
+describe('note links with contents', () => {
+  const graph = (nodes: unknown[]) => ({ name: 'G', description: '', mode: 'board', steps: [], links: [], nodes })
+  const note = (links: unknown[], key = 'n:1') => ({ key, title: 'T', body: '', tags: [], links })
+  const linksOf = (i: PayloadItem) => (i as Extract<PayloadItem, { kind: 'note' }>).note.links!
+
+  it('accepts the old name-only shape and the new one with contents', () => {
+    const links = linksOf(
+      only([
+        {
+          key: 'n:1',
+          kind: 'note',
+          note: note([
+            { kind: 'collection', key: 'n:1/c:2', name: 'Old', hue: 2 },
+            { kind: 'graph', key: 'n:1/g:3', name: 'Old graph' },
+            { kind: 'collection', key: 'n:1/c:4', name: 'New', hue: 3, collection: coll({ collections: [{ key: 'n:1/c:4/c:5', ...coll() }] }) },
+            { kind: 'graph', key: 'n:1/g:6', name: 'New graph', graph: graph([{ id: 'a', stepId: null, x: 0, y: 0, ref: { kind: 'bookmark', bookmark: bm({ key: 'n:1/g:6/n:a' }) } }]) },
+            { kind: 'graph', key: 'n:1/g:7', name: 'Bad contents', graph: { nodes: 'x' } },
+          ]),
+        },
+      ]),
+    )
+    expect(links.map((l) => [l.kind, 'key' in l ? l.key : '', 'collection' in l || 'graph' in l])).toEqual([
+      ['collection', 'n:1/c:2', false],
+      ['graph', 'n:1/g:3', false],
+      ['collection', 'n:1/c:4', true],
+      ['graph', 'n:1/g:6', true],
+      ['graph', 'n:1/g:7', false],
+    ])
+    const c = links[2] as Extract<PNoteLink, { kind: 'collection' }>
+    expect(c.collection?.collections?.[0].key).toBe('n:1/c:4/c:5')
+  })
+
+  it('embeds one level only: notes inside a linked graph keep their links as name-only chips', () => {
+    const inner = note([{ kind: 'graph', key: 'x/g:9', name: 'H', graph: graph([]) }, { kind: 'collection', key: 'x/c:9', name: 'C', hue: 1, collection: coll() }], 'n:1/g:6/n:a')
+    const links = linksOf(
+      only([{ key: 'n:1', kind: 'note', note: note([{ kind: 'graph', key: 'n:1/g:6', name: 'G', graph: graph([{ id: 'a', stepId: null, x: 0, y: 0, ref: { kind: 'note', note: inner } }]) }]) }]),
+    )
+    const g = (links[0] as Extract<PNoteLink, { kind: 'graph' }>).graph!
+    const n = g.nodes[0].ref as Extract<PGraphNode['ref'], { kind: 'note' }>
+    expect(n.note.links).toEqual([
+      { kind: 'graph', key: 'x/g:9', name: 'H' },
+      { kind: 'collection', key: 'x/c:9', name: 'C', hue: 1, icon: undefined },
+    ])
   })
 })
