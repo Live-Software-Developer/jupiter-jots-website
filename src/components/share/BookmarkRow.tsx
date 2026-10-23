@@ -6,6 +6,7 @@ import type { PBookmark } from "@/lib/share/types"
 import { cn } from "@/lib/utils"
 
 import { GLYPH, ico } from "./icons"
+import { SafeImg } from "./SafeImg"
 
 /** Tints for the five chart hues; a collection's `hue` (1-5) indexes this directly. */
 export const HUE_TINT = [
@@ -36,6 +37,41 @@ export const hueFor = (domain: string) => HUE_TINT[hueIndex(domain)]
 
 export const domainInitial = (domain: string) => (domain.replace(/^www\./, "")[0] || "?").toUpperCase()
 
+/**
+ * A bookmark's tile: the site's icon on a plain `plate`, or its hued initial when it has none or
+ * the icon fails. `className` sizes both (and sets the initial's type); `px` is the tile's size.
+ */
+export function BookmarkMark({
+  bookmark,
+  px,
+  className,
+  pad,
+  plate = "bg-muted",
+  tint = hueFor(bookmark.domain),
+}: {
+  bookmark: PBookmark
+  px: number
+  className: string
+  /** Inset of the icon inside its tile. */
+  pad: string
+  plate?: string
+  tint?: string
+}) {
+  return (
+    <SafeImg
+      src={bookmark.favicon}
+      width={px}
+      height={px}
+      className={cn("shrink-0 object-contain", plate, pad, className)}
+      fallback={
+        <span className={cn("grid shrink-0 place-items-center", tint, className)} aria-hidden="true">
+          {domainInitial(bookmark.domain)}
+        </span>
+      }
+    />
+  )
+}
+
 /** A link to the bookmark when its URL is http(s), plain content otherwise. */
 export function BookmarkLink({ url, className, children }: { url: string; className: string; children: ReactNode }) {
   const href = safeUrl(url)
@@ -52,9 +88,7 @@ export function BookmarkRow({ bookmark }: { bookmark: PBookmark }) {
   return (
     <div data-bookmark-row className="group px-4 py-4 transition-colors hover:bg-accent/40 sm:px-5">
       <BookmarkLink url={bookmark.url} className={cn("flex items-start gap-3.5 rounded-lg sm:gap-4", FOCUS_FLAT)}>
-        <span className={cn("grid size-9 shrink-0 place-items-center rounded-lg text-sm font-semibold", hueFor(bookmark.domain))} aria-hidden="true">
-          {domainInitial(bookmark.domain)}
-        </span>
+        <BookmarkMark bookmark={bookmark} px={36} pad="p-2" className="size-9 rounded-lg text-sm font-semibold" />
         <span className="min-w-0 flex-1">
           <span className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
             <span className="text-sm font-medium break-words text-foreground">{bookmark.title || bookmark.domain}</span>

@@ -7,8 +7,8 @@ import { bandOf, boardColumns, computePath, NODE_W, type Box } from "@/lib/share
 import type { PGraph, PGraphNode } from "@/lib/share/types"
 import { cn } from "@/lib/utils"
 
-import { BookmarkLink, domainInitial, hueFor } from "./BookmarkRow"
-import { collectionTint, useCollectionSheet } from "./CollectionSheet"
+import { BookmarkLink, BookmarkMark } from "./BookmarkRow"
+import { CollectionMark, useCollectionSheet } from "./CollectionSheet"
 import { GLYPH, ico } from "./icons"
 import { Modal } from "./Modal"
 
@@ -65,9 +65,7 @@ function NodeCard({ node, itemKey }: { node: PGraphNode; itemKey: string }) {
         <span className="pointer-events-none absolute inset-x-4 -bottom-3 h-3 rounded-b-xl border border-t-0 border-border bg-card/40" aria-hidden="true" />
         <button type="button" aria-haspopup="dialog" onClick={(e) => open(`${itemKey}/n:${node.id}`, e.currentTarget)} className={cn(CARD, FOCUS_FLAT)}>
           <span className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span className={cn("grid size-5 shrink-0 place-items-center rounded", collectionTint(c.hue))} aria-hidden="true">
-              {ico(GLYPH.folder, "size-3")}
-            </span>
+            <CollectionMark icon={c.icon} hue={c.hue} px={20} className="size-5 rounded" glyph="size-3" emoji="text-xs" />
             <span className="min-w-0 truncate">Collection</span>
           </span>
           <span className="mt-1.5 block text-sm leading-snug font-medium break-words text-pretty text-card-foreground">{c.name}</span>
@@ -88,9 +86,7 @@ function NodeCard({ node, itemKey }: { node: PGraphNode; itemKey: string }) {
   return (
     <BookmarkLink url={b.url} className={cn(CARD, FOCUS_FLAT)}>
       <span className="flex items-center gap-2 text-xs text-muted-foreground">
-        <span className={cn("grid size-5 shrink-0 place-items-center rounded text-xs font-semibold", hueFor(b.domain))} aria-hidden="true">
-          {domainInitial(b.domain)}
-        </span>
+        <BookmarkMark bookmark={b} px={20} pad="p-0.5" className="size-5 rounded text-xs font-semibold" />
         <span className="min-w-0 truncate">{domain}</span>
         {b.read ? (
           <span className="ml-auto text-primary" title="Read">

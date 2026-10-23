@@ -6,13 +6,15 @@ import { createContext, useCallback, useContext, useId, useMemo, useRef, useStat
 import { btnPrimary, btnSecondary, FOCUS_FLAT } from "@/components/site/styles"
 import type { SheetEntry } from "@/lib/share/collections"
 import { anchorFor, plural } from "@/lib/share/format"
-import type { PBookmark } from "@/lib/share/types"
+import type { MarkGlyph } from "@/lib/share/payload"
+import type { PBookmark, PIcon } from "@/lib/share/types"
 import { cn } from "@/lib/utils"
 
 import { BookmarkRow, HUE_TINT } from "./BookmarkRow"
 import { CopyLinkButton } from "./CopyLinkButton"
-import { GLYPH, ico } from "./icons"
+import { GLYPH, ico, MARK_GLYPH } from "./icons"
 import { Modal } from "./Modal"
+import { SafeImg } from "./SafeImg"
 
 /** `trigger` is the element focus returns to when the sheet closes (the clicked button). */
 export const CollectionSheetContext = createContext<{ open(key: string, trigger?: HTMLElement | null): void }>({ open: () => {} })
@@ -74,6 +76,44 @@ export function OpenCollectionButton({ itemKey, className, children }: { itemKey
 
 export const collectionTint = (hue: number) => HUE_TINT[(((Math.trunc(hue) || 1) - 1) % 5 + 5) % 5]
 
+/**
+ * A collection's tile, as in the extension: its glyph or emoji on its hue, or its logo on a plain
+ * card. No icon, or a logo that fails, shows the folder glyph on the hue. `className` sizes the
+ * tile, `glyph` the glyph and `emoji` the emoji's type; `px` is the tile's size.
+ */
+export function CollectionMark({
+  icon,
+  hue,
+  px,
+  className,
+  glyph,
+  emoji,
+}: {
+  icon?: PIcon
+  hue: number
+  px: number
+  className: string
+  glyph: string
+  emoji: string
+}) {
+  const tile = (content: ReactNode) => (
+    <span className={cn("grid shrink-0 place-items-center", collectionTint(hue), className)} aria-hidden="true">
+      {content}
+    </span>
+  )
+  const folder = tile(ico(MARK_GLYPH.folder, glyph, 1.8))
+  switch (icon?.type) {
+    case "image":
+      return <SafeImg src={icon.url} width={px} height={px} className={cn("shrink-0 border border-border bg-card object-cover", className)} fallback={folder} />
+    case "emoji":
+      return tile(<span className={cn("leading-none", emoji)}>{icon.value}</span>)
+    case "glyph":
+      return tile(ico(MARK_GLYPH[icon.value as MarkGlyph] ?? MARK_GLYPH.folder, glyph, 1.8))
+    default:
+      return folder
+  }
+}
+
 function matches(b: PBookmark, q: string): boolean {
   return [b.title, b.domain, b.note, ...b.tags].some((s) => s.toLowerCase().includes(q))
 }
@@ -102,9 +142,7 @@ function CollectionSheet({ entry, curator, onClose }: { entry: SheetEntry; curat
       <div className="absolute inset-x-0 bottom-0 flex max-h-[88dvh] flex-col rounded-t-3xl border-t border-border bg-popover text-popover-foreground shadow-2xl sm:inset-y-0 sm:right-0 sm:left-auto sm:max-h-none sm:w-full sm:max-w-lg sm:rounded-none sm:border-t-0 sm:border-l">
         <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-border sm:hidden" aria-hidden="true" />
         <div className="flex shrink-0 items-start gap-3 border-b border-border px-4 pt-3 pb-4 sm:px-5 sm:pt-5">
-          <span className={cn("grid size-11 shrink-0 place-items-center rounded-xl", collectionTint(c.hue))} aria-hidden="true">
-            {ico(GLYPH.folder, "size-5")}
-          </span>
+          <CollectionMark icon={c.icon} hue={c.hue} px={44} className="size-11 rounded-xl" glyph="size-5" emoji="text-2xl" />
           <div className="min-w-0 flex-1">
             <p className="text-xs font-medium text-muted-foreground">Collection</p>
             <h2 id={titleId} className="mt-0.5 font-serif text-2xl leading-tight break-words text-balance">

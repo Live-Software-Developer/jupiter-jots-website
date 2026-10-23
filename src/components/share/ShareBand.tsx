@@ -6,11 +6,12 @@ import { bookmarkLabel, collectionLabel, graphLabel, runKey } from "@/lib/share/
 import type { PBookmark, PayloadItem } from "@/lib/share/types"
 import { cn } from "@/lib/utils"
 
-import { BookmarkLink, BookmarkRow, CARD_TINT, domainInitial, hueIndex } from "./BookmarkRow"
-import { OpenCollectionButton } from "./CollectionSheet"
+import { BookmarkLink, BookmarkMark, BookmarkRow, CARD_TINT, hueIndex } from "./BookmarkRow"
+import { CollectionMark, OpenCollectionButton } from "./CollectionSheet"
 import { BandCommentsLink } from "./Discussion"
 import { GraphView } from "./GraphView"
 import { GLYPH, ico } from "./icons"
+import { SafeImg } from "./SafeImg"
 
 /** A band on the page: a payload item, or a run of adjacent loose bookmarks shown together. */
 export type Band = PayloadItem | { key: string; kind: "bookmarks"; bookmarks: PBookmark[] }
@@ -138,9 +139,13 @@ function BookmarkCard({ bookmark, curator }: { bookmark: PBookmark; curator?: st
       )}
     >
       <div className={cn("relative grid min-h-48 place-items-center md:col-span-2 md:min-h-72", tint.panel)}>
-        <span className={cn("grid size-20 place-items-center rounded-3xl font-serif text-4xl", tint.tile)} aria-hidden="true">
-          {domainInitial(bookmark.domain)}
-        </span>
+        <SafeImg
+          src={bookmark.image}
+          width={1200}
+          height={630}
+          className="absolute inset-0 size-full object-cover"
+          fallback={<BookmarkMark bookmark={bookmark} px={80} pad="p-5" plate="bg-background/80" tint={tint.tile} className="size-20 rounded-3xl font-serif text-4xl" />}
+        />
         <span className="absolute bottom-3 left-3 rounded-full bg-background/80 px-2.5 py-1 text-xs text-muted-foreground backdrop-blur">{bookmark.domain}</span>
       </div>
       <div className="flex min-w-0 flex-col p-5 sm:p-8 md:col-span-3">
@@ -222,7 +227,12 @@ export function ShareBand({ item, index, total, curator }: { item: Band; index: 
                 </>
               ) : null}
             </p>
-            <h2 className="mt-2 font-serif text-3xl leading-tight tracking-tight break-words text-balance sm:text-4xl">{heading}</h2>
+            <div className="mt-2 flex items-center gap-3">
+              {item.kind === "collection" ? (
+                <CollectionMark icon={item.collection.icon} hue={item.collection.hue} px={44} className="size-11 rounded-xl" glyph="size-5" emoji="text-2xl" />
+              ) : null}
+              <h2 className="min-w-0 font-serif text-3xl leading-tight tracking-tight break-words text-balance sm:text-4xl">{heading}</h2>
+            </div>
             {note ? <p className="mt-2 max-w-2xl text-base leading-relaxed text-pretty text-muted-foreground">{note}</p> : null}
           </div>
           <div className="flex flex-wrap items-center gap-2 empty:hidden">

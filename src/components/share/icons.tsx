@@ -1,5 +1,7 @@
 import type { ReactNode } from "react"
 
+import type { MarkGlyph } from "@/lib/share/payload"
+
 /** A 24-unit stroked glyph from the share designs. Decorative: always aria-hidden. */
 export const ico = (d: ReactNode, className = "size-4", strokeWidth = 1.7) => (
   <svg
@@ -67,3 +69,98 @@ export const GLYPH = {
 
 /** The padlock used for private shares (lock card, hero badge, "Lock again"). */
 export const LockIcon = ({ className = "size-4" }: { className?: string }) => ico(GLYPH.lock, className)
+
+/**
+ * The extension's collection glyphs (its `GLYPHS`, drawn at stroke 1.8), keyed by the names a
+ * payload's `{type: "glyph"}` icon may carry. Constants only; a payload never supplies markup.
+ */
+export const MARK_GLYPH: Record<MarkGlyph, ReactNode> = {
+  folder: <path d="M3 6.5h6l2 2h10V20H3z" />,
+  code: <path d="M8 8l-4 4 4 4M16 8l4 4-4 4M13.5 5l-3 14" />,
+  palette: (
+    <>
+      <path d="M12 3a9 9 0 1 0 0 18c1.2 0 1.8-.9 1.8-1.8 0-1.2-1-1.6-1-2.6 0-1 .8-1.6 1.8-1.6H17a4 4 0 0 0 4-4C21 6.6 17 3 12 3z" />
+      <circle cx="7.5" cy="11" r="1" />
+      <circle cx="10.5" cy="7.5" r="1" />
+      <circle cx="15" cy="7.5" r="1" />
+    </>
+  ),
+  book: (
+    <>
+      <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z" />
+      <path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5" />
+    </>
+  ),
+  utensils: <path d="M6 3v8a2 2 0 0 0 4 0V3M8 11v10M17 3c-2 1.5-3 4-3 7h3v11" />,
+  plane: <path d="M10.5 13.5L3 11l1.5-1.5 8 1 4-4.5a2 2 0 0 1 3 3l-4.5 4 1 8L14.5 22l-2.5-7.5-3 3V21l-1.5 1-1-3.5L3 17.5 4 16h3l3.5-2.5z" />,
+  briefcase: (
+    <>
+      <rect x="3" y="7" width="18" height="13" rx="2" />
+      <path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 13h18" />
+    </>
+  ),
+  gift: (
+    <>
+      <rect x="3" y="8" width="18" height="4" rx="1" />
+      <path d="M5 12v9h14v-9M12 8v13M12 8S10.5 3 8 4.5 9.5 8 12 8zm0 0s1.5-5 4-3.5S14.5 8 12 8z" />
+    </>
+  ),
+  star: <path d="M12 3.5l2.7 5.5 6 .9-4.4 4.2 1.1 6L12 17.3 6.6 20.1l1.1-6L3.3 9.9l6-.9z" />,
+  heart: <path d="M12 20s-7.5-4.6-7.5-10A4.5 4.5 0 0 1 12 7a4.5 4.5 0 0 1 7.5 3c0 5.4-7.5 10-7.5 10z" />,
+  music: (
+    <>
+      <path d="M9 18V5l11-2v13" />
+      <circle cx="6.5" cy="18" r="2.5" />
+      <circle cx="17.5" cy="16" r="2.5" />
+    </>
+  ),
+  film: (
+    <>
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4" />
+    </>
+  ),
+  camera: (
+    <>
+      <path d="M4 8h3l2-3h6l2 3h3v11H4z" />
+      <circle cx="12" cy="13" r="3.5" />
+    </>
+  ),
+  cap: (
+    <>
+      <path d="M2 9l10-5 10 5-10 5z" />
+      <path d="M6 11v5c3 2 9 2 12 0v-5M22 9v6" />
+    </>
+  ),
+  leaf: (
+    <>
+      <path d="M5 19c0-9 6-14 15-14 0 9-5 15-14 15" />
+      <path d="M5 19l8-8" />
+    </>
+  ),
+  home: (
+    <>
+      <path d="M4 11l8-7 8 7v9H4z" />
+      <path d="M10 20v-6h4v6" />
+    </>
+  ),
+  globe: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18M12 3c2.5 2.5 3.5 5.5 3.5 9s-1 6.5-3.5 9c-2.5-2.5-3.5-5.5-3.5-9s1-6.5 3.5-9z" />
+    </>
+  ),
+  bulb: <path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z" />,
+  bag: (
+    <>
+      <path d="M5 8h14l-1 13H6z" />
+      <path d="M9 8V6a3 3 0 0 1 6 0v2" />
+    </>
+  ),
+  inbox: (
+    <>
+      <path d="M3 5h18v14H3z" />
+      <path d="M3 11h5l1.5 2.5h5L16 11h5" />
+    </>
+  ),
+}
