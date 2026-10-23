@@ -31,6 +31,11 @@ describe('getShare', () => {
     fetchMock.mockResolvedValue(json(410, { code: 'gone' }))
     expect(await getShare('x')).toEqual({ status: 'gone' })
   })
+
+  it('maps a 410 takedown to removed', async () => {
+    fetchMock.mockResolvedValue(json(410, { code: 'removed' }))
+    expect(await getShare('x')).toEqual({ status: 'removed' })
+  })
   it('maps network errors and 5xx to error', async () => {
     fetchMock.mockRejectedValue(new Error('down'))
     expect(await getShare('x')).toEqual({ status: 'error' })

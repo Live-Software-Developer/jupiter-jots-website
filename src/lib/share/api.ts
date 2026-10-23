@@ -105,7 +105,11 @@ export async function getShare(slug: string, visitor?: string | null): Promise<S
     const headers: Record<string, string> = isVisitorKey(visitor) ? { 'X-Visitor-Key': visitor } : {}
     const res = await fetch(`${base}/api/sharing/s/${encodeURIComponent(slug)}`, { cache: 'no-store', headers })
     if (res.status === 404) return { status: 'missing' }
-    if (res.status === 410) return { status: 'gone' }
+    if (res.status === 410) {
+      // An operator takedown says `removed`; revoked, expired or used up says `gone`.
+      const gone: unknown = await res.json().catch(() => null)
+      return { status: (gone as { code?: unknown } | null)?.code === 'removed' ? 'removed' : 'gone' }
+    }
     if (!res.ok) return { status: 'error' }
     const body: unknown = await res.json()
     if (!body || typeof body !== 'object' || Array.isArray(body)) return { status: 'error' }
@@ -153,4 +157,7 @@ export const postComment = (slug: string, body: NewComment) =>
   call<PublicComment>(`/api/sharing/s/${encodeURIComponent(slug)}/comments`, 'POST', body)
 export const vote = (id: number) =>
   call<{ votes: number; voted: boolean }>(`/api/sharing/comments/${id}/vote`, 'POST', {})
+/** Reports the whole share to the operators; once per visitor (repeats are accepted and ignored). */
+export const reportShare = (slug: string, reason: string) =>
+  call<unknown>(`/api/sharing/s/${encodeURIComponent(slug)}/report`, 'POST', { reason })
 export const report = (id: number) => call<{ reports: number }>(`/api/sharing/comments/${id}/report`, 'POST', {})

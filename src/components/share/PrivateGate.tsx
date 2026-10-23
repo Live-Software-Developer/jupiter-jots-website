@@ -1,6 +1,5 @@
 "use client"
 
-import Link from "next/link"
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react"
 
 import { FOCUS, FOCUS_FLAT } from "@/components/site/styles"
@@ -13,6 +12,7 @@ import { cn } from "@/lib/utils"
 
 import type { CommentCodec } from "./Discussion"
 import { LockIcon } from "./icons"
+import { ReportShare } from "./ReportShare"
 import { ShareView } from "./ShareView"
 import { useClientValue } from "./useClientValue"
 
@@ -274,11 +274,9 @@ export function PrivateGate({ share }: { share: PublicShare }) {
             {expires ? `Expires ${expires}` : "Never expires"}. Lost the password? Ask {who} — Jupiter Jots can’t recover it.
           </p>
         </div>
-        <p className="mt-4 text-center text-xs text-muted-foreground">
-          <Link href="/support" className={cn("rounded underline-offset-4 hover:text-foreground hover:underline", FOCUS_FLAT)}>
-            Report this share
-          </Link>
-        </p>
+        <div className="mt-4 text-center text-xs">
+          <ReportShare slug={share.slug} />
+        </div>
       </div>
     </main>
   )

@@ -2,7 +2,7 @@ import Link from "next/link"
 
 import { btnPrimary, btnSecondary } from "@/components/site/styles"
 
-export type UnavailableReason = "missing" | "gone" | "error"
+export type UnavailableReason = "missing" | "gone" | "removed" | "error"
 
 const COPY: Record<UnavailableReason, { title: string; body: string }> = {
   missing: {
@@ -12,6 +12,10 @@ const COPY: Record<UnavailableReason, { title: string; body: string }> = {
   gone: {
     title: "This share is no longer available",
     body: "The person who shared it turned the link off, or it expired or reached its view limit. Ask them to share it again.",
+  },
+  removed: {
+    title: "This share was removed",
+    body: "It was taken down for breaking our terms after a report. If you made it and think this is a mistake, contact support.",
   },
   error: {
     title: "This share can’t be loaded right now",

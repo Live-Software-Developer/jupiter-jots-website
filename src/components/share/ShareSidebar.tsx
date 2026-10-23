@@ -1,11 +1,10 @@
-import Link from "next/link"
-
 import { FOCUS_FLAT } from "@/components/site/styles"
 import { formatDate } from "@/lib/share/format"
 import type { PublicShare } from "@/lib/share/types"
 import { cn } from "@/lib/utils"
 
 import { ItemCommentCount, ItemFilterLink } from "./Discussion"
+import { ReportShare } from "./ReportShare"
 import { type Band, type BandKind, bandFilterKey, bandTitle } from "./ShareBand"
 
 const DOT: Record<BandKind | "share", string> = {
@@ -67,9 +66,7 @@ export function ShareSidebar({ share, bands }: { share: PublicShare; bands: Band
           <dd className="text-right">{expires || "Never"}</dd>
         </div>
         <div className="border-t border-border pt-2.5">
-          <Link href="/support" className={cn("rounded text-muted-foreground underline-offset-4 hover:text-foreground hover:underline", FOCUS_FLAT)}>
-            Report this share
-          </Link>
+          <ReportShare slug={share.slug} />
         </div>
       </dl>
     </div>

@@ -113,7 +113,7 @@ export interface NewComment {
 
 export type ShareResult =
   | { status: 'ok'; share: PublicShare }
-  | { status: 'missing' | 'gone' | 'error' }
+  | { status: 'missing' | 'gone' | 'removed' | 'error' }
 
 export type ApiResult<T> =
   | { ok: true; data: T }
