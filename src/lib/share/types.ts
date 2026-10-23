@@ -9,6 +9,7 @@ export type PayloadItem =
   | { key: string; kind: 'bookmark'; bookmark: PBookmark }
   | { key: string; kind: 'collection'; collection: PCollection }
   | { key: string; kind: 'graph'; graph: PGraph }
+  | { key: string; kind: 'note'; note: PNote }
 export interface PBookmark {
   key: string
   url: string
@@ -22,6 +23,13 @@ export interface PBookmark {
   /** The page's preview (og:image), `https:` only. */
   image?: string
 }
+/** A note: `body` is markdown, rendered with the restricted subset in `markdown.tsx`. */
+export interface PNote {
+  key: string
+  title: string
+  body: string
+  tags: string[]
+}
 /** A collection's icon. A glyph is a name from the extension's glyph set (`MARK_GLYPHS`). */
 export type PIcon = { type: 'glyph'; value: string } | { type: 'emoji'; value: string } | { type: 'image'; url: string }
 export interface PCollection {
@@ -31,6 +39,8 @@ export interface PCollection {
   /** Optional: with none, the hue tile shows the folder glyph. */
   icon?: PIcon
   bookmarks: PBookmark[]
+  /** Listed before the bookmarks; keys 'c:<id>/n:<id>'. Optional: older payloads have none. */
+  notes?: PNote[]
 }
 export interface PGraphNode {
   id: string

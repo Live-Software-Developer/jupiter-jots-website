@@ -7,7 +7,12 @@ const bm = (key: string, title: string): PBookmark => ({ key, url: 'https://x.de
 const items: PayloadItem[] = [
   { key: 'b:1', kind: 'bookmark', bookmark: bm('b:1', 'One') },
   { key: 'b:2', kind: 'bookmark', bookmark: bm('b:2', '') },
-  { key: 'c:3', kind: 'collection', collection: { name: 'Reading', note: '', hue: 1, bookmarks: [bm('c:3/b:12', 'Twelve')] } },
+  {
+    key: 'c:3',
+    kind: 'collection',
+    collection: { name: 'Reading', note: '', hue: 1, bookmarks: [bm('c:3/b:12', 'Twelve')], notes: [{ key: 'c:3/n:5', title: 'Why', body: '', tags: [] }] },
+  },
+  { key: 'n:6', kind: 'note', note: { key: 'n:6', title: '', body: 'Loose', tags: [] } },
   {
     key: 'g:4',
     kind: 'graph',
@@ -39,6 +44,8 @@ describe('commentTargets', () => {
     expect(targetLabel(t, 'b:2')).toBe('x.dev')
     expect(targetLabel(t, 'c:3')).toBe('Reading')
     expect(targetLabel(t, 'c:3/b:12')).toBe('Twelve')
+    expect(targetLabel(t, 'c:3/n:5')).toBe('Why')
+    expect(targetLabel(t, 'n:6')).toBe('Untitled note')
     expect(targetLabel(t, 'g:4')).toBe('Path')
     expect(targetLabel(t, 'g:4/n:a')).toBe('Node A')
     expect(targetLabel(t, 'g:4/n:k')).toBe('Deep')
@@ -59,6 +66,12 @@ describe('commentTargets', () => {
     expect(inScope(t, '', 'c:3')).toBe(false)
     expect(inScope(t, '', '')).toBe(true)
     expect(inScope(t, runKey('b:1'), 'b:2')).toBe(true)
+  })
+  it("offers notes as targets, a collection's notes before its bookmarks", () => {
+    expect(isTarget(t, 'n:6')).toBe(true)
+    expect(isTarget(t, 'c:3/n:5')).toBe(true)
+    expect(inScope(t, 'c:3', 'c:3/n:5')).toBe(true)
+    expect(t.groups.find((g) => g.item.key === 'c:3')?.nested.map((n) => n.key)).toEqual(['c:3/n:5', 'c:3/b:12'])
   })
   it('knows which keys can be posted on', () => {
     expect(isTarget(t, 'g:4/n:k/b:9')).toBe(true)

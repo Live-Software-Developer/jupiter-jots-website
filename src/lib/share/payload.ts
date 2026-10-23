@@ -1,5 +1,5 @@
 import { httpsUrl } from './format'
-import type { PBookmark, PCollection, PIcon, PayloadItem, SharePayload } from './types'
+import type { PBookmark, PCollection, PIcon, PNote, PayloadItem, SharePayload } from './types'
 
 /** The extension's collection glyphs (its `GLYPH_CHOICES`); any other glyph name is dropped. */
 export const MARK_GLYPHS = [
@@ -26,12 +26,36 @@ export function toIcon(raw: unknown): PIcon | undefined {
   return undefined
 }
 
+/** Longest note body the page renders; anything past it is cut. */
+export const NOTE_MAX = 20_000
+
+/** A note the page can show, or null for a malformed one. */
+export function toNote(raw: unknown): PNote | null {
+  const n = raw as Record<string, unknown> | null
+  if (!n || typeof n !== 'object' || typeof n.key !== 'string' || !n.key || typeof n.title !== 'string' || typeof n.body !== 'string') return null
+  return {
+    key: n.key,
+    title: n.title,
+    body: n.body.length > NOTE_MAX ? n.body.slice(0, NOTE_MAX) : n.body,
+    tags: Array.isArray(n.tags) ? n.tags.filter((t): t is string => typeof t === 'string') : [],
+  }
+}
+
 // The optional fields are re-checked here so a bad one is dropped, never rendered.
 const bookmark = (b: PBookmark): PBookmark => ({ ...b, favicon: httpsUrl(b.favicon), image: httpsUrl(b.image) })
-const collection = (c: PCollection): PCollection => ({ ...c, icon: toIcon(c.icon), bookmarks: Array.isArray(c.bookmarks) ? c.bookmarks.map(bookmark) : [] })
+const collection = (c: PCollection): PCollection => ({
+  ...c,
+  icon: toIcon(c.icon),
+  bookmarks: Array.isArray(c.bookmarks) ? c.bookmarks.map(bookmark) : [],
+  notes: Array.isArray(c.notes) ? c.notes.map(toNote).filter((n) => n !== null) : undefined,
+})
 
-function clean(i: PayloadItem): PayloadItem {
+function clean(i: PayloadItem): PayloadItem | null {
   switch (i.kind) {
+    case 'note': {
+      const note = toNote(i.note)
+      return note ? { ...i, note } : null
+    }
     case 'bookmark':
       return { ...i, bookmark: bookmark(i.bookmark) }
     case 'collection':
@@ -57,7 +81,7 @@ function clean(i: PayloadItem): PayloadItem {
 
 /**
  * A share payload (parsed JSON: the public share's, or a private share's after decryption),
- * or null when it is not v1. Items of unknown kinds are dropped.
+ * or null when it is not v1. Items of unknown kinds, and malformed notes, are dropped.
  */
 export function toPayload(raw: unknown): SharePayload | null {
   const p = raw as SharePayload | null
@@ -66,9 +90,10 @@ export function toPayload(raw: unknown): SharePayload | null {
     (i) =>
       (i?.kind === 'bookmark' && i.bookmark) ||
       (i?.kind === 'collection' && Array.isArray(i.collection?.bookmarks)) ||
-      (i?.kind === 'graph' && [i.graph?.nodes, i.graph?.steps, i.graph?.links].every(Array.isArray)),
+      (i?.kind === 'graph' && [i.graph?.nodes, i.graph?.steps, i.graph?.links].every(Array.isArray)) ||
+      i?.kind === 'note',
   )
-  return { ...p, curator: p.curator ?? { name: '' }, items: items.map(clean) }
+  return { ...p, curator: p.curator ?? { name: '' }, items: items.map(clean).filter((i) => i !== null) }
 }
 
 /** A public share's payload string, or null when it is not valid v1 JSON. */

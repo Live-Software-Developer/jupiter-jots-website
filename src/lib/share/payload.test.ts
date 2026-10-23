@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { parsePayload, toIcon } from './payload'
-import type { PBookmark, PCollection, PayloadItem } from './types'
+import { NOTE_MAX, parsePayload, toIcon } from './payload'
+import type { PBookmark, PCollection, PGraphNode, PayloadItem } from './types'
 
 const bm = (extra: Record<string, unknown> = {}) => ({
   key: 'b:1',
@@ -101,5 +101,57 @@ describe('toIcon', () => {
     ['array', []],
   ])('drops a %s', (_, raw) => {
     expect(toIcon(raw)).toBeUndefined()
+  })
+})
+
+describe('parsePayload notes', () => {
+  const note = (extra: Record<string, unknown> = {}) => ({ key: 'n:1', title: 'Plan', body: 'Read **this** first', tags: ['ideas'], ...extra })
+  const noteOf = (i: PayloadItem) => (i as Extract<PayloadItem, { kind: 'note' }>).note
+
+  it('keeps a note item between other items', () => {
+    const p = parsePayload(json([{ key: 'b:1', kind: 'bookmark', bookmark: bm() }, { key: 'n:1', kind: 'note', note: note() }, { key: 'c:2', kind: 'collection', collection: coll() }]))!
+    expect(p.items.map((i) => i.kind)).toEqual(['bookmark', 'note', 'collection'])
+    expect(noteOf(p.items[1])).toEqual(note())
+  })
+
+  it('drops a malformed note item instead of failing the page', () => {
+    const p = parsePayload(
+      json([
+        { key: 'n:1', kind: 'note', note: note({ title: 7 }) },
+        { key: 'n:2', kind: 'note', note: note({ body: null }) },
+        { key: 'n:3', kind: 'note', note: note({ key: '' }) },
+        { key: 'n:4', kind: 'note' },
+        { key: 'n:5', kind: 'note', note: 'text' },
+        { key: 'b:1', kind: 'bookmark', bookmark: bm() },
+      ]),
+    )!
+    expect(p.items.map((i) => i.key)).toEqual(['b:1'])
+  })
+
+  it('caps the body, keeps only string tags and treats missing tags as none', () => {
+    const n = noteOf(only([{ key: 'n:1', kind: 'note', note: note({ body: 'x'.repeat(NOTE_MAX + 50), tags: ['a', 3, null, 'b'] }) }]))
+    expect(n.body).toHaveLength(NOTE_MAX)
+    expect(n.tags).toEqual(['a', 'b'])
+    expect(noteOf(only([{ key: 'n:1', kind: 'note', note: note({ tags: undefined }) }])).tags).toEqual([])
+  })
+
+  it('keeps well-formed collection notes and drops the rest', () => {
+    const c = collectionOf(only([{ key: 'c:2', kind: 'collection', collection: coll({ notes: [note({ key: 'c:2/n:1' }), { key: 'c:2/n:2' }, null, 'x', note({ key: 'c:2/n:3', title: '' })] }) }]))
+    expect(c.notes?.map((n) => n.key)).toEqual(['c:2/n:1', 'c:2/n:3'])
+    expect(c.bookmarks).toHaveLength(1)
+  })
+
+  it('ignores a collection notes field that is not a list, and cleans notes in graph collections', () => {
+    expect(collectionOf(only([{ key: 'c:2', kind: 'collection', collection: coll({ notes: 'nope' }) }])).notes).toBeUndefined()
+    expect(collectionOf(only([{ key: 'c:2', kind: 'collection', collection: coll() }])).notes).toBeUndefined()
+    const g = only([
+      {
+        key: 'g:1',
+        kind: 'graph',
+        graph: { name: 'G', description: '', mode: 'board', steps: [], links: [], nodes: [{ id: 'k', stepId: null, x: 0, y: 0, ref: { kind: 'collection', key: 'g:1/n:k', collection: coll({ notes: [note({ key: 'g:1/n:k/n:1' }), 5] }) } }] },
+      },
+    ]) as Extract<PayloadItem, { kind: 'graph' }>
+    const ref = g.graph.nodes[0].ref as Extract<PGraphNode['ref'], { kind: 'collection' }>
+    expect(ref.collection.notes?.map((n) => n.key)).toEqual(['g:1/n:k/n:1'])
   })
 })

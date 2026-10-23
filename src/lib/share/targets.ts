@@ -1,4 +1,4 @@
-import type { PBookmark, PCollection, PGraph, PayloadItem } from './types'
+import type { PBookmark, PCollection, PGraph, PNote, PayloadItem } from './types'
 
 /** Something a comment can be about: a payload key ("" is the whole share) and its label. */
 export interface CommentTarget {
@@ -29,6 +29,13 @@ export const UNKNOWN_TARGET = 'this share'
 export const bookmarkLabel = (b: PBookmark) => b.title || b.domain || 'Untitled bookmark'
 export const collectionLabel = (c: PCollection) => c.name || 'Untitled collection'
 export const graphLabel = (g: PGraph) => g.name || 'Untitled graph'
+export const noteLabel = (n: PNote) => n.title || 'Untitled note'
+
+/** A collection's notes, then its bookmarks, as targets (the order the page lists them). */
+const collectionTargets = (c: PCollection): CommentTarget[] => [
+  ...(c.notes ?? []).map((n) => ({ key: n.key, label: noteLabel(n) })),
+  ...c.bookmarks.map((b) => ({ key: b.key, label: bookmarkLabel(b) })),
+]
 
 export function commentTargets(items: PayloadItem[]): CommentTargets {
   const groups: TargetGroup[] = []
@@ -46,15 +53,17 @@ export function commentTargets(items: PayloadItem[]): CommentTargets {
     } else if (item.kind === 'collection') {
       groups.push({
         item: { key: item.key, label: collectionLabel(item.collection) },
-        nested: item.collection.bookmarks.map((b) => ({ key: b.key, label: bookmarkLabel(b) })),
+        nested: collectionTargets(item.collection),
       })
+    } else if (item.kind === 'note') {
+      groups.push({ item: { key: item.key, label: noteLabel(item.note) }, nested: [] })
     } else {
       const nested: CommentTarget[] = []
       for (const n of item.graph.nodes) {
         if (n.ref.kind === 'bookmark') nested.push({ key: n.ref.bookmark.key, label: bookmarkLabel(n.ref.bookmark) })
         else {
           nested.push({ key: n.ref.key, label: collectionLabel(n.ref.collection) })
-          for (const b of n.ref.collection.bookmarks) nested.push({ key: b.key, label: bookmarkLabel(b) })
+          nested.push(...collectionTargets(n.ref.collection))
         }
       }
       groups.push({ item: { key: item.key, label: graphLabel(item.graph) }, nested })
