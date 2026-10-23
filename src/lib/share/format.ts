@@ -22,6 +22,16 @@ export function safeUrl(url: string): string | null {
   return /^https?:\/\//i.test(url.trim()) ? url.trim() : null
 }
 
+/** An image address the page may load: an `https:` URL of at most 2048 characters, else undefined. */
+export function httpsUrl(url: unknown): string | undefined {
+  if (typeof url !== 'string' || url.length > 2048) return undefined
+  try {
+    return new URL(url).protocol === 'https:' ? url : undefined
+  } catch {
+    return undefined
+  }
+}
+
 export const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`
 
 /** Anchor id for a payload item's band, from its key; nested keys resolve to their top item ("g:1/n:a" -> "item-g-1"). */

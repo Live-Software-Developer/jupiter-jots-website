@@ -17,11 +17,19 @@ export interface PBookmark {
   note: string
   tags: string[]
   read: boolean
+  /** The site's icon, `https:` only. Optional: older payloads have none. */
+  favicon?: string
+  /** The page's preview (og:image), `https:` only. */
+  image?: string
 }
+/** A collection's icon. A glyph is a name from the extension's glyph set (`MARK_GLYPHS`). */
+export type PIcon = { type: 'glyph'; value: string } | { type: 'emoji'; value: string } | { type: 'image'; url: string }
 export interface PCollection {
   name: string
   note: string
   hue: 1 | 2 | 3 | 4 | 5
+  /** Optional: with none, the hue tile shows the folder glyph. */
+  icon?: PIcon
   bookmarks: PBookmark[]
 }
 export interface PGraphNode {
