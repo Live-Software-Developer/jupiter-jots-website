@@ -1,6 +1,7 @@
 /** Main navigation, shared by the header, the mobile menu and the footer. */
 export const NAV = [
   { href: "/#features", label: "Features", match: null },
+  { href: "/explore", label: "Explore", match: "/explore" },
   { href: "/guide", label: "Guide", match: "/guide" },
   { href: "/faq", label: "FAQ", match: "/faq" },
   { href: "/changelog", label: "Changelog", match: "/changelog" },
@@ -11,6 +12,7 @@ export const FOOTER_COLUMNS = [
     title: "Product",
     links: [
       ["Features", "/#features"],
+      ["Explore shares", "/explore"],
       ["Guide", "/guide"],
       ["Changelog", "/changelog"],
       ["FAQ", "/faq"],

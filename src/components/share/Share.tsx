@@ -49,6 +49,9 @@ export function ShareFooter() {
           <span className="text-sm font-medium">Shared with Jupiter Jots</span>
         </Link>
         <nav aria-label="Footer" className="flex flex-wrap items-center gap-x-5 gap-y-2 sm:ml-auto">
+          <Link href="/explore" className={link}>
+            Explore public shares
+          </Link>
           <Link href="/" className={link}>
             Features
           </Link>
