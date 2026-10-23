@@ -437,11 +437,12 @@ const KIND_ICON: Record<TargetKind, ReactNode> = { graph: GLYPH.graph, collectio
 
 function TargetRow({ icon, label }: { icon: ReactNode; label: string }) {
   return (
-    <span className="flex min-w-0 items-center gap-2" title={label}>
+    <span className="flex min-w-0 flex-1 items-center gap-2" title={label}>
       <span className="shrink-0 text-muted-foreground">{ico(icon, "size-3.5")}</span>
-      <SelectItemText>
-        <span className="block truncate">{label}</span>
-      </SelectItemText>
+      {/* Radix drops ItemText's className, so the wrapper truncates. */}
+      <span className="block min-w-0 truncate">
+        <SelectItemText>{label}</SelectItemText>
+      </span>
     </span>
   )
 }
