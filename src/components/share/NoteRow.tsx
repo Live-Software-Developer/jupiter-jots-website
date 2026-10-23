@@ -5,6 +5,7 @@ import type { PNote } from "@/lib/share/types"
 import { cn } from "@/lib/utils"
 
 import { GLYPH, ico } from "./icons"
+import { NoteLinks } from "./NoteLinks"
 
 /** A note's tile, in the notes hue. `className` sizes the tile, `glyph` the glyph. */
 export const NoteMark = ({ className, glyph = "size-4" }: { className: string; glyph?: string }) => (
@@ -19,7 +20,7 @@ export const NoteBody = ({ note, className }: { note: PNote; className?: string 
 
 /**
  * One note in a collection's band or sheet, above its bookmarks. `clamp` cuts the body to four
- * lines (the band); the sheet shows it in full.
+ * lines and leaves out its links (the band); the sheet shows it in full, links included.
  */
 export function NoteRow({ note, clamp = false }: { note: PNote; clamp?: boolean }) {
   return (
@@ -37,6 +38,7 @@ export function NoteRow({ note, clamp = false }: { note: PNote; clamp?: boolean 
             ))}
           </div>
         ) : null}
+        {clamp ? null : <NoteLinks note={note} bleed="-mx-4 sm:-mx-5" />}
       </div>
     </div>
   )

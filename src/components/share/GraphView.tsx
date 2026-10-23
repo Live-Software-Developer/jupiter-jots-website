@@ -6,6 +6,7 @@ import { FOCUS_FLAT } from "@/components/site/styles"
 import { plural } from "@/lib/share/format"
 import { bandOf, boardColumns, computePath, NODE_W, type Box } from "@/lib/share/graph"
 import { markdownPreview } from "@/lib/share/markdown"
+import { allBookmarks, allNotes } from "@/lib/share/payload"
 import { noteLabel } from "@/lib/share/targets"
 import type { PGraph, PGraphNode, PNote } from "@/lib/share/types"
 import { cn } from "@/lib/utils"
@@ -65,6 +66,7 @@ function NodeCard({ node, itemKey, graphName }: { node: PGraphNode; itemKey: str
   if (node.ref.kind === "note") return <NoteNodeCard note={node.ref.note} graphName={graphName} />
   if (node.ref.kind === "collection") {
     const c = node.ref.collection
+    const notes = allNotes(c).length
     return (
       <div className="relative pb-3">
         <span className="pointer-events-none absolute inset-x-2 -bottom-1.5 h-3 rounded-b-xl border border-t-0 border-border bg-card/70" aria-hidden="true" />
@@ -79,8 +81,8 @@ function NodeCard({ node, itemKey, graphName }: { node: PGraphNode; itemKey: str
           <span className="mt-2.5 flex items-center gap-1.5 text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-1">
               {ico(GLYPH.folder, "size-3.5")}
-              {c.notes?.length ? `${plural(c.notes.length, "note")} · ` : ""}
-              {plural(c.bookmarks.length, "link")}
+              {notes ? `${plural(notes, "note")} · ` : ""}
+              {plural(allBookmarks(c).length, "link")}
             </span>
             <span className="ml-auto font-medium text-primary">Open</span>
           </span>
@@ -155,7 +157,7 @@ function NoteNodeCard({ note, graphName }: { note: PNote; graphName: string }) {
             ) : (
               <p className="text-sm text-muted-foreground">This note is empty.</p>
             )}
-            {note.links?.length ? <NoteLinks links={note.links} bleed="-mx-4 sm:-mx-5" /> : null}
+            <NoteLinks note={note} bleed="-mx-4 sm:-mx-5" />
             {note.tags.length > 0 ? (
               <div className="mt-4 flex flex-wrap gap-1.5">
                 {note.tags.map((tag) => (

@@ -41,7 +41,9 @@ export function Modal({
   return (
     <dialog
       ref={dialogRef}
-      onClose={onClose}
+      // React bubbles `close` through its tree, so a dialog nested inside this one (a note's sheet
+      // in a graph sheet) would close this one too; only this dialog's own close counts.
+      onClose={(e) => e.target === e.currentTarget && onClose()}
       className={cn("fixed inset-0 m-0 size-full max-h-none max-w-none overflow-hidden border-0 bg-transparent p-0 backdrop:bg-transparent", className)}
       {...rest}
     >

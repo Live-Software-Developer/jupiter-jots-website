@@ -8,7 +8,8 @@ import type { SheetEntry } from "@/lib/share/collections"
 import { anchorFor, plural } from "@/lib/share/format"
 import { MARKDOWN_CLASS, renderMarkdown } from "@/lib/share/markdown"
 import type { MarkGlyph } from "@/lib/share/payload"
-import type { PBookmark, PIcon, PNote } from "@/lib/share/types"
+import { allBookmarks, allNotes } from "@/lib/share/payload"
+import type { PBookmark, PCollection, PIcon, PNote, PSubCollection } from "@/lib/share/types"
 import { cn } from "@/lib/utils"
 
 import { BookmarkRow, HUE_TINT } from "./BookmarkRow"
@@ -37,23 +38,24 @@ export const CollectionCommentsSlot = createContext<((itemKey: string) => ReactN
  */
 export function CollectionSheetProvider({ collections, curator, children }: { collections: SheetEntry[]; curator?: string; children: ReactNode }) {
   const entries = useMemo(() => new Map(collections.map((e) => [e.key, e])), [collections])
-  const [current, setCurrent] = useState<SheetEntry | null>(null)
-  const trigger = useRef<HTMLElement | null>(null)
+  // A sheet can open another (a note's linked collection), so they stack; each remembers its trigger.
+  const [stack, setStack] = useState<SheetEntry[]>([])
+  const triggers = useRef(new Map<string, HTMLElement | null>())
 
   const open = useCallback(
     (key: string, from?: HTMLElement | null) => {
       const entry = entries.get(key)
       if (!entry) return
-      trigger.current = from ?? null
-      setCurrent(entry)
+      triggers.current.set(key, from ?? null)
+      setStack((s) => (s.some((e) => e.key === key) ? s : [...s, entry]))
     },
     [entries],
   )
-  // Runs after the native close, so the page is no longer inert and the trigger can take focus.
-  const close = useCallback(() => {
-    const el = trigger.current
-    trigger.current = null
-    setCurrent(null)
+  // Runs after the native close, so the page (or the sheet below) is no longer inert and the trigger can take focus.
+  const close = useCallback((key: string) => {
+    const el = triggers.current.get(key)
+    triggers.current.delete(key)
+    setStack((s) => s.filter((e) => e.key !== key))
     if (el?.isConnected) el.focus()
   }, [])
   const value = useMemo(() => ({ open }), [open])
@@ -61,7 +63,9 @@ export function CollectionSheetProvider({ collections, curator, children }: { co
   return (
     <CollectionSheetContext.Provider value={value}>
       {children}
-      {current ? <CollectionSheet key={current.key} entry={current} curator={curator} onClose={close} /> : null}
+      {stack.map((entry) => (
+        <CollectionSheet key={entry.key} entry={entry} curator={curator} onClose={() => close(entry.key)} />
+      ))}
     </CollectionSheetContext.Provider>
   )
 }
@@ -123,19 +127,102 @@ function matches(b: PBookmark, q: string): boolean {
 const noteMatches = (n: PNote, q: string) => [n.title, n.body, ...n.tags].some((s) => s.toLowerCase().includes(q))
 
 /**
- * A collection opened in place (design: collection-sheet), in the shared `Sheet`.
+ * What of a collection the filter `q` keeps, at every level: matching notes and bookmarks, and
+ * the sub-collections with a match inside (a sub-collection whose name matches keeps everything).
+ * Null when nothing inside matches.
+ */
+function filterCollection<C extends PCollection>(c: C, q: string): C | null {
+  if (!q) return c
+  const collections = (c.collections ?? []).flatMap((s) => {
+    const kept = s.name.toLowerCase().includes(q) ? s : filterCollection(s, q)
+    return kept ? [kept] : []
+  })
+  const notes = (c.notes ?? []).filter((n) => noteMatches(n, q))
+  const bookmarks = c.bookmarks.filter((b) => matches(b, q))
+  return collections.length + notes.length + bookmarks.length ? { ...c, collections, notes, bookmarks } : null
+}
+
+const countOf = (c: PCollection) => allNotes(c).length + allBookmarks(c).length
+
+/** "2 notes · 5 bookmarks", counting every level. */
+export function collectionCounts(c: PCollection): string {
+  const notes = allNotes(c).length
+  const bookmarks = plural(allBookmarks(c).length, "bookmark")
+  return notes ? `${plural(notes, "note")} · ${bookmarks}` : bookmarks
+}
+
+/** A collection's contents in its sheet: sub-collections (nested sections), then its notes and bookmarks. */
+function CollectionRows({ collection: c, depth, filtering }: { collection: PCollection; depth: number; filtering: boolean }) {
+  return (
+    <>
+      {(c.collections ?? []).map((s) => (
+        <SubCollection key={s.key} sub={s} depth={depth} filtering={filtering} />
+      ))}
+      {(c.notes ?? []).map((n, i) => (
+        <NoteRow key={n.key || i} note={n} />
+      ))}
+      {c.bookmarks.map((b, i) => (
+        <BookmarkRow key={b.key || i} bookmark={b} />
+      ))}
+    </>
+  )
+}
+
+/**
+ * A sub-collection as a collapsible section: its mark, name and count, then its contents indented
+ * under a rule. The first level starts open, deeper ones closed; a filter opens every level.
+ */
+function SubCollection({ sub, depth, filtering }: { sub: PSubCollection; depth: number; filtering: boolean }) {
+  const [open, setOpen] = useState(depth === 0)
+  const id = useId()
+  const shown = open || filtering
+  const count = countOf(sub)
+  return (
+    <section data-sub-collection aria-label={sub.name}>
+      <button
+        type="button"
+        aria-expanded={shown}
+        aria-controls={id}
+        disabled={filtering}
+        onClick={() => setOpen((o) => !o)}
+        className={cn("flex w-full items-center gap-2.5 px-4 py-3 text-left transition-colors hover:bg-accent/40 disabled:cursor-default sm:px-5", FOCUS_FLAT)}
+      >
+        {ico(GLYPH.chevronRight, cn("size-4 shrink-0 text-muted-foreground transition-transform", shown && "rotate-90"))}
+        <CollectionMark icon={sub.icon} hue={sub.hue} px={28} className="size-7 rounded-lg" glyph="size-3.5" emoji="text-base" />
+        <span className="min-w-0 flex-1 truncate text-sm font-medium" title={sub.name}>
+          {sub.name || "Untitled collection"}
+        </span>
+        <span className="shrink-0 rounded-full bg-muted px-2 text-xs tabular-nums text-muted-foreground">{count}</span>
+      </button>
+      {shown ? (
+        <div id={id} className={cn("divide-y divide-border border-l-2 border-border", depth < 3 ? "ml-6 sm:ml-8" : "ml-2")}>
+          {sub.note ? (
+            <div className={cn(MARKDOWN_CLASS, "space-y-2 px-4 py-3 text-sm leading-relaxed text-pretty break-words text-muted-foreground sm:px-5")}>{renderMarkdown(sub.note)}</div>
+          ) : null}
+          {count || sub.collections?.length ? (
+            <CollectionRows collection={sub} depth={depth + 1} filtering={filtering} />
+          ) : (
+            <p className="px-4 py-3 text-sm text-muted-foreground sm:px-5">Empty.</p>
+          )}
+        </div>
+      ) : null}
+    </section>
+  )
+}
+
+/**
+ * A collection opened in place (design: collection-sheet), in the shared `Sheet`: its note,
+ * a filter across every level, then its sub-collections and its own notes and bookmarks.
  */
 function CollectionSheet({ entry, curator, onClose }: { entry: SheetEntry; curator?: string; onClose(): void }) {
   const { collection: c } = entry
   const [query, setQuery] = useState("")
 
   const q = query.trim().toLowerCase()
-  const allNotes = c.notes ?? []
-  const notes = q ? allNotes.filter((n) => noteMatches(n, q)) : allNotes
-  const rows = q ? c.bookmarks.filter((b) => matches(b, q)) : c.bookmarks
-  const total = allNotes.length + c.bookmarks.length
-  const counts = allNotes.length ? `${plural(allNotes.length, "note")} · ${plural(c.bookmarks.length, "bookmark")}` : plural(c.bookmarks.length, "bookmark")
-  const context = entry.graph ? `in ${entry.graph}` : curator ? `from ${curator}` : ""
+  const shown = filterCollection(c, q)
+  const total = countOf(c)
+  const hasAny = total > 0 || !!c.collections?.length
+  const context = entry.graph ? `in ${entry.graph}` : entry.note ? `linked from ${entry.note}` : curator ? `from ${curator}` : ""
 
   return (
     <Sheet
@@ -144,12 +231,12 @@ function CollectionSheet({ entry, curator, onClose }: { entry: SheetEntry; curat
       mark={<CollectionMark icon={c.icon} hue={c.hue} px={44} className="size-11 rounded-xl" glyph="size-5" emoji="text-2xl" />}
       kind="Collection"
       title={c.name}
-      meta={`${counts}${context ? ` · ${context}` : ""}`}
+      meta={`${collectionCounts(c)}${context ? ` · ${context}` : ""}`}
     >
       {c.note ? (
         <div className={cn(MARKDOWN_CLASS, "space-y-2 px-4 pt-4 text-sm leading-relaxed text-pretty break-words text-muted-foreground sm:px-5")}>{renderMarkdown(c.note)}</div>
       ) : null}
-      {total ? (
+      {hasAny ? (
         <>
           <label className="mx-4 mt-4 flex h-9 items-center gap-2 rounded-lg border border-input bg-background px-3 text-sm text-muted-foreground focus-within:ring-2 focus-within:ring-ring sm:mx-5">
             {ico(GLYPH.search)}
@@ -163,16 +250,11 @@ function CollectionSheet({ entry, curator, onClose }: { entry: SheetEntry; curat
             />
           </label>
           <p className="sr-only" aria-live="polite">
-            {q ? `${notes.length + rows.length} of ${plural(total, "item")} shown` : ""}
+            {q ? `${shown ? countOf(shown) : 0} of ${plural(total, "item")} shown` : ""}
           </p>
-          {notes.length + rows.length ? (
+          {shown ? (
             <div className="mt-2 divide-y divide-border">
-              {notes.map((n, i) => (
-                <NoteRow key={n.key || i} note={n} />
-              ))}
-              {rows.map((b, i) => (
-                <BookmarkRow key={b.key || i} bookmark={b} />
-              ))}
+              <CollectionRows collection={shown} depth={0} filtering={!!q} />
             </div>
           ) : (
             <p className="px-4 py-6 text-sm text-muted-foreground sm:px-5">Nothing matches “{query.trim()}”.</p>
@@ -184,6 +266,8 @@ function CollectionSheet({ entry, curator, onClose }: { entry: SheetEntry; curat
     </Sheet>
   )
 }
+
+const TOP_KIND: Record<string, string> = { g: "graph", c: "collection", n: "note", b: "bookmark" }
 
 /**
  * The sheet chrome (design: collection-sheet): a native modal dialog that is a right-hand sheet
@@ -197,6 +281,7 @@ export function Sheet({
   kind,
   title,
   meta,
+  wide = false,
   children,
 }: {
   itemKey: string
@@ -205,6 +290,8 @@ export function Sheet({
   kind: string
   title: ReactNode
   meta: string
+  /** Covers the whole viewport (a graph), instead of a side or bottom sheet. */
+  wide?: boolean
   children: ReactNode
 }) {
   const titleId = useId()
@@ -216,8 +303,16 @@ export function Sheet({
   return (
     <Modal dialogRef={dialog} initialFocus={closeBtn} onClose={onClose} aria-labelledby={titleId} className="text-popover-foreground">
       <div data-sheet-backdrop className="absolute inset-0 bg-black/45 backdrop-blur-sm" onClick={dismiss} aria-hidden="true" />
-      <div className="absolute inset-x-0 bottom-0 flex max-h-[88dvh] flex-col rounded-t-3xl border-t border-border bg-popover text-popover-foreground shadow-2xl sm:inset-y-0 sm:right-0 sm:left-auto sm:max-h-none sm:w-full sm:max-w-lg sm:rounded-none sm:border-t-0 sm:border-l">
-        <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-border sm:hidden" aria-hidden="true" />
+      <div
+        data-sheet={wide ? "wide" : "side"}
+        className={cn(
+          "absolute flex flex-col bg-popover text-popover-foreground shadow-2xl",
+          wide
+            ? "inset-0"
+            : "inset-x-0 bottom-0 max-h-[88dvh] rounded-t-3xl border-t border-border sm:inset-y-0 sm:right-0 sm:left-auto sm:max-h-none sm:w-full sm:max-w-lg sm:rounded-none sm:border-t-0 sm:border-l",
+        )}
+      >
+        {wide ? null : <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-border sm:hidden" aria-hidden="true" />}
         <div className="flex shrink-0 items-start gap-3 border-b border-border px-4 pt-3 pb-4 sm:px-5 sm:pt-5">
           {mark}
           <div className="min-w-0 flex-1">
@@ -248,10 +343,10 @@ export function Sheet({
           <Link href="/#get" className={cn(btnPrimary("md"), "flex-1 sm:flex-none")}>
             Get Jupiter Jots
           </Link>
-          {/* A graph node's sheet does not open from a link; its anchor is the graph's. */}
+          {/* A nested sheet (a graph node, a note's link) does not open from a link; its anchor is the top item's. */}
           <CopyLinkButton
             hash={anchorFor(itemKey)}
-            label={itemKey.includes("/") ? "Copy link to graph" : "Copy link"}
+            label={itemKey.includes("/") ? `Copy link to ${TOP_KIND[itemKey[0]] ?? "share"}` : "Copy link"}
             className={cn(btnSecondary("md"), "px-4")}
           />
         </div>

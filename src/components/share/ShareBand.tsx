@@ -3,12 +3,13 @@ import type { ReactNode } from "react"
 import { FOCUS } from "@/components/site/styles"
 import { anchorFor, plural } from "@/lib/share/format"
 import { MARKDOWN_CLASS, renderMarkdown } from "@/lib/share/markdown"
+import { allBookmarks, allNotes } from "@/lib/share/payload"
 import { bookmarkLabel, collectionLabel, graphLabel, noteLabel, runKey } from "@/lib/share/targets"
 import type { PBookmark, PNote, PayloadItem } from "@/lib/share/types"
 import { cn } from "@/lib/utils"
 
 import { BookmarkLink, BookmarkMark, BookmarkRow, CARD_TINT, hueIndex } from "./BookmarkRow"
-import { CollectionMark, OpenCollectionButton } from "./CollectionSheet"
+import { collectionCounts, CollectionMark, OpenCollectionButton } from "./CollectionSheet"
 import { BandCommentsLink } from "./Discussion"
 import { GraphView } from "./GraphView"
 import { GLYPH, ico } from "./icons"
@@ -68,8 +69,9 @@ export function bandSize(band: Band): string {
     case "graph":
       return plural(band.graph.nodes.length, "node")
     case "collection": {
-      const { bookmarks, notes = [] } = band.collection
-      return notes.length ? plural(notes.length + bookmarks.length, "item") : plural(bookmarks.length, "link")
+      const notes = allNotes(band.collection).length
+      const bookmarks = allBookmarks(band.collection).length
+      return notes ? plural(notes + bookmarks, "item") : plural(bookmarks, "link")
     }
     case "bookmark":
       return plural(1, "link")
@@ -103,10 +105,12 @@ export const bandIcon = (kind: BandKind, className?: string) => ico(BAND_KIND[ki
 
 const ROWS_SHOWN = 4
 
-/** A collection's notes come first, then its bookmarks; the band shows the first few of both. */
+/**
+ * A collection's notes come first, then its bookmarks, every level flattened; the band shows the
+ * first few, and its sheet the nesting.
+ */
 function CollectionBody({ band }: { band: Extract<Band, { kind: "collection" }> }) {
-  const { notes = [], bookmarks } = band.collection
-  const all = [...notes.map((note) => ({ note })), ...bookmarks.map((bookmark) => ({ bookmark }))]
+  const all = [...allNotes(band.collection).map((note) => ({ note })), ...allBookmarks(band.collection).map((bookmark) => ({ bookmark }))]
   if (!all.length) return <p className="text-sm text-muted-foreground">This collection is empty.</p>
   return (
     <>
@@ -195,7 +199,7 @@ function NoteCard({ note }: { note: PNote }) {
       ) : (
         <p className="text-sm text-muted-foreground">This note is empty.</p>
       )}
-      {note.links?.length ? <NoteLinks links={note.links} bleed="-mx-5 sm:-mx-8" /> : null}
+      <NoteLinks note={note} bleed="-mx-5 sm:-mx-8" />
       {note.tags.length > 0 ? (
         <div className="mt-6 flex flex-wrap gap-1.5">
           {note.tags.map((tag) => (
@@ -217,9 +221,8 @@ function meta(band: Band): string {
       return steps ? `${plural(steps, "step")} · ${nodes}` : nodes
     }
     case "collection": {
-      const { notes = [], bookmarks } = band.collection
-      const count = plural(bookmarks.length, "bookmark")
-      return notes.length ? `${plural(notes.length, "note")} · ${count}` : count
+      const subs = band.collection.collections?.length ?? 0
+      return `${collectionCounts(band.collection)}${subs ? ` · ${plural(subs, "collection")} inside` : ""}`
     }
     case "bookmarks":
       return plural(band.bookmarks.length, "bookmark")
