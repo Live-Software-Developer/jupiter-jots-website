@@ -4,9 +4,10 @@ import { useCallback, useId, useMemo, useState, type FormEvent, type ReactNode }
 
 import { FOCUS_FLAT } from "@/components/site/styles"
 import { formatDate, initialsOf, plural } from "@/lib/share/format"
-import { renderMarkdown } from "@/lib/share/markdown"
+import { renderMarkdown, type MarkdownOptions } from "@/lib/share/markdown"
 import { isTarget, targetLabel, WHOLE_SHARE } from "@/lib/share/targets"
 import type { ApiResult } from "@/lib/share/types"
+import { SITE_URL } from "@/lib/site"
 import { cn } from "@/lib/utils"
 
 import { HUE_TINT, hueIndex } from "./BookmarkRow"
@@ -24,8 +25,17 @@ import {
   type Thread,
 } from "./discussionStore"
 import { GLYPH, ico } from "./icons"
+import { ShareEmbedCard } from "./ShareEmbedCard"
 
 export type { CommentCodec, CommentText } from "./discussionStore"
+
+/** Comments only (they load on the client): a share link to this site on its own line is a card. */
+const commentMarkdown = (): MarkdownOptions => ({
+  shareLinks: {
+    origins: typeof window === "undefined" ? [SITE_URL] : [SITE_URL, window.location.origin],
+    render: (slug) => <ShareEmbedCard slug={slug} />,
+  },
+})
 
 /**
  * Holds a share's comments for the whole page (see DiscussionStoreProvider): the Discussion
@@ -191,6 +201,11 @@ function CommentView({ entry, filter, reply = false, onReply }: { entry: Entry; 
         <div className={cn("min-w-0 flex-1", held && "opacity-80")}>
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <span className="text-sm font-medium break-words">{entry.author_name}</span>
+            {entry.is_curator ? (
+              <span data-badge="curator" className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                Curator
+              </span>
+            ) : null}
             {held ? (
               <span className="inline-flex items-center gap-1 rounded-full bg-chart-3/10 px-2 py-0.5 text-xs font-medium text-foreground">
                 {ico(GLYPH.clock, "size-3.5")}
@@ -211,7 +226,7 @@ function CommentView({ entry, filter, reply = false, onReply }: { entry: Entry; 
             </button>
           ) : null}
           <div className="mt-1.5 space-y-2 text-sm leading-relaxed break-words text-pretty text-foreground/90">
-            {entry.unreadable ? <p className="text-muted-foreground italic">Couldn't read this comment.</p> : renderMarkdown(entry.body)}
+            {entry.unreadable ? <p className="text-muted-foreground italic">Couldn't read this comment.</p> : renderMarkdown(entry.body, undefined, commentMarkdown())}
           </div>
           {held ? null : (
             <div className="mt-2.5 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">

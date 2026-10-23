@@ -1,4 +1,4 @@
-import type { ApiResult, CommentList, NewComment, PublicComment, PublicShare, ShareResult } from './types'
+import type { ApiResult, CommentList, NewComment, PublicComment, PublicShare, ShareCard, ShareResult } from './types'
 
 /** Development only: the local backend. A production build never falls back to it. */
 const DEV_API = 'http://127.0.0.1:8000'
@@ -161,3 +161,21 @@ export const vote = (id: number) =>
 export const reportShare = (slug: string, reason: string) =>
   call<unknown>(`/api/sharing/s/${encodeURIComponent(slug)}/report`, 'POST', { reason })
 export const report = (id: number) => call<{ reports: number }>(`/api/sharing/comments/${id}/report`, 'POST', {})
+
+const cards = new Map<string, Promise<ApiResult<ShareCard>>>()
+
+/**
+ * A share-link embed's card, cached in memory for the page's lifetime so a link repeated in a
+ * thread (or re-rendered by a live update) is fetched once. Failed fetches are not cached.
+ */
+export function getShareCard(slug: string): Promise<ApiResult<ShareCard>> {
+  let p = cards.get(slug)
+  if (!p) {
+    p = call<ShareCard>(`/api/sharing/s/${encodeURIComponent(slug)}/card`, 'GET')
+    cards.set(slug, p)
+    p.then((r) => {
+      if (!r.ok && r.status !== 404) cards.delete(slug)
+    })
+  }
+  return p
+}

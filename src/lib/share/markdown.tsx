@@ -80,12 +80,38 @@ const BQ = /^> ?(.*)$/
 export const MARKDOWN_CLASS =
   '[&_blockquote]:border-l-2 [&_blockquote]:border-border [&_blockquote]:pl-4 [&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:font-mono [&_code]:text-[0.9em] [&_ol]:list-decimal [&_ol]:pl-6 [&_strong]:font-medium [&_strong]:text-foreground [&_ul]:list-disc [&_ul]:pl-6'
 
+const SLUG = /^[a-z0-9]{10}$/
+
+/**
+ * The slug of a line that is exactly a share link to one of `origins` (`<origin>/s/<slug>`,
+ * slug `[a-z0-9]{10}`; surrounding whitespace allowed, nothing else), or null.
+ */
+export function shareLinkSlug(line: string, origins: readonly string[]): string | null {
+  const t = line.trim()
+  for (const o of origins) {
+    const origin = o.replace(/\/+$/, '')
+    const prefix = `${origin}/s/`
+    if (origin && t.startsWith(prefix) && SLUG.test(t.slice(prefix.length))) return t.slice(prefix.length)
+  }
+  return null
+}
+
+export interface MarkdownOptions {
+  /**
+   * Comments only: a top-level line that is exactly a share link to one of `origins` renders as
+   * `render(slug)`. Every other URL stays plain text.
+   */
+  shareLinks?: { origins: readonly string[]; render: (slug: string) => ReactNode }
+}
+
 /** Renders a restricted markdown subset to React elements. Never emits raw HTML. Text past `max` is cut. */
-export function renderMarkdown(src: string, max = MAX_LEN): ReactNode {
+export function renderMarkdown(src: string, max = MAX_LEN, opts: MarkdownOptions = {}): ReactNode {
   const text = src.length > max ? src.slice(0, max) + '…' : src
   const all = text.replace(/\r\n?/g, '\n').split('\n')
   const blocks: ReactNode[] = []
   let k = 0
+  const links = opts.shareLinks
+  const embed = (l: string) => (links ? shareLinkSlug(l, links.origins) : null)
   let i = 0
   while (i < all.length) {
     const line = all[i]
@@ -94,7 +120,11 @@ export function renderMarkdown(src: string, max = MAX_LEN): ReactNode {
       continue
     }
     let m: RegExpMatchArray | null
-    if ((m = line.match(UL)) || (m = line.match(OL))) {
+    const slug = embed(line)
+    if (links && slug) {
+      blocks.push(<Fragment key={k++}>{links.render(slug)}</Fragment>)
+      i++
+    } else if ((m = line.match(UL)) || (m = line.match(OL))) {
       const re = UL.test(line) ? UL : OL
       const items: string[] = []
       while (i < all.length && (m = all[i].match(re))) {
@@ -113,7 +143,7 @@ export function renderMarkdown(src: string, max = MAX_LEN): ReactNode {
       k++
     } else {
       const ps: string[] = []
-      while (i < all.length && all[i].trim() && !UL.test(all[i]) && !OL.test(all[i]) && !BQ.test(all[i])) {
+      while (i < all.length && all[i].trim() && !UL.test(all[i]) && !OL.test(all[i]) && !BQ.test(all[i]) && !embed(all[i])) {
         ps.push(all[i])
         i++
       }

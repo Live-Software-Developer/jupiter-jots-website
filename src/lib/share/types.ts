@@ -90,6 +90,8 @@ export interface PublicComment {
   status: 'visible' | 'held' | 'hidden'
   pinned: boolean
   votes: number
+  /** Written by the share's owner from the extension (a "Curator" badge). */
+  is_curator?: boolean
   created_at: string
   mine: boolean
   /** Whether this visitor marked it helpful; sent when the request carries a visitor key. */
@@ -110,6 +112,12 @@ export interface NewComment {
   item_key: string
   parent_id?: number
 }
+
+/** `GET /api/sharing/s/{slug}/card`: what a share-link embed in a comment shows. */
+export type ShareCard =
+  | { status: 'ok'; visibility: 'public'; title: string; curator_name: string; summary: string; updated_at: string | null }
+  | { status: 'ok'; visibility: 'private'; title: string; curator_name: string }
+  | { status: 'gone' | 'removed' }
 
 export type ShareResult =
   | { status: 'ok'; share: PublicShare }

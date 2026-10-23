@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { markdownPreview, renderMarkdown } from './markdown'
+import { markdownPreview, renderMarkdown, shareLinkSlug } from './markdown'
 
 const html = (s: string) => renderToStaticMarkup(<>{renderMarkdown(s)}</>)
 
@@ -55,5 +55,40 @@ describe('renderMarkdown', () => {
 describe('markdownPreview', () => {
   it('flattens markdown to one plain line', () => {
     expect(markdownPreview('Read **this**\n\n- `one`\n1. *two*\n> quoted')).toBe('Read this one two quoted')
+  })
+})
+
+describe('share links in comments', () => {
+  const ORIGIN = 'https://jj.example'
+  const opts = { shareLinks: { origins: [ORIGIN, 'http://localhost:3000/'], render: (slug: string) => <aside data-card={slug} /> } }
+  const md = (s: string) => renderToStaticMarkup(<>{renderMarkdown(s, undefined, opts)}</>)
+
+  it('turns an exact share URL on its own line into a card', () => {
+    expect(md(`${ORIGIN}/s/abc123xyz0`)).toBe('<aside data-card="abc123xyz0"></aside>')
+    expect(md(`  http://localhost:3000/s/abc123xyz0  `)).toBe('<aside data-card="abc123xyz0"></aside>')
+  })
+  it('splits the surrounding paragraph around the card', () => {
+    expect(md(`Look:\n${ORIGIN}/s/abc123xyz0\n**nice**`)).toBe(
+      '<p>Look:</p><aside data-card="abc123xyz0"></aside><p><strong>nice</strong></p>',
+    )
+  })
+  it('keeps inline and other URLs as plain text', () => {
+    expect(md(`see ${ORIGIN}/s/abc123xyz0`)).toBe(`<p>see ${ORIGIN}/s/abc123xyz0</p>`)
+    expect(md(`${ORIGIN}/s/abc123xyz0 nice`)).toBe(`<p>${ORIGIN}/s/abc123xyz0 nice</p>`)
+    expect(md('https://evil.example/s/abc123xyz0')).toBe('<p>https://evil.example/s/abc123xyz0</p>')
+    expect(md(`${ORIGIN}/s/ABC123xyz0`)).toBe(`<p>${ORIGIN}/s/ABC123xyz0</p>`)
+    expect(md(`${ORIGIN}/s/abc123xyz0/`)).toBe(`<p>${ORIGIN}/s/abc123xyz0/</p>`)
+    expect(md(`${ORIGIN}/s/abc123xyz0?x=1`)).toBe(`<p>${ORIGIN}/s/abc123xyz0?x=1</p>`)
+    expect(md(`${ORIGIN}/s/abc123xyz01`)).toBe(`<p>${ORIGIN}/s/abc123xyz01</p>`)
+    expect(md(`- ${ORIGIN}/s/abc123xyz0`)).toBe(`<ul><li>${ORIGIN}/s/abc123xyz0</li></ul>`)
+    expect(md('https://jj.example.evil.dev/s/abc123xyz0')).not.toContain('data-card')
+  })
+  it('renders no cards without the option', () => {
+    expect(html(`${ORIGIN}/s/abc123xyz0`)).toBe(`<p>${ORIGIN}/s/abc123xyz0</p>`)
+  })
+  it('matches only exact lines', () => {
+    expect(shareLinkSlug(`${ORIGIN}/s/abc123xyz0`, [ORIGIN])).toBe('abc123xyz0')
+    expect(shareLinkSlug(`${ORIGIN}/s/abc123xyz0`, [])).toBeNull()
+    expect(shareLinkSlug('/s/abc123xyz0', [''])).toBeNull()
   })
 })

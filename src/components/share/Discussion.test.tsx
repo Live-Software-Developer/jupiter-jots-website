@@ -3,7 +3,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { commentTargets } from '@/lib/share/targets'
 import type { CommentList, CommentMode, PBookmark, PayloadItem, PublicComment } from '@/lib/share/types'
-import { getComments, postComment, report, vote } from '@/lib/share/api'
+import { getComments, getShareCard, postComment, report, vote } from '@/lib/share/api'
 import { CollectionCommentsSlot } from './CollectionSheet'
 import { BandCommentsLink, Discussion, DiscussionProvider, ItemFilterLink, type CommentCodec } from './Discussion'
 
@@ -13,12 +13,14 @@ vi.mock('@/lib/share/api', () => ({
   postComment: vi.fn(),
   vote: vi.fn(),
   report: vi.fn(),
+  getShareCard: vi.fn(),
 }))
 
 const getMock = vi.mocked(getComments)
 const postMock = vi.mocked(postComment)
 const voteMock = vi.mocked(vote)
 const reportMock = vi.mocked(report)
+const cardMock = vi.mocked(getShareCard)
 
 beforeAll(() => {
   ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -198,6 +200,39 @@ describe('threads', () => {
     expect($$('a').some((a) => a.getAttribute('href')?.startsWith('javascript'))).toBe(false)
     expect(host.textContent).toContain('<b>Eve</b>')
     expect(host.textContent).toContain('[a](javascript:alert(1))')
+  })
+
+  it('badges curator replies', async () => {
+    const parent = c({ body: 'Question' })
+    const answer = c({ parent_id: parent.id, author_name: 'Ann', body: 'Answer', is_curator: true })
+    getMock.mockResolvedValue(list([parent, answer]))
+    await render(ui())
+    expect(commentEl(answer.id)!.querySelector('[data-badge="curator"]')?.textContent).toBe('Curator')
+    expect(commentEl(parent.id)!.querySelector('[data-badge="curator"]')).toBeNull()
+  })
+
+  it('renders a share link on its own line as an embed card; inline links stay text', async () => {
+    cardMock.mockResolvedValue({ ok: true, data: { status: 'ok', visibility: 'public', title: 'Rust reading', curator_name: 'Bo', summary: '2 collections', updated_at: null } })
+    const url = `${window.location.origin}/s/zyxwvut987`
+    getMock.mockResolvedValue(list([c({ body: `Also see\n${url}\nand ${url} inline` })]))
+    await render(ui())
+    const card = $('a[data-share-embed="zyxwvut987"]') as HTMLAnchorElement
+    expect(card.getAttribute('href')).toBe('/s/zyxwvut987')
+    expect(card.textContent).toContain('Rust reading')
+    expect(card.textContent).toContain('2 collections')
+    expect(card.textContent).toContain('Curated by Bo')
+    expect(host.textContent).toContain(`and ${url} inline`)
+    expect($$('a').filter((a) => a.getAttribute('href')?.includes('zyxwvut987'))).toHaveLength(1)
+    expect(cardMock).toHaveBeenCalledWith('zyxwvut987')
+  })
+
+  it('shows an unavailable card for a gone share', async () => {
+    cardMock.mockResolvedValue({ ok: true, data: { status: 'removed' } })
+    getMock.mockResolvedValue(list([c({ body: `${window.location.origin}/s/gonegone12` })]))
+    await render(ui())
+    const card = $('[data-share-embed="gonegone12"]')!
+    expect(card.tagName).toBe('DIV')
+    expect(card.textContent).toContain('This share was removed')
   })
 
   it('shows hidden stubs and the visitor’s own held comments', async () => {

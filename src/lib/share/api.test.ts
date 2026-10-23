@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { apiBase, getComments, getShare, postComment, report, VISITOR_COOKIE, visitorKey, vote } from './api'
+import { apiBase, getComments, getShare, getShareCard, postComment, report, VISITOR_COOKIE, visitorKey, vote } from './api'
 
 const json = (status: number, body: unknown) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } })
@@ -161,5 +161,25 @@ describe('backend URL', () => {
     vi.stubEnv('NEXT_PUBLIC_JJ_API_URL', '')
     expect(await getComments('abc')).toEqual({ ok: false, status: 0, code: 'network' })
     expect(fetchMock).not.toHaveBeenCalled()
+  })
+})
+
+describe('getShareCard', () => {
+  it('fetches a card once per slug', async () => {
+    fetchMock.mockImplementation(async () => json(200, { status: 'ok', visibility: 'private', title: 'T', curator_name: 'A' }))
+    const a = await getShareCard('card000001')
+    const b = await getShareCard('card000001')
+    expect(a).toEqual({ ok: true, data: { status: 'ok', visibility: 'private', title: 'T', curator_name: 'A' } })
+    expect(b).toEqual(a)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(String(fetchMock.mock.calls[0][0])).toBe('http://127.0.0.1:8000/api/sharing/s/card000001/card')
+  })
+  it('does not cache a failed fetch', async () => {
+    fetchMock.mockRejectedValueOnce(new Error('down'))
+    expect((await getShareCard('card000002')).ok).toBe(false)
+    await Promise.resolve()
+    fetchMock.mockResolvedValueOnce(json(200, { status: 'gone' }))
+    expect(await getShareCard('card000002')).toEqual({ ok: true, data: { status: 'gone' } })
+    expect(fetchMock).toHaveBeenCalledTimes(2)
   })
 })
