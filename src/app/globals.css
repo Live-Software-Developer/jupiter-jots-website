@@ -123,6 +123,10 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
+  /* The share page's bar is sticky: keep focused and scrolled-to elements clear of it. */
+  html:has([data-share-topbar]) {
+    scroll-padding-top: 5rem;
+  }
   /* The mobile menu is a modal <dialog>: keep the page behind it still. */
   html:has(dialog[open]) {
     overflow: hidden;

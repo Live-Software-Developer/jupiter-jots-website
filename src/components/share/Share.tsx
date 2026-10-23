@@ -3,19 +3,26 @@ import Link from "next/link"
 import { BrandLogo } from "@/components/site/BrandLogo"
 import { PlusIcon } from "@/components/site/icons"
 import { FOCUS, FOCUS_FLAT } from "@/components/site/styles"
+import { ThemeToggle } from "@/components/site/ThemeToggle"
 import { cn } from "@/lib/utils"
 
+/**
+ * The share page's bar: stays at the top while the page scrolls (bands and the discussion keep
+ * `scroll-mt-20` clear of it; sheets and dialogs sit in the top layer above it), with the
+ * theme choice. On narrow phones the wordmark gives way to the logo alone.
+ */
 export function ShareTopbar() {
   return (
-    <div className="border-b border-border bg-background">
-      <div className="mx-auto flex h-16 w-full max-w-6xl items-center gap-3 px-4 sm:px-6">
+    <header data-share-topbar className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+      <div className="mx-auto flex h-16 w-full max-w-6xl items-center gap-2 px-4 sm:gap-3 sm:px-6">
         <Link href="/" className={cn("-ml-1 flex shrink-0 items-center gap-2.5 rounded-lg p-1", FOCUS)} aria-label="Jupiter Jots home">
           <BrandLogo className="size-8" />
-          <span className="text-lg leading-none font-semibold tracking-tight whitespace-nowrap">Jupiter Jots</span>
+          <span className="hidden text-lg leading-none font-semibold tracking-tight whitespace-nowrap min-[420px]:inline">Jupiter Jots</span>
         </Link>
         <span className="hidden h-4 w-px bg-border sm:block" aria-hidden="true" />
         <span className="hidden text-sm text-muted-foreground sm:block">Shared page</span>
         <div className="ml-auto flex items-center gap-2">
+          <ThemeToggle />
           <Link
             href="/#get"
             className={cn(
@@ -28,7 +35,7 @@ export function ShareTopbar() {
           </Link>
         </div>
       </div>
-    </div>
+    </header>
   )
 }
 
