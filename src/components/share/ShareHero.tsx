@@ -9,15 +9,15 @@ import { MARKDOWN_CLASS, renderMarkdown } from "@/lib/share/markdown"
 import type { PublicShare, SharePayload } from "@/lib/share/types"
 import { cn } from "@/lib/utils"
 
-import { GLYPH, ico, LockIcon } from "./icons"
+import { GLYPH, ico } from "./icons"
 import { BAND_KIND, bandIcon, bandId, bandSize, bandTitle, toBands } from "./ShareBand"
+import { VisibilityBadge } from "./VisibilityBadge"
 
 /**
  * Header for every share (design: share-hero), with the "In this share" index once there are 2+ bands.
  * `action` sits next to the badge (an unlocked private share's "Lock again").
  */
 export function ShareHero({ share, payload, action }: { share: PublicShare; payload: SharePayload; action?: ReactNode }) {
-  const priv = share.visibility === "private"
   const bands = toBands(payload.items)
   const curator = payload.curator.name || share.curator_name
   const updated = formatDate(share.updated_at)
@@ -28,15 +28,7 @@ export function ShareHero({ share, payload, action }: { share: PublicShare; payl
       <div className="grid gap-8 lg:grid-cols-12 lg:gap-12">
         <div className="min-w-0 lg:col-span-8">
           <div className="flex flex-wrap items-center gap-2">
-            <span
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-full border border-border px-2.5 py-1 text-xs font-medium",
-                priv ? "text-chart-3" : "text-muted-foreground",
-              )}
-            >
-              {priv ? <LockIcon className="size-3.5" /> : ico(GLYPH.globe, "size-3.5")}
-              {priv ? "Private · unlocked" : "Public link"}
-            </span>
+            <VisibilityBadge visibility={share.visibility} />
             {action}
           </div>
           <h1 className="mt-5 font-serif text-4xl leading-[1.05] font-normal tracking-tight break-words text-balance sm:text-5xl lg:text-6xl">

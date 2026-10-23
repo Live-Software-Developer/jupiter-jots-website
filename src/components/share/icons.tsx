@@ -59,6 +59,7 @@ export const GLYPH = {
     </>
   ),
   chat: <path d="M5 5.5h14v10H9.5L5 19z" />,
+  link: <path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" />,
   globe: (
     <>
       <circle cx="12" cy="12" r="9" />

@@ -80,7 +80,12 @@ export interface PGraph {
   links: { from: string; to: string }[]
 }
 
-export type Visibility = 'public' | 'private'
+/**
+ * `unlisted`: anyone with the link, not listed, not indexed. `public`: also listed on /explore
+ * and indexable. `private`: password-protected, end-to-end encrypted. Shares made before
+ * board #880 were stored `public` and migrated to `unlisted`; `public` is still a valid value.
+ */
+export type Visibility = 'unlisted' | 'public' | 'private'
 export type CommentMode = 'open' | 'held' | 'off'
 
 export interface PublicShare {
@@ -89,7 +94,7 @@ export interface PublicShare {
   title: string
   curator_name: string
   summary: string
-  /** JSON string for public shares, cipher for private ones. */
+  /** JSON string for unlisted and public shares, cipher for private ones. */
   payload: string
   salt: string
   kdf_iters: number
@@ -135,9 +140,25 @@ export interface NewComment {
 
 /** `GET /api/sharing/s/{slug}/card`: what a share-link embed in a comment shows. */
 export type ShareCard =
-  | { status: 'ok'; visibility: 'public'; title: string; curator_name: string; summary: string; updated_at: string | null }
+  | { status: 'ok'; visibility: 'unlisted' | 'public'; title: string; curator_name: string; summary: string; updated_at: string | null }
   | { status: 'ok'; visibility: 'private'; title: string; curator_name: string }
   | { status: 'gone' | 'removed' }
+
+/** One card on /explore: never the payload or anything about the owner. */
+export interface ExploreItem {
+  slug: string
+  title: string
+  curator_name: string
+  summary: string
+  updated_at: string
+}
+/** `GET /api/sharing/explore`: 20 per page; pass `next_cursor` back for the next one. */
+export interface ExplorePage {
+  results: ExploreItem[]
+  next_cursor: string | null
+}
+/** `down`: no backend configured or unreachable; `error`: it answered with a failure. */
+export type ExploreResult = { status: 'ok'; page: ExplorePage } | { status: 'down' | 'error' }
 
 export type ShareResult =
   | { status: 'ok'; share: PublicShare }

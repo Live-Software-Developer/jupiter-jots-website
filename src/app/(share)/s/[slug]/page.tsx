@@ -7,6 +7,7 @@ import { ShareUnavailable } from "@/components/share/ShareUnavailable"
 import { ShareView } from "@/components/share/ShareView"
 import { getShare, VISITOR_COOKIE } from "@/lib/share/api"
 import { parsePayload } from "@/lib/share/payload"
+import { shareRobots } from "@/lib/share/visibility"
 import type { ShareResult } from "@/lib/share/types"
 import { SITE } from "@/lib/site"
 
@@ -57,7 +58,8 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
     title: { absolute: title },
     description,
     keywords: null,
-    robots: ROBOTS,
+    // Only a public share (listed on /explore) may be indexed.
+    robots: shareRobots(share.visibility),
     alternates: { canonical: path },
     openGraph: { type: "website", siteName: SITE.name, url: path, title: share.title, description: description ?? undefined },
     twitter: { card: "summary_large_image", title: share.title, description: description ?? undefined },

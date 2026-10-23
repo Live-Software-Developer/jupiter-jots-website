@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils"
 import { ItemCommentCount, ItemFilterLink } from "./Discussion"
 import { ReportShare } from "./ReportShare"
 import { type Band, type BandKind, bandFilterKey, bandTitle } from "./ShareBand"
+import { VISIBILITY_LABEL } from "./VisibilityBadge"
 
 const DOT: Record<BandKind | "share", string> = {
   share: "bg-foreground/60",
@@ -53,7 +54,7 @@ export function ShareSidebar({ share, bands }: { share: PublicShare; bands: Band
       <dl className="space-y-2 rounded-2xl border border-border p-4 text-xs">
         <div className="flex justify-between gap-3">
           <dt className="text-muted-foreground">Visibility</dt>
-          <dd className="text-right">{share.visibility === "private" ? "Private · password" : "Public link"}</dd>
+          <dd className="text-right">{VISIBILITY_LABEL[share.visibility]}</dd>
         </div>
         {shared ? (
           <div className="flex justify-between gap-3">

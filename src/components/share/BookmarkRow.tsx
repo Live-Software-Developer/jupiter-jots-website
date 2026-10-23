@@ -78,7 +78,7 @@ export function BookmarkLink({ url, className, children }: { url: string; classN
   const href = safeUrl(url)
   if (!href) return <div className={className}>{children}</div>
   return (
-    <a href={href} target="_blank" rel="noopener noreferrer" className={className}>
+    <a href={href} target="_blank" rel="noopener noreferrer nofollow ugc" className={className}>
       {children}
     </a>
   )

@@ -20,7 +20,7 @@ afterEach(() => {
 describe('getShare', () => {
   it('maps 200 to ok', async () => {
     fetchMock.mockResolvedValue(json(200, { slug: 'abc' }))
-    expect(await getShare('abc')).toEqual({ status: 'ok', share: { slug: 'abc' } })
+    expect(await getShare('abc')).toEqual({ status: 'ok', share: { slug: 'abc', visibility: 'unlisted' } })
     expect(String(fetchMock.mock.calls[0][0])).toBe('http://127.0.0.1:8000/api/sharing/s/abc')
   })
   it('maps 404 to missing', async () => {
@@ -181,5 +181,44 @@ describe('getShareCard', () => {
     fetchMock.mockResolvedValueOnce(json(200, { status: 'gone' }))
     expect(await getShareCard('card000002')).toEqual({ ok: true, data: { status: 'gone' } })
     expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('visibility', () => {
+  it('getShare passes each visibility through', async () => {
+    for (const v of ['public', 'unlisted', 'private']) {
+      fetchMock.mockResolvedValue(json(200, { slug: 'abc', visibility: v }))
+      const r = await getShare('abc')
+      expect(r.status === 'ok' && r.share.visibility).toBe(v)
+    }
+  })
+})
+
+describe('getExplore', () => {
+  const row = { slug: 'abcdefghij', title: 'T', curator_name: 'A', summary: 'S', updated_at: '2026-10-20T10:00:00Z' }
+  it('requests the first page, then the cursor and search', async () => {
+    const { getExplore } = await import('./api')
+    fetchMock.mockResolvedValue(json(200, { results: [row], next_cursor: 'c1' }))
+    expect(await getExplore()).toEqual({ status: 'ok', page: { results: [row], next_cursor: 'c1' } })
+    expect(String(fetchMock.mock.calls[0][0])).toBe('http://127.0.0.1:8000/api/sharing/explore')
+    await getExplore({ q: '  rust & go ', cursor: 'c1' })
+    expect(String(fetchMock.mock.calls[1][0])).toBe('http://127.0.0.1:8000/api/sharing/explore?q=rust+%26+go&cursor=c1')
+    expect(new Headers(fetchMock.mock.calls[1][1]?.headers).has('X-Visitor-Key')).toBe(false)
+  })
+  it('drops malformed rows and treats an empty cursor as the end', async () => {
+    const { getExplore } = await import('./api')
+    fetchMock.mockResolvedValue(json(200, { results: [row, { slug: 1 }, null, { ...row, title: null }], next_cursor: '' }))
+    expect(await getExplore()).toEqual({ status: 'ok', page: { results: [row], next_cursor: null } })
+  })
+  it('maps an unreachable backend to down and a failure to error', async () => {
+    const { getExplore } = await import('./api')
+    fetchMock.mockRejectedValue(new Error('down'))
+    expect(await getExplore()).toEqual({ status: 'down' })
+    fetchMock.mockResolvedValue(json(500, {}))
+    expect(await getExplore()).toEqual({ status: 'error' })
+    fetchMock.mockResolvedValue(json(429, { code: 'throttled' }))
+    expect(await getExplore()).toEqual({ status: 'error' })
+    fetchMock.mockResolvedValue(json(200, { nope: true }))
+    expect(await getExplore()).toEqual({ status: 'error' })
   })
 })

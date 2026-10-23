@@ -157,7 +157,7 @@ describe('GraphView', () => {
     const links = [...el.querySelectorAll('a')]
     expect(links.map((a) => a.getAttribute('href'))).toEqual(['https://example.com/1'])
     expect(links[0].getAttribute('target')).toBe('_blank')
-    expect(links[0].getAttribute('rel')).toBe('noopener noreferrer')
+    expect(links[0].getAttribute('rel')).toBe('noopener noreferrer nofollow ugc')
   })
 
   it('draws one wire per link and lights up a hovered node’s wires', () => {
@@ -279,8 +279,8 @@ describe('CollectionSheet', () => {
     expect(d.querySelectorAll('[data-bookmark-row]')).toHaveLength(2)
     const links = [...d.querySelectorAll('[data-bookmark-row] a')]
     expect(links.map((a) => [a.getAttribute('href'), a.getAttribute('target'), a.getAttribute('rel')])).toEqual([
-      ['https://example.com/20', '_blank', 'noopener noreferrer'],
-      ['https://example.com/21', '_blank', 'noopener noreferrer'],
+      ['https://example.com/20', '_blank', 'noopener noreferrer nofollow ugc'],
+      ['https://example.com/21', '_blank', 'noopener noreferrer nofollow ugc'],
     ])
     expect(document.activeElement?.getAttribute('aria-label')).toBe('Close')
   })

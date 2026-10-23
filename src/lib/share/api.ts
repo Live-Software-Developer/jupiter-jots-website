@@ -1,4 +1,15 @@
-import type { ApiResult, CommentList, NewComment, PublicComment, PublicShare, ShareCard, ShareResult } from './types'
+import type {
+  ApiResult,
+  CommentList,
+  ExploreItem,
+  ExploreResult,
+  NewComment,
+  PublicComment,
+  PublicShare,
+  ShareCard,
+  ShareResult,
+} from './types'
+import { parseVisibility } from './visibility'
 
 /** Development only: the local backend. A production build never falls back to it. */
 const DEV_API = 'http://127.0.0.1:8000'
@@ -113,9 +124,50 @@ export async function getShare(slug: string, visitor?: string | null): Promise<S
     if (!res.ok) return { status: 'error' }
     const body: unknown = await res.json()
     if (!body || typeof body !== 'object' || Array.isArray(body)) return { status: 'error' }
-    return { status: 'ok', share: body as PublicShare }
+    const share = body as PublicShare
+    return { status: 'ok', share: { ...share, visibility: parseVisibility(share.visibility) } }
   } catch {
     return { status: 'error' }
+  }
+}
+
+const isExploreItem = (r: unknown): r is ExploreItem => {
+  if (!r || typeof r !== 'object') return false
+  const o = r as Record<string, unknown>
+  return ['slug', 'title', 'curator_name', 'summary', 'updated_at'].every((k) => typeof o[k] === 'string')
+}
+
+/** The longest `q` the explore endpoint accepts. */
+export const EXPLORE_MAX_Q = 100
+
+/**
+ * One page of public shares for /explore, newest first. Works on the server (first page) and in
+ * the browser (search and "Load more"). Malformed rows are dropped rather than failing the page.
+ */
+export async function getExplore(opts: { q?: string; cursor?: string | null } = {}): Promise<ExploreResult> {
+  const base = apiBase()
+  if (!base) {
+    warnUnconfigured()
+    return { status: 'down' }
+  }
+  const params = new URLSearchParams()
+  const q = opts.q?.trim()
+  if (q) params.set('q', q)
+  if (opts.cursor) params.set('cursor', opts.cursor)
+  const qs = params.toString()
+  let res: Response
+  try {
+    res = await fetch(`${base}/api/sharing/explore${qs ? `?${qs}` : ''}`, { cache: 'no-store' })
+  } catch {
+    return { status: 'down' }
+  }
+  if (!res.ok) return { status: 'error' }
+  const body: unknown = await res.json().catch(() => null)
+  if (!body || typeof body !== 'object' || !Array.isArray((body as { results?: unknown }).results)) return { status: 'error' }
+  const { results, next_cursor } = body as { results: unknown[]; next_cursor?: unknown }
+  return {
+    status: 'ok',
+    page: { results: results.filter(isExploreItem), next_cursor: typeof next_cursor === 'string' && next_cursor ? next_cursor : null },
   }
 }
 

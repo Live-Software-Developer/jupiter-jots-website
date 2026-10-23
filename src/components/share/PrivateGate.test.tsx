@@ -190,7 +190,7 @@ describe('unlocking', () => {
     expect(text()).toContain('Rolling back a deploy')
     expect(text()).toContain('First week')
     expect(document.querySelector('#item-n-4 strong')?.textContent).toBe('one')
-    expect(text()).toContain('Private · unlocked')
+    expect(document.querySelector('[data-visibility="private"]')?.textContent).toBe('Password protected')
     expect(passwordInput()).toBeNull()
   })
 
