@@ -54,6 +54,7 @@ function toNoteLink(raw: unknown): PNoteLink | null {
   if (l.kind === 'collection' && typeof l.key === 'string' && typeof l.name === 'string' && [1, 2, 3, 4, 5].includes(l.hue as number)) {
     return { kind: 'collection', key: l.key, name: l.name, hue: l.hue as PCollection['hue'], icon: toIcon(l.icon) }
   }
+  if (l.kind === 'graph' && typeof l.key === 'string' && typeof l.name === 'string') return { kind: 'graph', key: l.key, name: l.name }
   return null
 }
 

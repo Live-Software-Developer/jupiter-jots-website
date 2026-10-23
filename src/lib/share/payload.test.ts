@@ -112,12 +112,15 @@ describe('parsePayload notes', () => {
     const links = [
       { kind: 'bookmark', bookmark: bm({ favicon: 'http://x.test/f.ico' }) },
       { kind: 'collection', key: 'n:1/c:2', name: 'Reading', hue: 2, icon: { type: 'glyph', value: 'book' } },
+      { kind: 'graph', key: 'n:1/g:4', name: 'Path' },
+      { kind: 'graph', key: 'n:1/g:5' },
       { kind: 'collection', key: 'n:1/c:3', name: 'Bad hue', hue: 9 },
       { kind: 'bookmark', bookmark: { title: 'no url' } },
       'junk',
     ]
     const n = noteOf(parsePayload(json([{ key: 'n:1', kind: 'note', note: note({ links }) }]))!.items[0])
-    expect(n.links).toHaveLength(2)
+    expect(n.links).toHaveLength(3)
+    expect(n.links![2]).toEqual({ kind: 'graph', key: 'n:1/g:4', name: 'Path' })
     expect(n.links![0]).toMatchObject({ kind: 'bookmark', bookmark: { favicon: undefined } })
     expect(n.links![1]).toEqual({ kind: 'collection', key: 'n:1/c:2', name: 'Reading', hue: 2, icon: { type: 'glyph', value: 'book' } })
   })
