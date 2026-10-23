@@ -73,9 +73,16 @@ const UL = /^- (.*)$/
 const OL = /^\d+\. (.*)$/
 const BQ = /^> ?(.*)$/
 
-/** Renders a restricted markdown subset to React elements. Never emits raw HTML. */
-export function renderMarkdown(src: string): ReactNode {
-  const text = src.length > MAX_LEN ? src.slice(0, MAX_LEN) + '…' : src
+/**
+ * Classes for a container of rendered markdown; the container sets the type size, colour and block spacing.
+ * Written out in full so Tailwind sees every class.
+ */
+export const MARKDOWN_CLASS =
+  '[&_blockquote]:border-l-2 [&_blockquote]:border-border [&_blockquote]:pl-4 [&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:font-mono [&_code]:text-[0.9em] [&_ol]:list-decimal [&_ol]:pl-6 [&_strong]:font-medium [&_strong]:text-foreground [&_ul]:list-disc [&_ul]:pl-6'
+
+/** Renders a restricted markdown subset to React elements. Never emits raw HTML. Text past `max` is cut. */
+export function renderMarkdown(src: string, max = MAX_LEN): ReactNode {
+  const text = src.length > max ? src.slice(0, max) + '…' : src
   const all = text.replace(/\r\n?/g, '\n').split('\n')
   const blocks: ReactNode[] = []
   let k = 0
@@ -115,4 +122,15 @@ export function renderMarkdown(src: string): ReactNode {
     }
   }
   return <>{blocks}</>
+}
+
+/** Markdown as one line of plain text, for compact previews (list, quote and emphasis marks removed). */
+export function markdownPreview(src: string): string {
+  return src
+    .split(/\r\n?|\n/)
+    .map((l) => l.replace(/^(?:- |\d+\. |> ?)/, ''))
+    .join(' ')
+    .replace(/\*\*|[*`]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { renderMarkdown } from './markdown'
+import { markdownPreview, renderMarkdown } from './markdown'
 
 const html = (s: string) => renderToStaticMarkup(<>{renderMarkdown(s)}</>)
 
@@ -49,5 +49,11 @@ describe('renderMarkdown', () => {
   })
   it('returns nothing for empty input', () => {
     expect(html('')).toBe('')
+  })
+})
+
+describe('markdownPreview', () => {
+  it('flattens markdown to one plain line', () => {
+    expect(markdownPreview('Read **this**\n\n- `one`\n1. *two*\n> quoted')).toBe('Read this one two quoted')
   })
 })

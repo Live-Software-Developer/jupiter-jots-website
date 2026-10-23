@@ -291,7 +291,7 @@ describe('CollectionSheet', () => {
     expect(sheet()!.querySelectorAll('[data-bookmark-row]')).toHaveLength(1)
     set('nothing like this')
     expect(sheet()!.querySelectorAll('[data-bookmark-row]')).toHaveLength(0)
-    expect(sheet()!.textContent).toContain('No bookmarks match')
+    expect(sheet()!.textContent).toContain('Nothing matches')
   })
 
   it('renders the comments slot with the sheet key, and nothing without one', () => {

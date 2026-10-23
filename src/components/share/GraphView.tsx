@@ -4,6 +4,7 @@ import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useSta
 
 import { FOCUS_FLAT } from "@/components/site/styles"
 import { bandOf, boardColumns, computePath, NODE_W, type Box } from "@/lib/share/graph"
+import { markdownPreview } from "@/lib/share/markdown"
 import type { PGraph, PGraphNode } from "@/lib/share/types"
 import { cn } from "@/lib/utils"
 
@@ -69,7 +70,7 @@ function NodeCard({ node, itemKey }: { node: PGraphNode; itemKey: string }) {
             <span className="min-w-0 truncate">Collection</span>
           </span>
           <span className="mt-1.5 block text-sm leading-snug font-medium break-words text-pretty text-card-foreground">{c.name}</span>
-          {c.note ? <span className="mt-1 line-clamp-2 block text-xs leading-relaxed text-muted-foreground">{c.note}</span> : null}
+          {c.note ? <span className="mt-1 line-clamp-2 block text-xs leading-relaxed text-muted-foreground">{markdownPreview(c.note)}</span> : null}
           <span className="mt-2.5 flex items-center gap-1.5 text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-1">
               {ico(GLYPH.folder, "size-3.5")}
@@ -98,7 +99,7 @@ function NodeCard({ node, itemKey }: { node: PGraphNode; itemKey: string }) {
         )}
       </span>
       <span className="mt-1.5 block text-sm leading-snug font-medium break-words text-pretty text-card-foreground">{b.title || domain}</span>
-      {b.note ? <span className="mt-1 line-clamp-2 block text-xs leading-relaxed text-muted-foreground">{b.note}</span> : null}
+      {b.note ? <span className="mt-1 line-clamp-2 block text-xs leading-relaxed text-muted-foreground">{markdownPreview(b.note)}</span> : null}
       {b.tags.length ? (
         <span className="mt-2.5 flex items-center gap-1.5 text-xs text-muted-foreground">
           {b.tags.slice(0, 2).map((t) => (

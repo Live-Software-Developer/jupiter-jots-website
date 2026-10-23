@@ -6,14 +6,16 @@ import { createContext, useCallback, useContext, useId, useMemo, useRef, useStat
 import { btnPrimary, btnSecondary, FOCUS_FLAT } from "@/components/site/styles"
 import type { SheetEntry } from "@/lib/share/collections"
 import { anchorFor, plural } from "@/lib/share/format"
+import { MARKDOWN_CLASS, renderMarkdown } from "@/lib/share/markdown"
 import type { MarkGlyph } from "@/lib/share/payload"
-import type { PBookmark, PIcon } from "@/lib/share/types"
+import type { PBookmark, PIcon, PNote } from "@/lib/share/types"
 import { cn } from "@/lib/utils"
 
 import { BookmarkRow, HUE_TINT } from "./BookmarkRow"
 import { CopyLinkButton } from "./CopyLinkButton"
 import { GLYPH, ico, MARK_GLYPH } from "./icons"
 import { Modal } from "./Modal"
+import { NoteRow } from "./NoteRow"
 import { SafeImg } from "./SafeImg"
 
 /** `trigger` is the element focus returns to when the sheet closes (the clicked button). */
@@ -118,6 +120,8 @@ function matches(b: PBookmark, q: string): boolean {
   return [b.title, b.domain, b.note, ...b.tags].some((s) => s.toLowerCase().includes(q))
 }
 
+const noteMatches = (n: PNote, q: string) => [n.title, n.body, ...n.tags].some((s) => s.toLowerCase().includes(q))
+
 /**
  * A collection opened in place (design: collection-sheet): a native modal dialog that is a
  * right-hand sheet from `sm` up and a bottom sheet on phones. Esc, the close button and the
@@ -132,7 +136,11 @@ function CollectionSheet({ entry, curator, onClose }: { entry: SheetEntry; curat
   const renderComments = useContext(CollectionCommentsSlot)
 
   const q = query.trim().toLowerCase()
+  const allNotes = c.notes ?? []
+  const notes = q ? allNotes.filter((n) => noteMatches(n, q)) : allNotes
   const rows = q ? c.bookmarks.filter((b) => matches(b, q)) : c.bookmarks
+  const total = allNotes.length + c.bookmarks.length
+  const counts = allNotes.length ? `${plural(allNotes.length, "note")} · ${plural(c.bookmarks.length, "bookmark")}` : plural(c.bookmarks.length, "bookmark")
   const context = entry.graph ? `in ${entry.graph}` : curator ? `from ${curator}` : ""
   const dismiss = () => dialog.current?.close()
 
@@ -149,7 +157,7 @@ function CollectionSheet({ entry, curator, onClose }: { entry: SheetEntry; curat
               {c.name}
             </h2>
             <p className="mt-1 text-xs text-muted-foreground">
-              {plural(c.bookmarks.length, "bookmark")}
+              {counts}
               {context ? ` · ${context}` : ""}
             </p>
           </div>
@@ -167,8 +175,10 @@ function CollectionSheet({ entry, curator, onClose }: { entry: SheetEntry; curat
           </button>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-color:var(--border)_transparent] [scrollbar-width:thin]">
-          {c.note ? <p className="px-4 pt-4 text-sm leading-relaxed text-pretty text-muted-foreground sm:px-5">{c.note}</p> : null}
-          {c.bookmarks.length ? (
+          {c.note ? (
+            <div className={cn(MARKDOWN_CLASS, "space-y-2 px-4 pt-4 text-sm leading-relaxed text-pretty break-words text-muted-foreground sm:px-5")}>{renderMarkdown(c.note)}</div>
+          ) : null}
+          {total ? (
             <>
               <label className="mx-4 mt-4 flex h-9 items-center gap-2 rounded-lg border border-input bg-background px-3 text-sm text-muted-foreground focus-within:ring-2 focus-within:ring-ring sm:mx-5">
                 {ico(GLYPH.search)}
@@ -182,16 +192,19 @@ function CollectionSheet({ entry, curator, onClose }: { entry: SheetEntry; curat
                 />
               </label>
               <p className="sr-only" aria-live="polite">
-                {q ? `${rows.length} of ${plural(c.bookmarks.length, "bookmark")} shown` : ""}
+                {q ? `${notes.length + rows.length} of ${plural(total, "item")} shown` : ""}
               </p>
-              {rows.length ? (
+              {notes.length + rows.length ? (
                 <div className="mt-2 divide-y divide-border">
+                  {notes.map((n, i) => (
+                    <NoteRow key={n.key || i} note={n} />
+                  ))}
                   {rows.map((b, i) => (
                     <BookmarkRow key={b.key || i} bookmark={b} />
                   ))}
                 </div>
               ) : (
-                <p className="px-4 py-6 text-sm text-muted-foreground sm:px-5">No bookmarks match “{query.trim()}”.</p>
+                <p className="px-4 py-6 text-sm text-muted-foreground sm:px-5">Nothing matches “{query.trim()}”.</p>
               )}
             </>
           ) : (

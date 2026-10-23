@@ -2,8 +2,9 @@ import type { ReactNode } from "react"
 
 import { FOCUS } from "@/components/site/styles"
 import { anchorFor, plural } from "@/lib/share/format"
-import { bookmarkLabel, collectionLabel, graphLabel, runKey } from "@/lib/share/targets"
-import type { PBookmark, PayloadItem } from "@/lib/share/types"
+import { MARKDOWN_CLASS, renderMarkdown } from "@/lib/share/markdown"
+import { bookmarkLabel, collectionLabel, graphLabel, noteLabel, runKey } from "@/lib/share/targets"
+import type { PBookmark, PNote, PayloadItem } from "@/lib/share/types"
 import { cn } from "@/lib/utils"
 
 import { BookmarkLink, BookmarkMark, BookmarkRow, CARD_TINT, hueIndex } from "./BookmarkRow"
@@ -11,6 +12,7 @@ import { CollectionMark, OpenCollectionButton } from "./CollectionSheet"
 import { BandCommentsLink } from "./Discussion"
 import { GraphView } from "./GraphView"
 import { GLYPH, ico } from "./icons"
+import { NoteBody, NoteRow } from "./NoteRow"
 import { SafeImg } from "./SafeImg"
 
 /** A band on the page: a payload item, or a run of adjacent loose bookmarks shown together. */
@@ -54,20 +56,26 @@ export function bandTitle(band: Band): string {
       return bookmarkLabel(band.bookmark)
     case "bookmarks":
       return "Shared bookmarks"
+    case "note":
+      return noteLabel(band.note)
   }
 }
 
-/** How many things the band holds: nodes for a graph, bookmarks otherwise. */
-export function bandCount(band: Band): number {
+/** How much the band holds, for the hero's index: "4 nodes", "3 links", "5 items" (a collection with notes); empty for a note. */
+export function bandSize(band: Band): string {
   switch (band.kind) {
     case "graph":
-      return band.graph.nodes.length
-    case "collection":
-      return band.collection.bookmarks.length
+      return plural(band.graph.nodes.length, "node")
+    case "collection": {
+      const { bookmarks, notes = [] } = band.collection
+      return notes.length ? plural(notes.length + bookmarks.length, "item") : plural(bookmarks.length, "link")
+    }
     case "bookmark":
-      return 1
+      return plural(1, "link")
     case "bookmarks":
-      return band.bookmarks.length
+      return plural(band.bookmarks.length, "link")
+    case "note":
+      return ""
   }
 }
 
@@ -87,21 +95,24 @@ export const BAND_KIND: Record<BandKind, { label: string; icon: ReactNode; text:
   },
   bookmarks: { label: "Bookmarks", icon: GLYPH.bookmark, text: "text-chart-2", tile: "bg-chart-2/15 text-chart-2" },
   bookmark: { label: "Bookmark", icon: GLYPH.bookmark, text: "text-chart-2", tile: "bg-chart-2/15 text-chart-2" },
+  note: { label: "Note", icon: GLYPH.note, text: "text-chart-4", tile: "bg-chart-4/15 text-chart-4" },
 }
 
 export const bandIcon = (kind: BandKind, className?: string) => ico(BAND_KIND[kind].icon, className)
 
 const ROWS_SHOWN = 4
 
+/** A collection's notes come first, then its bookmarks; the band shows the first few of both. */
 function CollectionBody({ band }: { band: Extract<Band, { kind: "collection" }> }) {
-  const all = band.collection.bookmarks
+  const { notes = [], bookmarks } = band.collection
+  const all = [...notes.map((note) => ({ note })), ...bookmarks.map((bookmark) => ({ bookmark }))]
   if (!all.length) return <p className="text-sm text-muted-foreground">This collection is empty.</p>
   return (
     <>
       <div className="grid gap-px overflow-hidden rounded-2xl border border-border bg-border md:grid-cols-2 md:[&>*:last-child:nth-child(odd)]:col-span-2 [&>*]:bg-card">
-        {all.slice(0, ROWS_SHOWN).map((b, i) => (
-          <BookmarkRow key={b.key || i} bookmark={b} />
-        ))}
+        {all.slice(0, ROWS_SHOWN).map((e, i) =>
+          "note" in e ? <NoteRow key={e.note.key || i} note={e.note} clamp /> : <BookmarkRow key={e.bookmark.key || i} bookmark={e.bookmark} />,
+        )}
       </div>
       {all.length > ROWS_SHOWN ? (
         <OpenCollectionButton
@@ -152,7 +163,7 @@ function BookmarkCard({ bookmark, curator }: { bookmark: PBookmark; curator?: st
         <h3 className="text-2xl leading-snug font-medium break-words text-pretty">{bookmark.title || bookmark.domain}</h3>
         {bookmark.note ? (
           <blockquote className="mt-5 border-l-2 border-primary/50 pl-4 text-base leading-relaxed text-pretty text-muted-foreground">
-            {bookmark.note}
+            <span className={cn(MARKDOWN_CLASS, "block space-y-3 break-words")}>{renderMarkdown(bookmark.note)}</span>
             <span className="mt-2 block text-xs">— {curator ? `${curator}'s note` : "The curator's note"}</span>
           </blockquote>
         ) : null}
@@ -174,6 +185,28 @@ function BookmarkCard({ bookmark, curator }: { bookmark: PBookmark; curator?: st
   )
 }
 
+/** A shared note: its rendered body and tags on a card; the band's heading is its title. */
+function NoteCard({ note }: { note: PNote }) {
+  return (
+    <article className="max-w-3xl rounded-3xl border border-border bg-card p-5 text-card-foreground sm:p-8">
+      {note.body ? (
+        <NoteBody note={note} className="space-y-4 text-base leading-relaxed text-pretty text-foreground/90" />
+      ) : (
+        <p className="text-sm text-muted-foreground">This note is empty.</p>
+      )}
+      {note.tags.length > 0 ? (
+        <div className="mt-6 flex flex-wrap gap-1.5">
+          {note.tags.map((tag) => (
+            <span key={tag} className="rounded-md bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
+              #{tag}
+            </span>
+          ))}
+        </div>
+      ) : null}
+    </article>
+  )
+}
+
 function meta(band: Band): string {
   switch (band.kind) {
     case "graph": {
@@ -181,11 +214,15 @@ function meta(band: Band): string {
       const nodes = plural(band.graph.nodes.length, "node")
       return steps ? `${plural(steps, "step")} · ${nodes}` : nodes
     }
-    case "collection":
-      return plural(band.collection.bookmarks.length, "bookmark")
+    case "collection": {
+      const { notes = [], bookmarks } = band.collection
+      const count = plural(bookmarks.length, "bookmark")
+      return notes.length ? `${plural(notes.length, "note")} · ${count}` : count
+    }
     case "bookmarks":
       return plural(band.bookmarks.length, "bookmark")
     case "bookmark":
+    case "note":
       return ""
   }
 }
@@ -199,7 +236,8 @@ export function ShareBand({ item, index, total, curator }: { item: Band; index: 
   const full = item.kind === "graph"
   const wrap = "mx-auto w-full max-w-6xl px-3 sm:px-6"
   const heading = item.kind === "bookmark" ? item.bookmark.domain : bandTitle(item)
-  const note = item.kind === "graph" ? item.graph.description : item.kind === "collection" ? item.collection.note : ""
+  const description = item.kind === "graph" ? item.graph.description : ""
+  const note = item.kind === "collection" ? item.collection.note : ""
   const info = meta(item)
 
   return (
@@ -233,7 +271,10 @@ export function ShareBand({ item, index, total, curator }: { item: Band; index: 
               ) : null}
               <h2 className="min-w-0 font-serif text-3xl leading-tight tracking-tight break-words text-balance sm:text-4xl">{heading}</h2>
             </div>
-            {note ? <p className="mt-2 max-w-2xl text-base leading-relaxed text-pretty text-muted-foreground">{note}</p> : null}
+            {description ? <p className="mt-2 max-w-2xl text-base leading-relaxed text-pretty text-muted-foreground">{description}</p> : null}
+            {note ? (
+              <div className={cn(MARKDOWN_CLASS, "mt-2 max-w-2xl space-y-3 text-base leading-relaxed text-pretty break-words text-muted-foreground")}>{renderMarkdown(note)}</div>
+            ) : null}
           </div>
           <div className="flex flex-wrap items-center gap-2 empty:hidden">
             <BandCommentsLink
@@ -257,6 +298,7 @@ export function ShareBand({ item, index, total, curator }: { item: Band; index: 
         {item.kind === "collection" ? <CollectionBody band={item} /> : null}
         {item.kind === "bookmarks" ? <BookmarksBody bookmarks={item.bookmarks} /> : null}
         {item.kind === "bookmark" ? <BookmarkCard bookmark={item.bookmark} curator={curator} /> : null}
+        {item.kind === "note" ? <NoteCard note={item.note} /> : null}
       </div>
     </section>
   )

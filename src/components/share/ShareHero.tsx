@@ -5,12 +5,12 @@ import { CopyLinkButton } from "@/components/share/CopyLinkButton"
 import { PlusIcon } from "@/components/site/icons"
 import { FOCUS } from "@/components/site/styles"
 import { formatDate, initialsOf } from "@/lib/share/format"
-import { renderMarkdown } from "@/lib/share/markdown"
+import { MARKDOWN_CLASS, renderMarkdown } from "@/lib/share/markdown"
 import type { PublicShare, SharePayload } from "@/lib/share/types"
 import { cn } from "@/lib/utils"
 
 import { GLYPH, ico, LockIcon } from "./icons"
-import { BAND_KIND, bandCount, bandIcon, bandId, bandTitle, toBands } from "./ShareBand"
+import { BAND_KIND, bandIcon, bandId, bandSize, bandTitle, toBands } from "./ShareBand"
 
 /**
  * Header for every share (design: share-hero), with the "In this share" index once there are 2+ bands.
@@ -43,7 +43,7 @@ export function ShareHero({ share, payload, action }: { share: PublicShare; payl
             {payload.title || share.title}
           </h1>
           {payload.intro ? (
-            <div className="mt-4 max-w-2xl space-y-3 text-lg leading-relaxed text-pretty text-muted-foreground [&_blockquote]:border-l-2 [&_blockquote]:border-border [&_blockquote]:pl-4 [&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:font-mono [&_code]:text-base [&_ol]:list-decimal [&_ol]:pl-6 [&_strong]:font-medium [&_strong]:text-foreground [&_ul]:list-disc [&_ul]:pl-6">
+            <div className={cn(MARKDOWN_CLASS, "mt-4 max-w-2xl space-y-3 text-lg leading-relaxed text-pretty text-muted-foreground")}>
               {renderMarkdown(payload.intro)}
             </div>
           ) : null}
@@ -107,8 +107,7 @@ export function ShareHero({ share, payload, action }: { share: PublicShare; payl
           <ol className="mt-2.5 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {bands.map((band, i) => {
               const kind = BAND_KIND[band.kind]
-              const n = bandCount(band)
-              const unit = band.kind === "graph" ? "nodes" : n === 1 ? "link" : "links"
+              const size = bandSize(band)
               return (
                 <li key={band.key}>
                   <a
@@ -122,7 +121,8 @@ export function ShareHero({ share, payload, action }: { share: PublicShare; payl
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-medium">{bandTitle(band)}</span>
                       <span className="block text-xs text-muted-foreground">
-                        <span className="tabular-nums">{String(i + 1).padStart(2, "0")}</span> · {kind.label} · {n} {unit}
+                        <span className="tabular-nums">{String(i + 1).padStart(2, "0")}</span> · {kind.label}
+                        {size ? ` · ${size}` : ""}
                       </span>
                     </span>
                     {ico(GLYPH.arrowDown, "size-4 text-muted-foreground/60 transition-transform group-hover:translate-y-0.5")}

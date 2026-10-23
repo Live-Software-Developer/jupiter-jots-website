@@ -30,6 +30,7 @@ const PAYLOAD: SharePayload = {
   items: [
     { key: 'c:1', kind: 'collection', collection: { name: 'Design system docs', note: '', hue: 2, bookmarks: [bm('c:1/b:2', 'Token reference')] } },
     { key: 'b:3', kind: 'bookmark', bookmark: bm('b:3', 'Rolling back a deploy') },
+    { key: 'n:4', kind: 'note', note: { key: 'n:4', title: 'First week', body: 'Pair on **one** deploy.', tags: [] } },
   ],
 }
 
@@ -187,6 +188,8 @@ describe('unlocking', () => {
     await tryPassword(PASSWORD)
     expect(text()).toContain('Design system docs')
     expect(text()).toContain('Rolling back a deploy')
+    expect(text()).toContain('First week')
+    expect(document.querySelector('#item-n-4 strong')?.textContent).toBe('one')
     expect(text()).toContain('Private · unlocked')
     expect(passwordInput()).toBeNull()
   })

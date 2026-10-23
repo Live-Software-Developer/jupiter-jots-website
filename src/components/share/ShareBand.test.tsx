@@ -120,13 +120,50 @@ describe('ShareBand', () => {
   })
 })
 
+describe('ShareBand notes', () => {
+  const note = { key: 'n:5', title: 'Reading plan', body: 'Start with **these**:\n\n- one\n- two\n\n<script>x</script> [link](https://evil.test)', tags: ['plan'] }
+
+  it('renders a note band with its title, tags and markdown body', () => {
+    const el = render([{ key: 'n:5', kind: 'note', note }])
+    const section = el.querySelector('section')!
+    expect(section.id).toBe('item-n-5')
+    expect(section.querySelector('h2')?.textContent).toBe('Reading plan')
+    expect(section.textContent).toContain('Note')
+    expect(section.querySelector('strong')?.textContent).toBe('these')
+    expect([...section.querySelectorAll('li')].map((li) => li.textContent)).toEqual(['one', 'two'])
+    expect(section.textContent).toContain('#plan')
+    expect(section.querySelector('script, a[href*="evil"]')).toBeNull()
+  })
+
+  it("lists a collection's notes before its bookmarks and counts both", () => {
+    const el = render([
+      {
+        key: 'c:2',
+        kind: 'collection',
+        collection: { name: 'Mixed', note: 'Read *slowly*', hue: 1, bookmarks: [bm(1)], notes: [{ ...note, key: 'c:2/n:5' }] },
+      },
+    ])
+    const section = el.querySelector('section')!
+    const rows = section.querySelectorAll('[data-note-row], [data-bookmark-row]')
+    expect([...rows].map((r) => r.hasAttribute('data-note-row'))).toEqual([true, false])
+    expect(section.textContent).toContain('1 note · 1 bookmark')
+    expect(section.querySelector('em')?.textContent).toBe('slowly')
+  })
+
+  it('renders bookmark notes as markdown', () => {
+    const el = render([{ key: 'b:7', kind: 'bookmark', bookmark: bm(7, { note: 'A **good** one' }) }])
+    expect(el.querySelector('blockquote strong')?.textContent).toBe('good')
+  })
+})
+
 describe('bandTitle', () => {
   it('labels unnamed items like the composer does', () => {
     const items: PayloadItem[] = [
       { ...graph, graph: { ...(graph as Extract<PayloadItem, { kind: 'graph' }>).graph, name: '' } },
       { key: 'c:9', kind: 'collection', collection: { name: '', note: '', hue: 1, bookmarks: [] } },
       { key: 'b:7', kind: 'bookmark', bookmark: bm(7, { title: '', domain: '' }) },
+      { key: 'n:8', kind: 'note', note: { key: 'n:8', title: '', body: '', tags: [] } },
     ]
-    expect(toBands(items).map(bandTitle)).toEqual(['Untitled graph', 'Untitled collection', 'Untitled bookmark'])
+    expect(toBands(items).map(bandTitle)).toEqual(['Untitled graph', 'Untitled collection', 'Untitled bookmark', 'Untitled note'])
   })
 })

@@ -30,6 +30,7 @@ export const GLYPH = {
     </>
   ),
   bookmark: <path d="M7 4h10v16l-5-3.5L7 20z" />,
+  note: <path d="M6 3.5h8l4 4v13H6zM14 3.5v4h4M9 12h6M9 15.5h6" />,
   close: <path d="M6 6l12 12M18 6L6 18" />,
   search: (
     <>

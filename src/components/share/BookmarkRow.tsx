@@ -2,6 +2,7 @@ import type { ReactNode } from "react"
 
 import { FOCUS_FLAT } from "@/components/site/styles"
 import { safeUrl } from "@/lib/share/format"
+import { MARKDOWN_CLASS, renderMarkdown } from "@/lib/share/markdown"
 import type { PBookmark } from "@/lib/share/types"
 import { cn } from "@/lib/utils"
 
@@ -94,7 +95,9 @@ export function BookmarkRow({ bookmark }: { bookmark: PBookmark }) {
             <span className="text-sm font-medium break-words text-foreground">{bookmark.title || bookmark.domain}</span>
             <span className="text-xs text-muted-foreground">{bookmark.domain}</span>
           </span>
-          {bookmark.note ? <span className="mt-1 block text-sm leading-relaxed text-muted-foreground">{bookmark.note}</span> : null}
+          {bookmark.note ? (
+            <span className={cn(MARKDOWN_CLASS, "mt-1 block space-y-2 text-sm leading-relaxed break-words text-muted-foreground")}>{renderMarkdown(bookmark.note)}</span>
+          ) : null}
           {bookmark.tags.length > 0 ? (
             <span className="mt-2 flex flex-wrap gap-1">
               {bookmark.tags.map((tag) => (

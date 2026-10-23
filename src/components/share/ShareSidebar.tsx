@@ -14,6 +14,7 @@ const DOT: Record<BandKind | "share", string> = {
   collection: "bg-chart-5",
   bookmark: "bg-chart-2",
   bookmarks: "bg-chart-2",
+  note: "bg-chart-4",
 }
 
 /**
