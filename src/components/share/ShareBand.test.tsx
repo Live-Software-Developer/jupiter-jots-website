@@ -135,6 +135,13 @@ describe('ShareBand notes', () => {
     expect(section.querySelector('script, a[href*="evil"]')).toBeNull()
   })
 
+  it('lists what a note links to: bookmark rows and collection name chips', () => {
+    const links = [{ kind: 'bookmark' as const, bookmark: bm(9) }, { kind: 'collection' as const, key: 'n:5/c:2', name: 'Reading', hue: 2 as const }]
+    const section = render([{ key: 'n:5', kind: 'note', note: { ...note, links } }]).querySelector('section[aria-label="Linked"]')!
+    expect(section.querySelectorAll('[data-bookmark-row]')).toHaveLength(1)
+    expect(section.textContent).toContain('Reading')
+  })
+
   it("lists a collection's notes before its bookmarks and counts both", () => {
     const el = render([
       {

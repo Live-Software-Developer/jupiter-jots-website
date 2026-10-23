@@ -108,6 +108,20 @@ describe('parsePayload notes', () => {
   const note = (extra: Record<string, unknown> = {}) => ({ key: 'n:1', title: 'Plan', body: 'Read **this** first', tags: ['ideas'], ...extra })
   const noteOf = (i: PayloadItem) => (i as Extract<PayloadItem, { kind: 'note' }>).note
 
+  it('keeps valid note links and drops malformed ones', () => {
+    const links = [
+      { kind: 'bookmark', bookmark: bm({ favicon: 'http://x.test/f.ico' }) },
+      { kind: 'collection', key: 'n:1/c:2', name: 'Reading', hue: 2, icon: { type: 'glyph', value: 'book' } },
+      { kind: 'collection', key: 'n:1/c:3', name: 'Bad hue', hue: 9 },
+      { kind: 'bookmark', bookmark: { title: 'no url' } },
+      'junk',
+    ]
+    const n = noteOf(parsePayload(json([{ key: 'n:1', kind: 'note', note: note({ links }) }]))!.items[0])
+    expect(n.links).toHaveLength(2)
+    expect(n.links![0]).toMatchObject({ kind: 'bookmark', bookmark: { favicon: undefined } })
+    expect(n.links![1]).toEqual({ kind: 'collection', key: 'n:1/c:2', name: 'Reading', hue: 2, icon: { type: 'glyph', value: 'book' } })
+  })
+
   it('keeps a note item between other items', () => {
     const p = parsePayload(json([{ key: 'b:1', kind: 'bookmark', bookmark: bm() }, { key: 'n:1', kind: 'note', note: note() }, { key: 'c:2', kind: 'collection', collection: coll() }]))!
     expect(p.items.map((i) => i.kind)).toEqual(['bookmark', 'note', 'collection'])

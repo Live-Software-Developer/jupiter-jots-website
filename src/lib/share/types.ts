@@ -29,7 +29,10 @@ export interface PNote {
   title: string
   body: string
   tags: string[]
+  /** What the note is about: linked bookmarks in full, linked collections by name and mark only. */
+  links?: PNoteLink[]
 }
+export type PNoteLink = { kind: 'bookmark'; bookmark: PBookmark } | { kind: 'collection'; key: string; name: string; hue: 1 | 2 | 3 | 4 | 5; icon?: PIcon }
 /** A collection's icon. A glyph is a name from the extension's glyph set (`MARK_GLYPHS`). */
 export type PIcon = { type: 'glyph'; value: string } | { type: 'emoji'; value: string } | { type: 'image'; url: string }
 export interface PCollection {

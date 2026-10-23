@@ -1,5 +1,5 @@
 import { httpsUrl } from './format'
-import type { PBookmark, PCollection, PIcon, PNote, PayloadItem, SharePayload } from './types'
+import type { PBookmark, PCollection, PIcon, PNote, PNoteLink, PayloadItem, SharePayload } from './types'
 
 /** The extension's collection glyphs (its `GLYPH_CHOICES`); any other glyph name is dropped. */
 export const MARK_GLYPHS = [
@@ -38,7 +38,23 @@ export function toNote(raw: unknown): PNote | null {
     title: n.title,
     body: n.body.length > NOTE_MAX ? n.body.slice(0, NOTE_MAX) : n.body,
     tags: Array.isArray(n.tags) ? n.tags.filter((t): t is string => typeof t === 'string') : [],
+    links: Array.isArray(n.links) ? n.links.map(toNoteLink).filter((l) => l !== null) : undefined,
   }
+}
+
+/** A note's link the page can show, or null for a malformed one. */
+function toNoteLink(raw: unknown): PNoteLink | null {
+  const l = raw as Record<string, unknown> | null
+  if (!l || typeof l !== 'object') return null
+  if (l.kind === 'bookmark') {
+    const b = l.bookmark as Record<string, unknown> | null
+    if (!b || typeof b.key !== 'string' || typeof b.url !== 'string' || typeof b.title !== 'string') return null
+    return { kind: 'bookmark', bookmark: bookmark(b as unknown as PBookmark) }
+  }
+  if (l.kind === 'collection' && typeof l.key === 'string' && typeof l.name === 'string' && [1, 2, 3, 4, 5].includes(l.hue as number)) {
+    return { kind: 'collection', key: l.key, name: l.name, hue: l.hue as PCollection['hue'], icon: toIcon(l.icon) }
+  }
+  return null
 }
 
 // The optional fields are re-checked here so a bad one is dropped, never rendered.
