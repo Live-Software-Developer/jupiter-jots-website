@@ -12,6 +12,7 @@ import { CollectionMark, OpenCollectionButton } from "./CollectionSheet"
 import { BandCommentsLink } from "./Discussion"
 import { GraphView } from "./GraphView"
 import { GLYPH, ico } from "./icons"
+import { NoteLinks } from "./NoteLinks"
 import { NoteBody, NoteRow } from "./NoteRow"
 import { SafeImg } from "./SafeImg"
 
@@ -194,7 +195,7 @@ function NoteCard({ note }: { note: PNote }) {
       ) : (
         <p className="text-sm text-muted-foreground">This note is empty.</p>
       )}
-      {note.links?.length ? <NoteLinks links={note.links} /> : null}
+      {note.links?.length ? <NoteLinks links={note.links} bleed="-mx-5 sm:-mx-8" /> : null}
       {note.tags.length > 0 ? (
         <div className="mt-6 flex flex-wrap gap-1.5">
           {note.tags.map((tag) => (
@@ -205,34 +206,6 @@ function NoteCard({ note }: { note: PNote }) {
         </div>
       ) : null}
     </article>
-  )
-}
-
-/** What the note links to: its bookmarks as rows, its collections as name chips (their contents aren't shared). */
-function NoteLinks({ links }: { links: NonNullable<PNote["links"]> }) {
-  const bookmarks = links.flatMap((l) => (l.kind === "bookmark" ? [l.bookmark] : []))
-  const collections = links.flatMap((l) => (l.kind === "collection" ? [l] : []))
-  return (
-    <section aria-label="Linked" className="mt-6 border-t border-border pt-5">
-      <h3 className="text-xs font-medium text-muted-foreground">Linked</h3>
-      {bookmarks.length > 0 ? (
-        <div className="-mx-5 mt-2 divide-y divide-border sm:-mx-8">
-          {bookmarks.map((b) => (
-            <BookmarkRow key={b.key} bookmark={b} />
-          ))}
-        </div>
-      ) : null}
-      {collections.length > 0 ? (
-        <ul className="mt-3 flex flex-wrap gap-2">
-          {collections.map((c) => (
-            <li key={c.key} className="inline-flex max-w-full items-center gap-2 rounded-full border border-border py-1 pr-3 pl-1 text-sm">
-              <CollectionMark icon={c.icon} hue={c.hue} px={24} className="size-6 rounded-full" glyph="size-3.5" emoji="text-sm" />
-              <span className="min-w-0 truncate">{c.name}</span>
-            </li>
-          ))}
-        </ul>
-      ) : null}
-    </section>
   )
 }
 

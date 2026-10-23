@@ -123,17 +123,11 @@ function matches(b: PBookmark, q: string): boolean {
 const noteMatches = (n: PNote, q: string) => [n.title, n.body, ...n.tags].some((s) => s.toLowerCase().includes(q))
 
 /**
- * A collection opened in place (design: collection-sheet): a native modal dialog that is a
- * right-hand sheet from `sm` up and a bottom sheet on phones. Esc, the close button and the
- * backdrop close it; the provider then returns focus to the trigger.
+ * A collection opened in place (design: collection-sheet), in the shared `Sheet`.
  */
 function CollectionSheet({ entry, curator, onClose }: { entry: SheetEntry; curator?: string; onClose(): void }) {
   const { collection: c } = entry
-  const titleId = useId()
-  const dialog = useRef<HTMLDialogElement>(null)
-  const closeBtn = useRef<HTMLButtonElement>(null)
   const [query, setQuery] = useState("")
-  const renderComments = useContext(CollectionCommentsSlot)
 
   const q = query.trim().toLowerCase()
   const allNotes = c.notes ?? []
@@ -142,6 +136,81 @@ function CollectionSheet({ entry, curator, onClose }: { entry: SheetEntry; curat
   const total = allNotes.length + c.bookmarks.length
   const counts = allNotes.length ? `${plural(allNotes.length, "note")} · ${plural(c.bookmarks.length, "bookmark")}` : plural(c.bookmarks.length, "bookmark")
   const context = entry.graph ? `in ${entry.graph}` : curator ? `from ${curator}` : ""
+
+  return (
+    <Sheet
+      itemKey={entry.key}
+      onClose={onClose}
+      mark={<CollectionMark icon={c.icon} hue={c.hue} px={44} className="size-11 rounded-xl" glyph="size-5" emoji="text-2xl" />}
+      kind="Collection"
+      title={c.name}
+      meta={`${counts}${context ? ` · ${context}` : ""}`}
+    >
+      {c.note ? (
+        <div className={cn(MARKDOWN_CLASS, "space-y-2 px-4 pt-4 text-sm leading-relaxed text-pretty break-words text-muted-foreground sm:px-5")}>{renderMarkdown(c.note)}</div>
+      ) : null}
+      {total ? (
+        <>
+          <label className="mx-4 mt-4 flex h-9 items-center gap-2 rounded-lg border border-input bg-background px-3 text-sm text-muted-foreground focus-within:ring-2 focus-within:ring-ring sm:mx-5">
+            {ico(GLYPH.search)}
+            <span className="sr-only">Filter this collection</span>
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Filter this collection"
+              className="min-w-0 flex-1 bg-transparent text-foreground placeholder:text-muted-foreground focus:outline-none"
+            />
+          </label>
+          <p className="sr-only" aria-live="polite">
+            {q ? `${notes.length + rows.length} of ${plural(total, "item")} shown` : ""}
+          </p>
+          {notes.length + rows.length ? (
+            <div className="mt-2 divide-y divide-border">
+              {notes.map((n, i) => (
+                <NoteRow key={n.key || i} note={n} />
+              ))}
+              {rows.map((b, i) => (
+                <BookmarkRow key={b.key || i} bookmark={b} />
+              ))}
+            </div>
+          ) : (
+            <p className="px-4 py-6 text-sm text-muted-foreground sm:px-5">Nothing matches “{query.trim()}”.</p>
+          )}
+        </>
+      ) : (
+        <p className="px-4 py-6 text-sm text-muted-foreground sm:px-5">This collection is empty.</p>
+      )}
+    </Sheet>
+  )
+}
+
+/**
+ * The sheet chrome (design: collection-sheet): a native modal dialog that is a right-hand sheet
+ * from `sm` up and a bottom sheet on phones, with the item's comments after `children` and a
+ * copy-link footer. Esc, the close button and the backdrop close it; `onClose` runs after.
+ */
+export function Sheet({
+  itemKey,
+  onClose,
+  mark,
+  kind,
+  title,
+  meta,
+  children,
+}: {
+  itemKey: string
+  onClose(): void
+  mark: ReactNode
+  kind: string
+  title: ReactNode
+  meta: string
+  children: ReactNode
+}) {
+  const titleId = useId()
+  const dialog = useRef<HTMLDialogElement>(null)
+  const closeBtn = useRef<HTMLButtonElement>(null)
+  const renderComments = useContext(CollectionCommentsSlot)
   const dismiss = () => dialog.current?.close()
 
   return (
@@ -150,16 +219,13 @@ function CollectionSheet({ entry, curator, onClose }: { entry: SheetEntry; curat
       <div className="absolute inset-x-0 bottom-0 flex max-h-[88dvh] flex-col rounded-t-3xl border-t border-border bg-popover text-popover-foreground shadow-2xl sm:inset-y-0 sm:right-0 sm:left-auto sm:max-h-none sm:w-full sm:max-w-lg sm:rounded-none sm:border-t-0 sm:border-l">
         <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-border sm:hidden" aria-hidden="true" />
         <div className="flex shrink-0 items-start gap-3 border-b border-border px-4 pt-3 pb-4 sm:px-5 sm:pt-5">
-          <CollectionMark icon={c.icon} hue={c.hue} px={44} className="size-11 rounded-xl" glyph="size-5" emoji="text-2xl" />
+          {mark}
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-medium text-muted-foreground">Collection</p>
+            <p className="text-xs font-medium text-muted-foreground">{kind}</p>
             <h2 id={titleId} className="mt-0.5 font-serif text-2xl leading-tight break-words text-balance">
-              {c.name}
+              {title}
             </h2>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {counts}
-              {context ? ` · ${context}` : ""}
-            </p>
+            <p className="mt-1 text-xs text-muted-foreground">{meta}</p>
           </div>
           <button
             ref={closeBtn}
@@ -175,42 +241,8 @@ function CollectionSheet({ entry, curator, onClose }: { entry: SheetEntry; curat
           </button>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-color:var(--border)_transparent] [scrollbar-width:thin]">
-          {c.note ? (
-            <div className={cn(MARKDOWN_CLASS, "space-y-2 px-4 pt-4 text-sm leading-relaxed text-pretty break-words text-muted-foreground sm:px-5")}>{renderMarkdown(c.note)}</div>
-          ) : null}
-          {total ? (
-            <>
-              <label className="mx-4 mt-4 flex h-9 items-center gap-2 rounded-lg border border-input bg-background px-3 text-sm text-muted-foreground focus-within:ring-2 focus-within:ring-ring sm:mx-5">
-                {ico(GLYPH.search)}
-                <span className="sr-only">Filter this collection</span>
-                <input
-                  type="search"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Filter this collection"
-                  className="min-w-0 flex-1 bg-transparent text-foreground placeholder:text-muted-foreground focus:outline-none"
-                />
-              </label>
-              <p className="sr-only" aria-live="polite">
-                {q ? `${notes.length + rows.length} of ${plural(total, "item")} shown` : ""}
-              </p>
-              {notes.length + rows.length ? (
-                <div className="mt-2 divide-y divide-border">
-                  {notes.map((n, i) => (
-                    <NoteRow key={n.key || i} note={n} />
-                  ))}
-                  {rows.map((b, i) => (
-                    <BookmarkRow key={b.key || i} bookmark={b} />
-                  ))}
-                </div>
-              ) : (
-                <p className="px-4 py-6 text-sm text-muted-foreground sm:px-5">Nothing matches “{query.trim()}”.</p>
-              )}
-            </>
-          ) : (
-            <p className="px-4 py-6 text-sm text-muted-foreground sm:px-5">This collection is empty.</p>
-          )}
-          {renderComments ? renderComments(entry.key) : null}
+          {children}
+          {renderComments ? renderComments(itemKey) : null}
         </div>
         <div className="flex shrink-0 items-center gap-2 border-t border-border px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-5">
           <Link href="/#get" className={cn(btnPrimary("md"), "flex-1 sm:flex-none")}>
@@ -218,8 +250,8 @@ function CollectionSheet({ entry, curator, onClose }: { entry: SheetEntry; curat
           </Link>
           {/* A graph node's sheet does not open from a link; its anchor is the graph's. */}
           <CopyLinkButton
-            hash={anchorFor(entry.key)}
-            label={entry.key.includes("/") ? "Copy link to graph" : "Copy link"}
+            hash={anchorFor(itemKey)}
+            label={itemKey.includes("/") ? "Copy link to graph" : "Copy link"}
             className={cn(btnSecondary("md"), "px-4")}
           />
         </div>
