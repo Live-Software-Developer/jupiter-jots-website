@@ -21,7 +21,7 @@ export const toc = [
 - The one exception is a share you choose to make: it is stored on our server so its link works.
 - Private shares are encrypted in your browser. We can’t read their contents or comments.
 - There is no account and no email. No analytics, no advertising and no tracking. Nothing is sold.
-- Share pages set one functional cookie, `jj_visitor`, and no other cookies.
+- Share pages set one functional cookie, `jj_visitor`, and no other cookies. They load site icons and preview images straight from the sites that host them.
 - Pages are read only when you save them. Chrome bookmarks are read only when you import them.
 - Uninstalling deletes your library. Export a backup first if you want to keep it.
 
@@ -100,7 +100,7 @@ Your bookmarks stay on your device. A **share** is the exception. When you creat
 
 </Prose>
 <Defs>
-<Def term="Public shares">Their contents are stored readable on our server and shown to anyone with the link: the title and intro, your curator name, and the bookmarks, collections and graphs you add. For each bookmark that is its address, title, site, tags, note (unless you leave notes out) and whether you have opened it.</Def>
+<Def term="Public shares">Their contents are stored readable on our server and shown to anyone with the link: the title and intro, your curator name, and the bookmarks, collections and graphs you add. For each bookmark that is its address, title, site, tags, note (unless you leave notes out), whether you have opened it, and the addresses of its site icon and preview image. For each collection it is its name, colour, icon and description (unless you leave notes out). A logo you uploaded yourself is not included.</Def>
 <Def term="Private shares">Their contents and their comments are encrypted in your browser with the share password before they leave it. Our server can’t read its contents or comments. It can see the title, your curator name and the item counts (such as “1 graph · 2 collections”) shown on the lock screen, the share’s settings, and which item each comment is on. It also stores the values your browser needs to turn the password into a key. The password never reaches us in a form we can read, so we can’t recover it.</Def>
 <Def term="Settings">For every share we also store its settings (public or private, comment mode, expiry, view limit, keep live), a view count, when it was created, changed or revoked, and a fingerprint of its contents that tells your devices when it has changed.</Def>
 <Def term="Your list of shares">So your other devices can manage a share, the extension also stores with it the list of what is in it and, for a private share, its password. Both are encrypted on your device with a key from your code that never leaves it, so we can’t read them.</Def>
@@ -148,6 +148,7 @@ They are visible to anyone who can open the share. While a comment waits for app
 
 </Def>
 <Def term="Votes and reports">Marking a comment helpful, or reporting it to the share’s owner, stores the hashed visitor key against that comment.</Def>
+<Def term="Images from other sites">A share page shows each bookmark’s site icon and preview image, and a collection’s logo, by loading them straight from where they are kept, the way any web page loads a picture. That is usually the bookmarked site itself, or Google’s favicon service for a collection logo picked by its domain. Those sites see your IP address and the request, as they would if you visited them. Your browser sends them no referrer, so they aren’t told which share you are looking at. This applies to private shares too, once you unlock one.</Def>
 <Def term="IP address">Used only to limit how often comments, votes and first shares from a new code can come from one address. It is not saved to our database.</Def>
 </Defs>
 </Section>
@@ -217,7 +218,7 @@ Jupiter Jots asks no one, including children under 13, for an email, an account 
 
 If a future version changes what Jupiter Jots stores or sends, for example when optional sync arrives, we will update this page and its date before that version ships, and note it in the [changelog](/changelog). Anything that sends data off your device will be optional and off until you turn it on, as sharing is: nothing from your library is sent until you create a share.
 
-The update of 23 October 2026 added sharing, your code, share pages and comments.
+The update of 23 October 2026 added sharing, your code, share pages and comments, and the site icons and preview images that share pages load from other sites.
 
 </Prose>
 </Section>
