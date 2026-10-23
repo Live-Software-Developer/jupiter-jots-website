@@ -168,4 +168,22 @@ describe('parsePayload notes', () => {
     const ref = g.graph.nodes[0].ref as Extract<PGraphNode['ref'], { kind: 'collection' }>
     expect(ref.collection.notes?.map((n) => n.key)).toEqual(['g:1/n:k/n:1'])
   })
+
+  it('keeps note nodes in a graph and drops a malformed one with its arrows, not the graph', () => {
+    const at = (id: string, ref: unknown) => ({ id, stepId: null, x: 0, y: 0, ref })
+    const g = only([
+      {
+        key: 'g:1',
+        kind: 'graph',
+        graph: {
+          name: 'G', description: '', mode: 'board', steps: [],
+          nodes: [at('a', { kind: 'note', note: note({ key: 'g:1/n:a' }) }), at('b', { kind: 'bookmark', bookmark: bm() }), at('c', { kind: 'note', note: note({ title: 3 }) }), at('d', { kind: 'note' })],
+          links: [{ from: 'a', to: 'b' }, { from: 'b', to: 'c' }, { from: 'd', to: 'a' }],
+        },
+      },
+    ]) as Extract<PayloadItem, { kind: 'graph' }>
+    expect(g.graph.nodes.map((n) => n.id)).toEqual(['a', 'b'])
+    expect(g.graph.nodes[0].ref).toEqual({ kind: 'note', note: { ...note({ key: 'g:1/n:a' }), links: undefined } })
+    expect(g.graph.links).toEqual([{ from: 'a', to: 'b' }])
+  })
 })

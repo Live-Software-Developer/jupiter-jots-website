@@ -31,6 +31,7 @@ const items: PayloadItem[] = [
           y: 0,
           ref: { kind: 'collection', key: 'g:4/n:k', collection: { name: 'Deep', note: '', hue: 2, bookmarks: [bm('g:4/n:k/b:9', 'Nine')] } },
         },
+        { id: 'm', stepId: null, x: 0, y: 0, ref: { kind: 'note', note: { key: 'g:4/n:m', title: 'Why this order', body: '', tags: [] } } },
       ],
     },
   },
@@ -50,6 +51,7 @@ describe('commentTargets', () => {
     expect(targetLabel(t, 'g:4/n:a')).toBe('Node A')
     expect(targetLabel(t, 'g:4/n:k')).toBe('Deep')
     expect(targetLabel(t, 'g:4/n:k/b:9')).toBe('Nine')
+    expect(targetLabel(t, 'g:4/n:m')).toBe('Why this order')
     expect(targetLabel(t, 'c:99')).toBe('this share')
     expect(targetLabel(t, 'constructor')).toBe('this share')
     expect(inScope(t, 'constructor', 'b:1')).toBe(false)
@@ -70,6 +72,8 @@ describe('commentTargets', () => {
   it("offers notes as targets, a collection's notes before its bookmarks", () => {
     expect(isTarget(t, 'n:6')).toBe(true)
     expect(isTarget(t, 'c:3/n:5')).toBe(true)
+    expect(isTarget(t, 'g:4/n:m')).toBe(true)
+    expect(inScope(t, 'g:4', 'g:4/n:m')).toBe(true)
     expect(inScope(t, 'c:3', 'c:3/n:5')).toBe(true)
     expect(t.groups.find((g) => g.item.key === 'c:3')?.nested.map((n) => n.key)).toEqual(['c:3/n:5', 'c:3/b:12'])
   })

@@ -3,15 +3,19 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react"
 
 import { FOCUS_FLAT } from "@/components/site/styles"
+import { plural } from "@/lib/share/format"
 import { bandOf, boardColumns, computePath, NODE_W, type Box } from "@/lib/share/graph"
 import { markdownPreview } from "@/lib/share/markdown"
-import type { PGraph, PGraphNode } from "@/lib/share/types"
+import { noteLabel } from "@/lib/share/targets"
+import type { PGraph, PGraphNode, PNote } from "@/lib/share/types"
 import { cn } from "@/lib/utils"
 
 import { BookmarkLink, BookmarkMark } from "./BookmarkRow"
-import { CollectionMark, useCollectionSheet } from "./CollectionSheet"
+import { CollectionMark, Sheet, useCollectionSheet } from "./CollectionSheet"
 import { GLYPH, ico } from "./icons"
 import { Modal } from "./Modal"
+import { NoteLinks } from "./NoteLinks"
+import { NoteBody, NoteMark } from "./NoteRow"
 
 // Read-only port of the extension's graph view (design: graph-view). Board and Canvas show the
 // same nodes; Canvas places them at their saved x/y and zooms with a CSS transform.
@@ -56,8 +60,9 @@ const I: Record<string, ReactNode> = {
 const CARD =
   "group relative block w-full rounded-xl border border-border bg-card p-3 text-left transition-[border-color,box-shadow] hover:border-foreground/25 hover:shadow-lg hover:shadow-foreground/5"
 
-function NodeCard({ node, itemKey }: { node: PGraphNode; itemKey: string }) {
+function NodeCard({ node, itemKey, graphName }: { node: PGraphNode; itemKey: string; graphName: string }) {
   const { open } = useCollectionSheet()
+  if (node.ref.kind === "note") return <NoteNodeCard note={node.ref.note} graphName={graphName} />
   if (node.ref.kind === "collection") {
     const c = node.ref.collection
     return (
@@ -74,7 +79,8 @@ function NodeCard({ node, itemKey }: { node: PGraphNode; itemKey: string }) {
           <span className="mt-2.5 flex items-center gap-1.5 text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-1">
               {ico(GLYPH.folder, "size-3.5")}
-              {c.bookmarks.length} {c.bookmarks.length === 1 ? "link" : "links"}
+              {c.notes?.length ? `${plural(c.notes.length, "note")} · ` : ""}
+              {plural(c.bookmarks.length, "link")}
             </span>
             <span className="ml-auto font-medium text-primary">Open</span>
           </span>
@@ -110,6 +116,59 @@ function NodeCard({ node, itemKey }: { node: PGraphNode; itemKey: string }) {
         </span>
       ) : null}
     </BookmarkLink>
+  )
+}
+
+/** A note node: its title and a clamped plain preview; a click opens the whole note in a sheet. */
+function NoteNodeCard({ note, graphName }: { note: PNote; graphName: string }) {
+  const [open, setOpen] = useState(false)
+  const trigger = useRef<HTMLButtonElement>(null)
+  const preview = markdownPreview(note.body)
+  // Runs after the native close, so the page is no longer inert and the card can take focus back.
+  const close = useCallback(() => {
+    setOpen(false)
+    trigger.current?.focus()
+  }, [])
+  return (
+    <>
+      <button ref={trigger} type="button" aria-haspopup="dialog" onClick={() => setOpen(true)} className={cn(CARD, FOCUS_FLAT)}>
+        <span className="flex items-center gap-2 text-xs text-muted-foreground">
+          <NoteMark className="size-5 rounded" glyph="size-3" />
+          <span className="min-w-0 truncate">Note</span>
+        </span>
+        <span className="mt-1.5 block text-sm leading-snug font-medium break-words text-pretty text-card-foreground">{noteLabel(note)}</span>
+        {preview ? <span className="mt-1 line-clamp-3 block text-xs leading-relaxed break-words text-muted-foreground">{preview}</span> : null}
+        <span className="mt-2.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+          {note.tags.slice(0, 2).map((t) => (
+            <span key={t} className="rounded bg-muted px-1.5 py-0.5">
+              #{t}
+            </span>
+          ))}
+          <span className="ml-auto font-medium text-primary">Read</span>
+        </span>
+      </button>
+      {open ? (
+        <Sheet itemKey={note.key} onClose={close} mark={<NoteMark className="size-11 rounded-xl" glyph="size-5" />} kind="Note" title={noteLabel(note)} meta={`in ${graphName}`}>
+          <div className="px-4 pt-4 pb-2 sm:px-5">
+            {note.body ? (
+              <NoteBody note={note} className="space-y-3 text-sm leading-relaxed text-pretty text-foreground/90" />
+            ) : (
+              <p className="text-sm text-muted-foreground">This note is empty.</p>
+            )}
+            {note.links?.length ? <NoteLinks links={note.links} bleed="-mx-4 sm:-mx-5" /> : null}
+            {note.tags.length > 0 ? (
+              <div className="mt-4 flex flex-wrap gap-1.5">
+                {note.tags.map((tag) => (
+                  <span key={tag} className="rounded-md bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        </Sheet>
+      ) : null}
+    </>
   )
 }
 
@@ -248,7 +307,7 @@ function Board({ graph, itemKey, full, hot, setHot }: ViewProps) {
                   const node = byId.get(id)
                   return node ? (
                     <li key={id} data-gid={id} {...hotProps(id, setHot)}>
-                      <NodeCard node={node} itemKey={itemKey} />
+                      <NodeCard node={node} itemKey={itemKey} graphName={graph.name} />
                     </li>
                   ) : null
                 })}
@@ -315,7 +374,7 @@ function Canvas({ graph, itemKey, full, hot, setHot, scale, onFit }: ViewProps &
           <Wires wires={wires} hot={hot} />
           {graph.nodes.map((n) => (
             <div key={n.id} data-gid={n.id} className="absolute" style={{ left: n.x, top: n.y, width: NODE_W }} {...hotProps(n.id, setHot)}>
-              <NodeCard node={n} itemKey={itemKey} />
+              <NodeCard node={n} itemKey={itemKey} graphName={graph.name} />
             </div>
           ))}
         </div>
@@ -329,8 +388,8 @@ const TOOL = cn("grid size-8 place-items-center rounded-md text-muted-foreground
 /**
  * A shared graph, read-only: Board/Canvas toggle (starting at the graph's own mode), zoom on the
  * canvas, full screen in a native modal dialog (Esc leaves it), wires that light up on hover,
- * collection nodes that open their sheet (`<itemKey>/n:<nodeId>`) and bookmark nodes that open
- * in a new tab.
+ * collection and note nodes that open their sheet (`<itemKey>/n:<nodeId>`) and bookmark nodes that
+ * open in a new tab.
  */
 export function GraphView({ graph, itemKey }: { graph: PGraph; itemKey: string }) {
   const [mode, setMode] = useState<Mode>(graph.mode === "canvas" ? "canvas" : "board")

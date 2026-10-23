@@ -1,5 +1,5 @@
 import { httpsUrl } from './format'
-import type { PBookmark, PCollection, PIcon, PNote, PNoteLink, PayloadItem, SharePayload } from './types'
+import type { PBookmark, PCollection, PGraphNode, PIcon, PNote, PNoteLink, PayloadItem, SharePayload } from './types'
 
 /** The extension's collection glyphs (its `GLYPH_CHOICES`); any other glyph name is dropped. */
 export const MARK_GLYPHS = [
@@ -66,6 +66,22 @@ const collection = (c: PCollection): PCollection => ({
   notes: Array.isArray(c.notes) ? c.notes.map(toNote).filter((n) => n !== null) : undefined,
 })
 
+/** A graph node with its ref re-checked, or null for a malformed note node (the rest of the graph still renders). */
+function node(n: PGraphNode): PGraphNode | null {
+  switch (n.ref?.kind) {
+    case 'collection':
+      return { ...n, ref: { ...n.ref, collection: collection(n.ref.collection) } }
+    case 'bookmark':
+      return { ...n, ref: { ...n.ref, bookmark: bookmark(n.ref.bookmark) } }
+    case 'note': {
+      const note = toNote(n.ref.note)
+      return note ? { ...n, ref: { kind: 'note', note } } : null
+    }
+    default:
+      return n
+  }
+}
+
 function clean(i: PayloadItem): PayloadItem | null {
   switch (i.kind) {
     case 'note': {
@@ -76,28 +92,18 @@ function clean(i: PayloadItem): PayloadItem | null {
       return { ...i, bookmark: bookmark(i.bookmark) }
     case 'collection':
       return { ...i, collection: collection(i.collection) }
-    case 'graph':
-      return {
-        ...i,
-        graph: {
-          ...i.graph,
-          nodes: i.graph.nodes.map((n) => ({
-            ...n,
-            ref:
-              n.ref?.kind === 'collection'
-                ? { ...n.ref, collection: collection(n.ref.collection) }
-                : n.ref?.kind === 'bookmark'
-                  ? { ...n.ref, bookmark: bookmark(n.ref.bookmark) }
-                  : n.ref,
-          })),
-        },
-      }
+    case 'graph': {
+      const nodes = i.graph.nodes.map(node).filter((n) => n !== null)
+      const kept = new Set(nodes.map((n) => n.id))
+      // A dropped node takes its arrows with it.
+      return { ...i, graph: { ...i.graph, nodes, links: i.graph.links.filter((l) => kept.has(l.from) && kept.has(l.to)) } }
+    }
   }
 }
 
 /**
  * A share payload (parsed JSON: the public share's, or a private share's after decryption),
- * or null when it is not v1. Items of unknown kinds, and malformed notes, are dropped.
+ * or null when it is not v1. Items of unknown kinds, and malformed notes and note nodes, are dropped.
  */
 export function toPayload(raw: unknown): SharePayload | null {
   const p = raw as SharePayload | null

@@ -61,6 +61,7 @@ export function commentTargets(items: PayloadItem[]): CommentTargets {
       const nested: CommentTarget[] = []
       for (const n of item.graph.nodes) {
         if (n.ref.kind === 'bookmark') nested.push({ key: n.ref.bookmark.key, label: bookmarkLabel(n.ref.bookmark) })
+        else if (n.ref.kind === 'note') nested.push({ key: n.ref.note.key, label: noteLabel(n.ref.note) })
         else {
           nested.push({ key: n.ref.key, label: collectionLabel(n.ref.collection) })
           nested.push(...collectionTargets(n.ref.collection))

@@ -53,6 +53,7 @@ export interface PGraphNode {
   ref:
     | { kind: 'bookmark'; bookmark: PBookmark }
     | { kind: 'collection'; key: string; collection: PCollection }
+    | { kind: 'note'; note: PNote }
 }
 export interface PGraph {
   name: string

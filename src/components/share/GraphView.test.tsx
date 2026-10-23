@@ -217,6 +217,46 @@ describe('GraphView', () => {
   })
 })
 
+describe('note nodes', () => {
+  const noted: PGraph = {
+    ...graph,
+    nodes: [
+      ...graph.nodes.map((n) => (n.ref.kind === 'collection' ? { ...n, ref: { ...n.ref, collection: { ...n.ref.collection, notes: [{ key: 'g:1/n:c1/n:3', title: 'A', body: '', tags: [] }] } } } : n)),
+      { id: 'n1', stepId: 's1', x: 40, y: 240, ref: { kind: 'note', note: { key: 'g:1/n:n1', title: 'Why this order', body: 'Read **ownership** first.\n\n- then borrowing', tags: ['rust'] } } },
+    ],
+  }
+
+  it('shows the title and a plain preview, and counts notes on collection nodes', () => {
+    const el = mount(<GraphView graph={noted} itemKey="g:1" />)
+    const card = el.querySelector('[data-gid="n1"]')!
+    expect(card.textContent).toContain('Why this order')
+    expect(card.textContent).toContain('Read ownership first.')
+    expect(card.querySelector('strong')).toBeNull()
+    expect(el.querySelector('[data-gid="c1"]')!.textContent).toContain('1 note · 2 links')
+  })
+
+  it('opens the whole note in a sheet with its comments, and focus returns to the card', () => {
+    const el = mount(
+      <CollectionCommentsSlot.Provider value={(k) => <p data-comments>{`comments on ${k}`}</p>}>
+        <GraphView graph={noted} itemKey="g:1" />
+      </CollectionCommentsSlot.Provider>,
+    )
+    const trigger = el.querySelector<HTMLElement>('[data-gid="n1"] button')!
+    expect(trigger.getAttribute('aria-haspopup')).toBe('dialog')
+    click(trigger)
+    const d = sheet()!
+    expect(document.getElementById(d.getAttribute('aria-labelledby')!)?.textContent).toBe('Why this order')
+    expect(d.querySelector('strong')?.textContent).toBe('ownership')
+    expect(d.querySelectorAll('li')).toHaveLength(1)
+    expect(d.textContent).toContain('in Rust, from zero to shipping')
+    expect(d.textContent).toContain('#rust')
+    expect(d.querySelector('[data-comments]')?.textContent).toBe('comments on g:1/n:n1')
+    esc()
+    expect(sheet()).toBeNull()
+    expect(document.activeElement).toBe(trigger)
+  })
+})
+
 describe('CollectionSheet', () => {
   function page() {
     return mount(
