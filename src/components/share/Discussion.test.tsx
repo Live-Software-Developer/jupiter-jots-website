@@ -28,7 +28,17 @@ beforeAll(() => {
 
 const bm = (key: string, title: string): PBookmark => ({ key, url: 'https://x.dev', title, domain: 'x.dev', note: '', tags: [], read: false })
 const items: PayloadItem[] = [
-  { key: 'c:3', kind: 'collection', collection: { name: 'Reading list', note: '', hue: 1, bookmarks: [bm('c:3/b:12', 'Twelve')] } },
+  {
+    key: 'c:3',
+    kind: 'collection',
+    collection: {
+      name: 'Reading list',
+      note: '',
+      hue: 1,
+      bookmarks: [bm('c:3/b:12', 'Twelve')],
+      collections: [{ key: 'c:3/c:7', name: 'Near', note: '', hue: 2, bookmarks: [bm('c:3/b:13', 'Rust cross contract calls')] }],
+    },
+  },
   {
     key: 'g:4',
     kind: 'graph',
@@ -111,6 +121,22 @@ const live = (event: string, data: unknown, channel = GROUP) =>
 
 let root: Root | null = null
 let host: HTMLDivElement
+/** Opens the composer's "On" select (Radix, in a portal) and returns its options in order. */
+async function openTargets(): Promise<HTMLElement[]> {
+  const trigger = $('button[role="combobox"]') as HTMLButtonElement
+  await act(async () => {
+    trigger.focus()
+    trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }))
+  })
+  return [...document.querySelectorAll<HTMLElement>('[role="option"]')]
+}
+/** Chooses an open select's option with the keyboard, as Radix does on Enter. */
+async function pick(option: HTMLElement) {
+  await act(async () => {
+    option.focus()
+    option.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+  })
+}
 async function render(ui: ReactNode) {
   host = document.createElement('div')
   document.body.append(host)
@@ -437,12 +463,29 @@ describe('composer', () => {
     expect(localStorage.getItem('jj.name')).toBe('Kim')
   })
 
-  it('posts on the chosen item', async () => {
+  it('posts on the chosen item, picked from the nested select', async () => {
     postMock.mockImplementation(async (_slug, body) => ({ ok: true, data: c({ ...body, mine: true }) }))
     await render(ui())
-    const select = $('select[name="item_key"]') as HTMLSelectElement
-    expect([...select.options].map((o) => o.value)).toEqual(['', 'c:3', 'c:3/b:12', 'g:4', 'g:4/n:k', 'g:4/n:k/b:9'])
-    await act(async () => type(select, 'g:4/n:k/b:9'))
+    const trigger = $('button[role="combobox"]') as HTMLButtonElement
+    expect(trigger.textContent).toBe('The whole share')
+    let opts = await openTargets()
+    expect(opts.map((o) => [o.textContent, o.dataset.depth ?? null])).toEqual([
+      ['The whole share', null],
+      ['Reading list', '0'],
+      ['Near', '1'],
+      ['Rust cross contract calls', '2'],
+      ['Twelve', '1'],
+      ['Learning path', '0'],
+      ['Deep dives', '1'],
+      ['Nine', '2'],
+    ])
+    expect(opts[3].style.paddingLeft).toBe('2.25rem')
+    expect(opts[3].querySelector('[title]')?.getAttribute('title')).toBe('Rust cross contract calls')
+    await pick(opts[3])
+    expect(trigger.textContent).toBe('Near › Rust cross contract calls')
+    expect(($('input[name="item_key"]') as HTMLInputElement).value).toBe('c:3/b:13')
+    opts = await openTargets()
+    await pick(opts.find((o) => o.textContent === 'Nine')!)
     await fill('Kim', 'On nine')
     await submit()
     expect(postMock.mock.calls[0][1].item_key).toBe('g:4/n:k/b:9')
@@ -597,7 +640,7 @@ describe('item filter', () => {
     expect(host.textContent).toContain('Showing comments on')
     expect(host.textContent).toContain('About twelve')
     expect(host.textContent).not.toContain('About everything')
-    expect(($('select[name="item_key"]') as HTMLSelectElement).value).toBe('c:3')
+    expect(($('input[name="item_key"]') as HTMLInputElement).value).toBe('c:3')
     await act(async () => ($('button[aria-label="Clear filter"]') as HTMLButtonElement).click())
     expect(host.textContent).toContain('About everything')
   })

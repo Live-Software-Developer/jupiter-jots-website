@@ -3,9 +3,10 @@
 import { useCallback, useId, useMemo, useState, type FormEvent, type ReactNode } from "react"
 
 import { FOCUS_FLAT } from "@/components/site/styles"
+import { Select, SelectContent, SelectGroup, SelectItem, SelectItemText, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { formatDate, initialsOf, plural } from "@/lib/share/format"
 import { renderMarkdown, type MarkdownOptions } from "@/lib/share/markdown"
-import { isTarget, targetLabel, WHOLE_SHARE } from "@/lib/share/targets"
+import { isTarget, targetLabel, WHOLE_SHARE, type TargetKind } from "@/lib/share/targets"
 import type { ApiResult } from "@/lib/share/types"
 import { SITE_URL } from "@/lib/site"
 import { cn } from "@/lib/utils"
@@ -399,33 +400,11 @@ function Composer({ itemKey, parent, onDone }: { itemKey?: string; parent?: Show
       </p>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         {showSelect ? (
-          <label className="inline-flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
-            On
-            <select
-              name="item_key"
-              value={target}
-              onChange={(e) => setChoice({ filter: s.filter, key: e.target.value })}
-              className={cn("h-9 max-w-56 min-w-0 truncate rounded-lg border border-input bg-background px-2 text-sm text-foreground", FOCUS_FLAT)}
-            >
-              <option value="">{WHOLE_SHARE}</option>
-              {s.targets.groups.map((g) =>
-                g.nested.length ? (
-                  <optgroup key={g.item.key} label={g.item.label}>
-                    <option value={g.item.key}>{g.item.label}</option>
-                    {g.nested.map((n) => (
-                      <option key={n.key} value={n.key}>
-                        {n.label}
-                      </option>
-                    ))}
-                  </optgroup>
-                ) : (
-                  <option key={g.item.key} value={g.item.key}>
-                    {g.item.label}
-                  </option>
-                ),
-              )}
-            </select>
-          </label>
+          <span className="inline-flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+            <span id={`${id}-on`}>On</span>
+            <TargetSelect value={target} labelledBy={`${id}-on`} onChange={(key) => setChoice({ filter: s.filter, key })} />
+            <input type="hidden" name="item_key" value={target} />
+          </span>
         ) : null}
         <span className="ml-auto flex items-center gap-2">
           {parent && onDone ? (
@@ -448,6 +427,65 @@ function Composer({ itemKey, parent, onDone }: { itemKey?: string; parent?: Show
         </p>
       ) : null}
     </form>
+  )
+}
+
+/** Radix reserves "" for "no value", so the whole share ("") is this in the select. */
+const WHOLE = "__share__"
+
+const KIND_ICON: Record<TargetKind, ReactNode> = { graph: GLYPH.graph, collection: GLYPH.folder, note: GLYPH.note, bookmark: GLYPH.bookmark }
+
+function TargetRow({ icon, label }: { icon: ReactNode; label: string }) {
+  return (
+    <span className="flex min-w-0 items-center gap-2" title={label}>
+      <span className="shrink-0 text-muted-foreground">{ico(icon, "size-3.5")}</span>
+      <SelectItemText>
+        <span className="block truncate">{label}</span>
+      </SelectItemText>
+    </span>
+  )
+}
+
+/**
+ * The composer's "On …" picker: the whole share, then each item with what is nested in it
+ * indented by depth (a collection or graph is itself a target, its contents under it). The
+ * trigger shows a nested pick with its parent ("Near › Rust").
+ */
+function TargetSelect({ value, labelledBy, onChange }: { value: string; labelledBy: string; onChange(key: string): void }) {
+  const s = useRequiredStore()
+  const picked = useMemo(() => {
+    for (const g of s.targets.groups) for (const t of [g.item, ...g.nested]) if (t.key === value) return t
+    return null
+  }, [s.targets, value])
+  const shown = picked ? (picked.parent ? `${picked.parent} › ${picked.label}` : picked.label) : WHOLE_SHARE
+  return (
+    <Select value={value || WHOLE} onValueChange={(v) => onChange(v === WHOLE ? "" : v)}>
+      <SelectTrigger aria-labelledby={labelledBy} title={shown} className="max-w-56">
+        <SelectValue>{shown}</SelectValue>
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value={WHOLE} textValue={WHOLE_SHARE}>
+          <TargetRow icon={GLYPH.chat} label={WHOLE_SHARE} />
+        </SelectItem>
+        <SelectSeparator />
+        {s.targets.groups.map((g) => (
+          <SelectGroup key={g.item.key} data-target-group>
+            {[g.item, ...g.nested].map((t) => (
+              <SelectItem
+                key={t.key}
+                value={t.key}
+                textValue={t.label}
+                data-depth={t.depth}
+                style={{ paddingLeft: `${0.5 + Math.min(t.depth, 6) * 0.875}rem` }}
+                className={t.depth === 0 ? "font-medium" : undefined}
+              >
+                <TargetRow icon={KIND_ICON[t.kind]} label={t.label} />
+              </SelectItem>
+            ))}
+          </SelectGroup>
+        ))}
+      </SelectContent>
+    </Select>
   )
 }
 
