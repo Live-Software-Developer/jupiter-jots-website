@@ -24,7 +24,7 @@ export const toc = [
 - There is no account and no email. No analytics, no advertising and no tracking. Nothing is sold.
 - Share pages set one functional cookie, `jj_visitor`, and no other cookies. They load site icons and preview images straight from the sites that host them.
 - Pages are read only when you save them. Chrome bookmarks are read only when you import them.
-- AI is bring-your-own-key. Your keys stay in your browser, and AI requests go straight from your browser to the provider you pick. Our server never sees your keys or prompts.
+- AI is bring-your-own-key. Your keys stay in your browser, encrypted with a password you choose, and AI requests go straight from your browser to the provider you pick. Our server never sees your keys or prompts.
 - Uninstalling deletes your library. Export a backup first if you want to keep it.
 
 </Summary>
@@ -59,7 +59,8 @@ Your library lives in your browser’s own database (IndexedDB), inside your Chr
 - **Bookmarks:** each page’s address and title, its description and preview image address if the page provides them, any text you had selected, and the date you saved it.
 - **Notes, tags and collections**, including the icon, emoji or colour you give a collection.
 - **Settings**, such as your theme, default collection and the sites your keyboard shortcuts open.
-- **AI provider keys**, if you add any, and which model to use. These are kept in the extension’s own local storage (`chrome.storage.local`) in this browser, apart from your library. They are never sent to us, never synced, and never included in a backup or export.
+- **AI provider keys**, if you add any, and which model to use. The keys are encrypted with a password you choose on this device (Argon2id and AES-256-GCM) and kept in the extension’s own local storage (`chrome.storage.local`), apart from your library. Neither the keys nor the password are ever sent to us, synced, or included in a backup or export. While you use AI the keys are unlocked in memory only; if you choose to keep them unlocked until the browser closes, the unlocking key is held in Chrome’s in-memory session storage, never on disk. A forgotten password can’t be recovered: you reset the vault and add your keys again.
+- **Key transfer codes**, if you move your keys to another device. A transfer code holds your keys encrypted with a passphrase (your password, or another one you choose). You copy it or show it as a QR code yourself; it never passes through our server.
 - **An activity log** of when you open or save a bookmark, and from where (popup, side panel, full screen or a shortcut). It powers the Insights page. You can pause or clear it in Settings.
 
 Jupiter Jots asks Chrome for unlimited local storage so a large library is not trimmed. That storage never leaves your device.
