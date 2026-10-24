@@ -6,6 +6,8 @@ import { b64encode, decryptJson, deriveKey, encryptJson } from '@/lib/share/cryp
 import type { PBookmark, PublicComment, PublicShare, SharePayload } from '@/lib/share/types'
 import { commentCodec, PrivateGate } from './PrivateGate'
 
+vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn() }) }))
+
 vi.mock('@/lib/share/api', () => ({
   apiBase: () => 'http://127.0.0.1:8000',
   visitorKey: () => 'f'.repeat(32),
@@ -192,6 +194,21 @@ describe('unlocking', () => {
     expect(document.querySelector('#item-n-4 strong')?.textContent).toBe('one')
     expect(document.querySelector('[data-visibility="private"]')?.textContent).toBe('Password protected')
     expect(passwordInput()).toBeNull()
+  })
+
+  it('decrypts a live share’s new ciphertext with the key already in memory', async () => {
+    await render(await makeShare({ live: true }))
+    await tryPassword(PASSWORD)
+    expect(text()).toContain('Design system docs')
+
+    const updated: SharePayload = {
+      ...PAYLOAD,
+      items: [{ key: 'b:9', kind: 'bookmark', bookmark: bm('b:9', 'Added after the share went live') }],
+    }
+    await act(async () => root!.render(<PrivateGate share={await makeShare({ live: true, updated_at: '2026-10-24T11:00:00Z' }, updated)} />))
+    await until(() => text().includes('Added after the share went live'), 'the live update')
+    expect(text()).not.toContain('Design system docs')
+    expect(text()).not.toContain(PASSWORD)
   })
 
   it('says the password did not work and keeps what was typed', async () => {

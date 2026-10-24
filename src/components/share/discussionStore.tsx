@@ -190,6 +190,10 @@ export interface StoreProps {
   targets: CommentTargets
   audience?: "link" | "password"
   codec?: CommentCodec
+  /** A live share announced a newer `updated_at`; the page re-reads it. */
+  onShareUpdated?: (data: unknown) => void
+  /** Called when the stream was down and reconnects, or when polling has to stand in for it. */
+  onCatchUp?: () => void
   children: ReactNode
 }
 
@@ -199,7 +203,18 @@ export interface StoreProps {
  * visitor's own posts — goes through one promise queue, so a slow `codec.decode` cannot reorder
  * events and a refetch in flight cannot overwrite a newer change.
  */
-export function DiscussionStoreProvider({ slug, mode, locked, count: initialCount, targets, audience = "link", codec = IDENTITY, children }: StoreProps) {
+export function DiscussionStoreProvider({
+  slug,
+  mode,
+  locked,
+  count: initialCount,
+  targets,
+  audience = "link",
+  codec = IDENTITY,
+  onShareUpdated,
+  onCatchUp,
+  children,
+}: StoreProps) {
   const [state, dispatch] = useReducer(reducer, undefined, initialState)
   const [closed, setClosed] = useState<Closed>(mode === "off" ? "off" : locked ? "locked" : null)
   const [filter, setFilter] = useState<string | null>(null)
@@ -255,8 +270,10 @@ export function DiscussionStoreProvider({ slug, mode, locked, count: initialCoun
       comment_hidden: (d) => {
         if (hasId(d)) enqueue(async () => dispatch({ type: "hide", id: d.id }))
       },
+      ...(onShareUpdated && { share_updated: onShareUpdated }),
     },
     reload,
+    onCatchUp,
   )
 
   const post = useCallback(

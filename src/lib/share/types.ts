@@ -100,6 +100,8 @@ export interface PublicShare {
   kdf_iters: number
   comment_mode: CommentMode
   locked: boolean
+  /** The curator keeps this share's content in sync; the page follows `share_updated` events. */
+  live?: boolean
   created_at: string
   updated_at: string
   expires_at: string | null

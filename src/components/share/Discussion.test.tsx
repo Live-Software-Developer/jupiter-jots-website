@@ -5,7 +5,10 @@ import { commentTargets } from '@/lib/share/targets'
 import type { CommentList, CommentMode, PBookmark, PayloadItem, PublicComment } from '@/lib/share/types'
 import { getComments, getShareCard, postComment, report, vote } from '@/lib/share/api'
 import { CollectionCommentsSlot } from './CollectionSheet'
-import { BandCommentsLink, Discussion, DiscussionProvider, ItemFilterLink, type CommentCodec } from './Discussion'
+import { BandCommentsLink, Discussion, DiscussionProvider, ShareDiscussionProvider, ItemFilterLink, type CommentCodec } from './Discussion'
+
+const routerMock = vi.hoisted(() => ({ refresh: vi.fn() }))
+vi.mock('next/navigation', () => ({ useRouter: () => routerMock }))
 
 vi.mock('@/lib/share/api', () => ({
   apiBase: () => 'http://127.0.0.1:8000',
@@ -151,6 +154,22 @@ function ui({ mode = 'open', locked = false, codec, audience, children }: { mode
     <DiscussionProvider slug="abcdefghij" mode={mode} locked={locked} count={0} targets={targets} codec={codec} audience={audience}>
       {children ?? <Discussion />}
     </DiscussionProvider>
+  )
+}
+
+function shareUi(live: boolean, updatedAt = '2026-10-24T10:00:00.000Z') {
+  return (
+    <ShareDiscussionProvider
+      slug="abcdefghij"
+      mode="open"
+      locked={false}
+      count={0}
+      targets={targets}
+      live={live}
+      updatedAt={updatedAt}
+    >
+      <Discussion />
+    </ShareDiscussionProvider>
   )
 }
 
@@ -406,6 +425,50 @@ describe('live events', () => {
     await act(async () => vi.advanceTimersByTime(30_000))
     await flush()
     expect(getMock).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('live share content', () => {
+  it('asks the router to re-read when a newer share_updated arrives', async () => {
+    await render(shareUi(true))
+    await live('share_updated', { updated_at: '2026-10-24T10:00:01.000Z' })
+    expect(routerMock.refresh).toHaveBeenCalledTimes(1)
+  })
+
+  it('ignores the same or an older timestamp, and malformed events', async () => {
+    await render(shareUi(true))
+    await live('share_updated', { updated_at: '2026-10-24T10:00:00.000Z' })
+    await live('share_updated', { updated_at: '2026-10-24T09:59:59.000Z' })
+    await live('share_updated', {})
+    await live('share_updated', null)
+    expect(routerMock.refresh).not.toHaveBeenCalled()
+  })
+
+  it('does not stack refresh calls for duplicate events, even before the new props land', async () => {
+    await render(shareUi(true))
+    const at = '2026-10-24T10:00:01.000Z'
+    await live('share_updated', { updated_at: at })
+    await live('share_updated', { updated_at: at })
+    expect(routerMock.refresh).toHaveBeenCalledTimes(1)
+  })
+
+  it('leaves snapshot shares alone', async () => {
+    await render(shareUi(false))
+    await live('share_updated', { updated_at: '2026-10-24T10:00:01.000Z' })
+    expect(routerMock.refresh).not.toHaveBeenCalled()
+  })
+
+  it('re-reads the share when the stream reconnects or has to poll', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] })
+    await render(shareUi(true))
+    const es = streams()[0]
+    es.open()
+    await act(async () => es.fail(FakeEventSource.CONNECTING))
+    await act(async () => es.open())
+    expect(routerMock.refresh).toHaveBeenCalledTimes(1)
+    await act(async () => streams()[0].fail(FakeEventSource.CLOSED))
+    await act(async () => vi.advanceTimersByTime(30_000))
+    expect(routerMock.refresh).toHaveBeenCalledTimes(2)
   })
 })
 

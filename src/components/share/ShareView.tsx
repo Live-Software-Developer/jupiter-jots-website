@@ -2,7 +2,7 @@ import type { ReactNode } from "react"
 
 import { BookmarkSheetProvider } from "@/components/share/BookmarkSheet"
 import { CollectionSheetProvider } from "@/components/share/CollectionSheet"
-import { Discussion, DiscussionProvider, type CommentCodec } from "@/components/share/Discussion"
+import { Discussion, ShareDiscussionProvider, type CommentCodec } from "@/components/share/Discussion"
 import { ShareReadProvider } from "@/components/share/ReadState"
 import { ShareBand, toBands } from "@/components/share/ShareBand"
 import { ShareHero } from "@/components/share/ShareHero"
@@ -31,7 +31,7 @@ export function ShareView({
 
   return (
     <ShareReadProvider slug={share.slug}>
-      <DiscussionProvider
+      <ShareDiscussionProvider
         slug={share.slug}
         mode={share.comment_mode}
         locked={share.locked}
@@ -39,6 +39,8 @@ export function ShareView({
         targets={commentTargets(payload.items)}
         audience={share.visibility === "private" ? "password" : "link"}
         codec={codec}
+        live={share.live === true}
+        updatedAt={share.updated_at}
       >
         <BookmarkSheetProvider>
           <CollectionSheetProvider collections={sheetEntries(payload.items)} curator={curator}>
@@ -60,7 +62,7 @@ export function ShareView({
             </main>
           </CollectionSheetProvider>
         </BookmarkSheetProvider>
-      </DiscussionProvider>
+      </ShareDiscussionProvider>
     </ShareReadProvider>
   )
 }

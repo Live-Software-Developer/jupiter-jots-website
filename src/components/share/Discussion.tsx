@@ -1,11 +1,13 @@
 "use client"
 
-import { useCallback, useId, useMemo, useState, type FormEvent, type ReactNode } from "react"
+import { useRouter } from "next/navigation"
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react"
 
 import { FOCUS_FLAT } from "@/components/site/styles"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectItemText, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { formatDate, initialsOf, plural } from "@/lib/share/format"
 import { renderMarkdown, type MarkdownOptions } from "@/lib/share/markdown"
+import { newerShareUpdate } from "@/lib/share/shareUpdates"
 import { isTarget, targetLabel, WHOLE_SHARE, type TargetKind } from "@/lib/share/targets"
 import type { ApiResult } from "@/lib/share/types"
 import { SITE_URL } from "@/lib/site"
@@ -50,6 +52,38 @@ export function DiscussionProvider({ children, ...props }: StoreProps) {
       <CollectionCommentsSlot.Provider value={slot}>{children}</CollectionCommentsSlot.Provider>
     </DiscussionStoreProvider>
   )
+}
+
+/** A live share also refreshes the server-rendered content when `share_updated` arrives. */
+export function ShareDiscussionProvider({
+  live,
+  updatedAt,
+  ...props
+}: StoreProps & { live?: boolean; updatedAt: string }) {
+  if (!live) return <DiscussionProvider {...props} />
+  return <LiveDiscussionProvider {...props} updatedAt={updatedAt} />
+}
+
+function LiveDiscussionProvider({ updatedAt, ...props }: StoreProps & { updatedAt: string }) {
+  const router = useRouter()
+  const seenAt = useRef(updatedAt)
+  useEffect(() => {
+    seenAt.current = updatedAt
+  }, [updatedAt])
+
+  const refresh = useCallback(() => router.refresh(), [router])
+  const onShareUpdated = useCallback(
+    (data: unknown) => {
+      const at = newerShareUpdate(data, seenAt.current)
+      if (!at) return
+      // Remember it before the refresh lands, so duplicate events do not stack another refresh.
+      seenAt.current = at
+      router.refresh()
+    },
+    [router],
+  )
+
+  return <DiscussionProvider {...props} onShareUpdated={onShareUpdated} onCatchUp={refresh} />
 }
 
 // ---------------------------------------------------------------------------------------------

@@ -70,6 +70,8 @@ export function PrivateGate({ share }: { share: PublicShare }) {
   const failures = useRef(0)
   const cooldown = useRef<ReturnType<typeof setTimeout> | null>(null)
   const input = useRef<HTMLInputElement>(null)
+  // The ciphertext the open view was decrypted from, so a new server payload is decrypted exactly once.
+  const lastPayload = useRef<string | null>(null)
 
   const salt = useMemo(() => saltOf(share), [share])
   const unsafe =
@@ -89,6 +91,28 @@ export function PrivateGate({ share }: { share: PublicShare }) {
   const key = phase.kind === "open" ? phase.key : null
   const codec = useMemo(() => (key ? commentCodec(key) : undefined), [key])
 
+  // A live share refreshes on the server; decrypt its new ciphertext with the key already in
+  // memory. The page never sends that key anywhere, and a failure shows the same damaged card.
+  useEffect(() => {
+    if (!share.live || !key || lastPayload.current === share.payload) return
+    lastPayload.current = share.payload
+    let alive = true
+    decryptJson(key, share.payload)
+      .then((raw) => {
+        if (!alive) return
+        const payload = toPayload(raw)
+        setPhase((p) =>
+          p.kind === "open" && p.key === key ? (payload ? { ...p, payload } : { kind: "damaged" }) : p,
+        )
+      })
+      .catch(() => {
+        if (alive) setPhase((p) => (p.kind === "open" && p.key === key ? { kind: "damaged" } : p))
+      })
+    return () => {
+      alive = false
+    }
+  }, [key, share.live, share.payload])
+
   async function unlock(e: FormEvent) {
     e.preventDefault()
     if (busy || cooling || !password || !salt) return
@@ -99,6 +123,7 @@ export function PrivateGate({ share }: { share: PublicShare }) {
       const payload = toPayload(await decryptJson(k, share.payload))
       failures.current = 0
       setPassword("")
+      if (payload) lastPayload.current = share.payload
       setPhase(payload ? { kind: "open", key: k, payload } : { kind: "damaged" })
     } catch (err) {
       if (!(err instanceof WrongPassword)) {
