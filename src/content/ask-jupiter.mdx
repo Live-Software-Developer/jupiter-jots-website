@@ -1,0 +1,126 @@
+export const toc = [
+  { id: "what", label: "What Ask Jupiter is" },
+  { id: "setup", label: "Add your AI key" },
+  { id: "ask", label: "Questions it can answer" },
+  { id: "changes", label: "Approve every change" },
+  { id: "privacy", label: "What it can see" },
+  { id: "chats", label: "Saved chats" },
+  { id: "limits", label: "Limits and costs" },
+]
+
+<Section anchor="what" title="What Ask Jupiter is">
+<Prose>
+
+Ask Jupiter is a conversation inside Jupiter Jots. It works on **your saved library**, not the open web: it finds bookmarks by what they are about, reads the notes you wrote, summarises a collection, suggests tags, and can prepare changes when you ask for them.
+
+It is not a browser copilot. It does not read the page you are looking at, and it cannot browse sites for you. Its answers come from what you saved, plus the AI model you connect.
+
+Ask Jupiter is included in the extension. It stays dormant until you add a key from an AI provider you choose.
+
+</Prose>
+
+<AskPreview className="mt-6" />
+
+</Section>
+
+<Section anchor="setup" title="Add your AI key">
+<Prose>
+
+Ask Jupiter uses **your** account with an AI provider, not one supplied by Jupiter Jots. That keeps your questions and library out of our hands, and means you choose the model and pay the provider directly (some OpenRouter models are free).
+
+1. Open Jupiter Jots and go to **Settings → AI providers**.
+2. Choose a provider: Anthropic, OpenAI, Google or OpenRouter, and paste its API key.
+3. Set a vault password. The key is encrypted with it and kept in this browser only.
+4. Choose the model you want to use. You can change it later.
+5. Open **Ask Jupiter** from the sparkle in the header, or press <Kbd>Ctrl</Kbd>/<Kbd>Cmd</Kbd> + <Kbd>K</Kbd> and type a question.
+
+The first time, Jupiter Jots may ask Chrome for permission to reach that provider’s API. No request goes to a Jupiter Jots server. The key is never synced, put in a backup, or sent to us. If you forget the vault password, it cannot be recovered; reset the vault and add the key again.
+
+</Prose>
+
+<Defs>
+<Def term="Bring your own key">Use a key you already have with Anthropic, OpenAI, Google or OpenRouter.</Def>
+<Def term="Your vault">The key is encrypted on this device with a password you choose. Unlock it when you want to ask.</Def>
+<Def term="Your model">Different models differ in quality, speed and price. The model picker shows what each provider offers.</Def>
+<Def term="No key, no requests">Without a key, the panel shows setup instructions and never contacts a provider.</Def>
+</Defs>
+
+</Section>
+
+<Section anchor="ask" title="Questions it can answer">
+<Prose>
+
+Ask in the same words you would use with a person. Jupiter searches titles, addresses, page descriptions, collection names, tags and your notes, then answers with the saved items it used. You can open any of those items from the answer.
+
+</Prose>
+
+<Defs>
+<Def term="Find something">“What did I save about database locks?” or “Find the article about Rust ownership I noted last month.”</Def>
+<Def term="Summarise">“Summarise my Web3 collection.” or “What are the main ideas across these five links?”</Def>
+<Def term="Tidy up">“Organise my unsorted bookmarks.” or “Find duplicate bookmarks and suggest a merge.”</Def>
+<Def term="Write and organise">“Create a reading path for learning Rust.” or “Add the tag `#postgres` to those three.”</Def>
+<Def term="Review">“What should I clean up?” or “Which saves have I never opened?”</Def>
+<Def term="Share">“Prepare a share of these five links.” Sharing tools always wait for your approval.</Def>
+</Defs>
+
+<Prose className="mt-6">
+
+Answers are grounded in the library, but a model can still be wrong. Treat a summary as a first pass, especially before deleting or merging anything.
+
+</Prose>
+
+</Section>
+
+<Section anchor="changes" title="Approve every change">
+<Prose>
+
+Ask Jupiter uses the same tools as the rest of Jupiter Jots, under permissions you control. When a conversation proposes a change, it is staged as a **Change set**: you see the before and after, then choose **Apply** or **Discard**. After applying, **Undo** reverses it.
+
+Writes never happen silently. Even with a tool set to **On**, a write comes back as a proposal. Destructive actions ask again before they run.
+
+</Prose>
+
+<Defs>
+<Def term="Off">The tool does not exist for Ask Jupiter. It is not offered to the model.</Def>
+<Def term="Ask">The tool waits for your confirmation before it runs.</Def>
+<Def term="On">Reads can run without a prompt. Writes still wait for your review.</Def>
+<Def term="Always asks">Sharing and destructive tools cannot be set to On, so they always ask.</Def>
+<Def term="Read-only">One switch in **Settings → AI tools** turns every write and destructive tool off for both Ask Jupiter and outside agents.</Def>
+</Defs>
+
+</Section>
+
+<Section anchor="privacy" title="What it can see">
+<Prose>
+
+Ask Jupiter can read a saved page’s **title, address and description**, the collection and tag names it belongs to, and **your notes**. It never receives the text of the page itself.
+
+Notes you hide from AI, and password-locked notes, do not exist to it. A tool asked for one answers the same way as for an item that does not exist.
+
+Your question and the items needed to answer it go straight from your browser to the AI provider, using your key. They do not pass through our server. That provider’s privacy policy governs what it receives. The [privacy policy](/privacy#network) covers this in more detail.
+
+</Prose>
+
+</Section>
+
+<Section anchor="chats" title="Saved chats">
+<Prose>
+
+Each conversation is saved in this browser so you can come back to it. Open the chat history from the Ask Jupiter panel to reopen or delete a conversation. A saved chat keeps the model it started with; if that model is no longer available, choose another before continuing.
+
+Saved chats are not shared and not synced between devices. Deleting a chat removes its transcript from this browser.
+
+</Prose>
+
+</Section>
+
+<Section anchor="limits" title="Limits and costs">
+<Prose>
+
+Ask Jupiter depends on an outside AI provider, so it needs an internet connection while it works. Answers may be incomplete or wrong, and the provider may charge for tokens.
+
+It sees your notes but not the pages those notes are about. It does not sync your library, run on a schedule, or act as a general browser agent. You can turn individual tools off, use read-only mode, remove your key, or close the panel at any time.
+
+</Prose>
+
+</Section>

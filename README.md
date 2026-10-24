@@ -28,6 +28,8 @@ Already set: the Chrome Web Store listing (`STORE_URL`, every "Add to Chrome" li
 |---|---|---|
 | `/` | `src/app/(site)/page.tsx` | `/site` |
 | `/guide` | `src/content/guide.mdx` | `/site-guide` |
+| `/guide/ask-jupiter` | `src/content/ask-jupiter.mdx` | — |
+| `/guide/agents` | `src/content/agents.mdx` | — |
 | `/faq` | `src/content/faq.mdx` | `/site-faq` |
 | `/changelog` | `src/content/changelog.mdx` | `/site-changelog` |
 | `/about` | `src/content/about.mdx` | `/site-about` |

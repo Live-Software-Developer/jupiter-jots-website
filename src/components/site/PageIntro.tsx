@@ -1,5 +1,7 @@
+import type { ReactNode } from "react"
+
 /** The design's <site-page-intro>: the opening block of a content page. */
-export function PageIntro({ title, lede, meta }: { title: string; lede?: string; meta?: string }) {
+export function PageIntro({ title, lede, meta }: { title: string; lede?: string; meta?: ReactNode }) {
   return (
     <div className="block border-b border-border">
       <div className="mx-auto w-full max-w-6xl px-4 pt-10 pb-8 sm:px-6 sm:pt-14 sm:pb-10 lg:pt-16 lg:pb-12">

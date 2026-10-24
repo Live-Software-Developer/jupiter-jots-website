@@ -10,7 +10,7 @@ import { FOCUS } from "@/components/site/styles"
 export function NavLinks({ mobile = false, onNavigate }: { mobile?: boolean; onNavigate?: () => void }) {
   const pathname = usePathname()
   return NAV.map((item) => {
-    const on = item.match !== null && pathname === item.match
+    const on = item.match !== null && (pathname === item.match || pathname.startsWith(`${item.match}/`))
     const cls = mobile
       ? `flex items-center justify-between rounded-lg px-3 py-3 text-xl font-semibold tracking-tight transition-colors ${
           on ? "bg-accent text-accent-foreground" : "text-foreground hover:bg-accent"

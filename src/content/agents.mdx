@@ -1,0 +1,199 @@
+export const toc = [
+  { id: "what", label: "What it is" },
+  { id: "before", label: "Before you start" },
+  { id: "enable", label: "Turn on the bridge" },
+  { id: "connect", label: "Connect your agent" },
+  { id: "use", label: "Work with your library" },
+  { id: "approve", label: "Approve writes" },
+  { id: "permissions", label: "Set permissions" },
+  { id: "privacy", label: "What leaves your device" },
+  { id: "disconnect", label: "Disconnect or revoke" },
+  { id: "troubleshoot", label: "If tools don’t appear" },
+]
+
+<Section anchor="what" title="What it is">
+<Prose>
+
+Jupiter Jots can expose its library to an agent running in your terminal. The agent searches, reads, saves and organises through **MCP** (Model Context Protocol), the standard way tools are offered to Claude Code, Cursor and other MCP clients.
+
+The connection is **local to this computer**. A small bridge, included with Jupiter Jots, runs on your machine and talks to the extension. There is no account and no Jupiter Jots server in the middle. The agent may still send what it reads to its own model provider, under that provider’s terms.
+
+This is different from [Ask Jupiter](/guide/ask-jupiter): Ask Jupiter is the chat inside the extension, using the key you added there. Connected agents are outside programs you already work with.
+
+</Prose>
+
+<AgentFlowPreview className="mt-6" />
+
+</Section>
+
+<Section anchor="before" title="Before you start">
+<Prose>
+
+You need:
+
+- **Jupiter Jots** installed in Chrome, with the Connected agents feature.
+- **Node.js**, because the bridge is a small Node.js program. If Claude Code runs on this machine, its Node.js is enough.
+- **An MCP client** that can launch a local stdio server. The examples below use Claude Code; any client that understands `command` and `args` works the same way.
+- **The bridge files** in the Jupiter Jots checkout, under `mcp/`. Keep them in a folder you control; the client will launch `mcp/server.mjs` from there.
+
+Keep Chrome running while you use the bridge. The extension’s offscreen document holds the local connection; closing Chrome closes it too.
+
+</Prose>
+
+</Section>
+
+<Section anchor="enable" title="Turn on the bridge">
+<Prose>
+
+1. In Jupiter Jots, open **Settings → Connected agents**.
+2. Turn on **Let outside agents connect**.
+3. Continue with the next step. If the local bridge is not running yet, the status may say **Connecting**; it retries until the daemon starts, then changes to **Connected**. The page can be closed; the bridge keeps running in the extension.
+
+Connected agents is off by default. Turning it on does not install a key or contact an AI provider: it only opens the local door an agent can knock on.
+
+</Prose>
+
+</Section>
+
+<Section anchor="connect" title="Connect your agent">
+<Prose>
+
+Point your MCP client at `mcp/server.mjs` with Node. In Claude Code, the project file `.mcp.json` does this:
+
+```json
+{
+  "mcpServers": {
+    "jupiter-jots": {
+      "command": "node",
+      "args": ["mcp/server.mjs"]
+    }
+  }
+}
+```
+
+That relative path works when Claude Code starts in the Jupiter Jots folder. If your config lives elsewhere, use the absolute path to `server.mjs`:
+
+```json
+{
+  "mcpServers": {
+    "jupiter-jots": {
+      "command": "node",
+      "args": ["/absolute/path/to/jupiter-jots/mcp/server.mjs"]
+    }
+  }
+}
+```
+
+Restart the client or approve the project server when it asks. The client starts the local daemon itself; you do not run a separate bridge command. Once Connected agents is on in the extension, the two sides pair and **Bridge status** becomes **Connected**.
+
+Run `/mcp` in Claude Code. `jupiter-jots` should show as connected with tools available.
+
+There is no extension ID to configure. The first extension that connects pairs with the local daemon; after that the daemon accepts only that pairing. Use **Repair pairing** if the extension was reinstalled or its browser data was cleared.
+
+</Prose>
+
+</Section>
+
+<Section anchor="use" title="Work with your library">
+<Prose>
+
+Once connected, you can ask the agent in your own words. It sees the same tools as the app, filtered by your permission settings.
+
+</Prose>
+
+<Defs>
+<Def term="Search and read">Find bookmarks by title, address, description, note, tag or collection. Summarise what you saved and open the items behind the answer.</Def>
+<Def term="Save and edit">Save a page or link, add a note or tags, and move bookmarks between collections.</Def>
+<Def term="Organise">Create, rename and nest collections; make notes; build graphs; suggest tags or clean up duplicates.</Def>
+<Def term="Share">Prepare a share link or update a share. Sharing tools always wait for your approval.</Def>
+<Def term="Browser context">Read the open tabs or save a group of tabs, with a separate confirmation when tabs will close.</Def>
+</Defs>
+
+<Prose className="mt-6">
+
+Each terminal session appears as its own agent in **Connected agents**, so two projects can be open at once without their calls mixing. They share one local bridge and one library.
+
+</Prose>
+
+</Section>
+
+<Section anchor="approve" title="Approve writes">
+<Prose>
+
+Every request that changes your library waits for you. A **Write** or **Destructive** card appears on **Connected agents** with the agent’s name, the tool and the input. Choose **Approve** or **Deny**; nothing changes before you decide.
+
+- **Writes wait even when the tool is On.** On controls reads, not writes.
+- **Destructive tools and sharing tools always ask**, even if you try to set them to On.
+- **Closing tabs needs an extra checkbox.** Saving tabs with `close: true` also closes them in Chrome, so Approve stays disabled until you tick it.
+- **Closing the page does not cancel the request.** Reopen **Connected agents** to decide; turning the bridge off or revoking it denies everything still waiting.
+
+If you are away, calls stay pending. There is no timeout that quietly applies them.
+
+</Prose>
+
+</Section>
+
+<Section anchor="permissions" title="Set permissions">
+<Prose>
+
+Open **Settings → AI tools**. Each tool has separate settings for **Assistant** (Ask Jupiter) and **MCP** (outside agents):
+
+- **Off** hides the tool completely. It is not offered to the agent.
+- **Ask** runs it only after you confirm.
+- **On** lets reads run. Writes still come back as proposals or approval cards.
+
+MCP starts stricter than the assistant: most tools start at Ask, while the assistant’s ordinary reads and writes start On. **Read-only** turns every write and destructive tool off for both callers in one step. You can also set a group of tools off together, or reset everything to its defaults.
+
+Hidden notes and locked notes never reach an agent, whatever its permissions say.
+
+</Prose>
+
+</Section>
+
+<Section anchor="privacy" title="What leaves your device">
+<Prose>
+
+The bridge itself stays on this computer and listens only on loopback. Your pairing token is stored locally, and the bridge’s state files are readable only by your user account. Nothing in the bridge is sent to Jupiter Jots.
+
+An agent can read what its tools return: page titles, addresses, descriptions, your notes, tags and collection names. As with Ask Jupiter, it never receives the text of the pages themselves, hidden notes or locked notes. What the agent does with those results is up to it; if it uses a cloud model, that provider receives what the agent sends, under its own privacy policy.
+
+The [privacy policy](/privacy#network) lists this alongside the rest of the extension’s network activity.
+
+</Prose>
+
+</Section>
+
+<Section anchor="disconnect" title="Disconnect or revoke">
+<Prose>
+
+- **Turn the toggle off** to deny pending calls and disconnect every agent. Your pairing is kept, so you can turn it back on later.
+- **Revoke** closes every agent, denies pending calls, and rotates the pairing token. The extension has to pair again before an agent can reconnect.
+- **Repair pairing** is for a reinstall or cleared browser data. Use it when the bridge is running but refuses this browser.
+- If Repair still fails, stop the local daemon and clear its pairing, then use Repair pairing again:
+
+```bash
+node mcp/daemon.mjs --reset-pairing
+```
+
+Only one browser extension is paired with a bridge at a time. To switch to a second profile or a copied browser, reset the daemon’s pairing with the command above, then use Repair pairing in the browser you want to connect.
+
+</Prose>
+
+</Section>
+
+<Section anchor="troubleshoot" title="If tools don’t appear">
+<Prose>
+
+**The client says “Jupiter Jots is not connected.”** The proxy is running but the extension has not paired. Open Jupiter Jots → **Connected agents**, turn the bridge on, and check that Chrome is running. In Claude Code, `claude mcp list` or `/mcp` shows the same state.
+
+**The bridge says “pairing mismatch.”** Click **Repair pairing**. If it still fails, run the reset command above and repair again.
+
+**The connection works but a tool is missing.** Open **Settings → AI tools** and check that tool under **MCP**. Off tools are not listed at all.
+
+**The agent cannot start the server.** Use an absolute path to `mcp/server.mjs` in the client config, and check that `node` is the same Node.js your terminal uses.
+
+**Tools stopped after an update.** Disconnect the agent, close any old bridge process, reload the extension, then reconnect. Upgrading both halves together avoids a bridge speaking an older protocol.
+
+</Prose>
+
+</Section>

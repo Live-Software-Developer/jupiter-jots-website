@@ -14,6 +14,8 @@ export const FOOTER_COLUMNS = [
       ["Features", "/#features"],
       ["Explore shares", "/explore"],
       ["Guide", "/guide"],
+      ["Ask Jupiter", "/guide/ask-jupiter"],
+      ["Terminal agents", "/guide/agents"],
       ["Changelog", "/changelog"],
       ["FAQ", "/faq"],
     ],

@@ -39,3 +39,12 @@ export function CloseIcon({ className = "size-5" }: { className?: string }) {
     </svg>
   )
 }
+
+/** The four-point sparkle used for Ask Jupiter. */
+export function SparkleIcon({ className = "size-4" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
+      <path d="M12 2.4l1.9 5.9a3.2 3.2 0 0 0 2.8 2.8l5.9 1.9-5.9 1.9a3.2 3.2 0 0 0-2.8 2.8l-1.9 5.9-1.9-5.9a3.2 3.2 0 0 0-2.8-2.8L2.4 13l5.9-1.9a3.2 3.2 0 0 0 2.8-2.8L12 2.4z" />
+    </svg>
+  )
+}

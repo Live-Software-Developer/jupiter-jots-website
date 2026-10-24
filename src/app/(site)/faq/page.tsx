@@ -10,11 +10,11 @@ export const metadata = pageMetadata({
   title: "FAQ | Jupiter Jots bookmark manager",
   socialTitle: "Jupiter Jots: frequently asked questions",
   description:
-    "Short answers about saving pages, collections and tags, where your data is stored, importing Chrome bookmarks, shortcuts and what is coming next.",
+    "Short answers about saving pages, collections and tags, where your data is stored, Ask Jupiter, terminal agents, importing Chrome bookmarks and shortcuts.",
   path: "/faq",
   image: "faq",
   imageAlt: "Jupiter Jots frequently asked questions",
-  keywords: ["Jupiter Jots FAQ", "import Chrome bookmarks", "bookmark manager offline"],
+  keywords: ["Jupiter Jots FAQ", "Ask Jupiter", "Jupiter Jots MCP", "import Chrome bookmarks", "bookmark manager offline"],
 })
 
 export default function FaqPage() {

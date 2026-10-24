@@ -1,6 +1,7 @@
 import Link from "next/link"
 
 import { BrandLogo } from "@/components/site/BrandLogo"
+import { AskPreview } from "@/components/site/AskPreview"
 import { StoreLink } from "@/components/site/ExternalStoreLink"
 import { PlusIcon } from "@/components/site/icons"
 import { Platforms } from "@/components/site/Platforms"
@@ -175,6 +176,47 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Ask Jupiter */}
+      <section id="ask" className="scroll-mt-20 pt-20 sm:pt-28" aria-labelledby="ask-h">
+        <div className="mx-auto grid w-full max-w-6xl gap-10 px-4 sm:px-6 lg:grid-cols-12 lg:items-center lg:gap-12">
+          <div className="lg:col-span-5">
+            <p className="text-sm font-semibold text-primary">Ask Jupiter</p>
+            <h2 id="ask-h" className={`mt-2 ${H2}`}>
+              Ask your library a question.
+            </h2>
+            <p className={`mt-4 ${LEAD}`}>
+              “What did I save about Postgres locks?” Jupiter searches your titles, notes and tags, answers with the items
+              it used, and prepares a change for you to approve.
+            </p>
+            <ul className="mt-6 space-y-2.5 text-muted-foreground">
+              <li className="flex gap-2.5">
+                <span className="mt-2 size-1.5 shrink-0 rounded-full bg-primary" aria-hidden="true" />
+                <span><strong className="font-medium text-foreground">Bring your own AI key.</strong> Anthropic, OpenAI, Google or OpenRouter. It stays encrypted on this computer.</span>
+              </li>
+              <li className="flex gap-2.5">
+                <span className="mt-2 size-1.5 shrink-0 rounded-full bg-primary" aria-hidden="true" />
+                <span><strong className="font-medium text-foreground">Nothing changes on its own.</strong> Edits arrive as a proposal; Apply is your call.</span>
+              </li>
+              <li className="flex gap-2.5">
+                <span className="mt-2 size-1.5 shrink-0 rounded-full bg-primary" aria-hidden="true" />
+                <span><strong className="font-medium text-foreground">Some things stay private.</strong> Hidden and locked notes never reach the model.</span>
+              </li>
+            </ul>
+            <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2">
+              <Link href="/guide/ask-jupiter" className={textLink}>
+                How Ask Jupiter works
+              </Link>
+              <Link href="/guide/agents" className={textLink}>
+                Use it from your terminal
+              </Link>
+            </div>
+          </div>
+          <div className="lg:col-span-7">
+            <AskPreview />
+          </div>
+        </div>
+      </section>
+
       {/* Privacy */}
       <section className="pt-20 sm:pt-28" aria-labelledby="priv-h">
         <div className="mx-auto grid w-full max-w-6xl gap-10 px-4 sm:px-6 lg:grid-cols-12">
@@ -211,7 +253,7 @@ export default function HomePage() {
             </h2>
             <p className={`mt-4 ${LEAD}`}>Free in Chrome today, and in Brave and Edge through the Chrome Web Store.</p>
             <p className="mt-4 text-muted-foreground">
-              Also coming: sync across devices, reminders, and asking questions of your library.{" "}
+              Also coming: sync across devices and reminders.{" "}
               <Link href="/changelog" className={textLink}>
                 Changelog
               </Link>

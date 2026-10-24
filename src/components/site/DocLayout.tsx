@@ -14,7 +14,7 @@ export function DocLayout({
 }: {
   title: string
   lede?: string
-  meta?: string
+  meta?: ReactNode
   toc: TocItem[]
   tocTitle?: string
   children: ReactNode

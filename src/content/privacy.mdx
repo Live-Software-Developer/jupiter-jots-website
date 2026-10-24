@@ -24,7 +24,7 @@ export const toc = [
 - There is no account and no email. No analytics, no advertising and no tracking. Nothing is sold.
 - Share pages set one functional cookie, `jj_visitor`, and no other cookies. They load site icons and preview images straight from the sites that host them.
 - Pages are read only when you save them. Chrome bookmarks are read only when you import them.
-- AI is bring-your-own-key. Your keys stay in your browser, encrypted with a password you choose, and AI requests go straight from your browser to the provider you pick. Our server never sees your keys or prompts.
+- AI is bring-your-own-key. Your Ask Jupiter keys stay in your browser, encrypted with a password you choose, and AI requests go straight from your browser to the provider you pick. Our server never sees your keys or prompts. Connected agents use a bridge that stays on your computer; only the agent’s own model provider receives what the agent reads.
 - Uninstalling deletes your library. Export a backup first if you want to keep it.
 
 </Summary>
@@ -46,7 +46,7 @@ This policy covers the Jupiter Jots extension for Chrome, version 2.0.0 and late
 
 **From shares and share pages:** what you share, comments people post, and a hashed visitor key. See [When you share](#sharing) and [Visiting and commenting](#visitors).
 
-We never see your bookmarks, notes, tags, collections, settings or how you use the extension, unless you put them in a share. Sharing is the only feature that sends anything of yours to our server, and only what you choose to share, as described in [When you share](#sharing). (The extension also downloads the list of AI providers and models from our server; that request carries nothing about you. See [AI assistant](#network).) We do not sell or hand on anything we receive.
+We never see your bookmarks, notes, tags, collections, settings or how you use the extension, unless you put them in a share. Sharing is the only feature that sends anything of yours to our server, and only what you choose to share, as described in [When you share](#sharing). (The extension also downloads the list of AI providers and models from our server; that request carries nothing about you. See [Ask Jupiter and connected agents](#network).) We do not sell or hand on anything we receive.
 
 </Prose>
 </Section>
@@ -85,7 +85,7 @@ Jupiter Jots reads a page only when you ask it to save something.
 <Section anchor="network" title="What leaves your device">
 <Prose>
 
-Your library is never sent to us. Jupiter Jots makes only the requests any web page makes to show pictures, plus one request to Google if you choose a site logo for a collection, the AI requests you make (sent straight to the provider you chose, never to us), the AI model list, and the requests a share needs, described in the next sections.
+Your library is never sent to us. Jupiter Jots makes only the requests any web page makes to show pictures, plus one request to Google if you choose a site logo for a collection, the AI requests you make (sent straight to the provider you chose, never to us), the AI model list, requests through the local bridge when you connect an agent, and the requests a share needs, described in the next sections.
 
 </Prose>
 <Defs>
@@ -94,7 +94,8 @@ Your library is never sent to us. Jupiter Jots makes only the requests any web p
 <Def term="Collection logos">Only if you pick Logo as a collection’s icon and type a domain. The logo is loaded from Google’s favicon service, which tells Google the domain you typed.</Def>
 <Def term="Opening a bookmark">Opens the site in a tab, exactly as clicking a link would.</Def>
 <Def term="Speak to type">Only while the mic button on a note is lit. Chrome’s built-in speech recognition sends the audio to Google’s speech service, which returns the text; Google’s privacy policy covers that audio. We never receive it, and the text stays in your note on your device.</Def>
-<Def term="AI assistant">Only if you add your own key for an AI provider (Anthropic, OpenAI, Google or OpenRouter). Requests go straight from your browser to that provider, using your key; they never pass through our server, so we never see your keys, your questions or the answers. The provider receives your question plus the library items the assistant reads to answer it (titles, addresses, descriptions and your notes, never the text of the pages themselves, and never notes you hide from AI or lock). That provider’s own privacy policy covers what it receives.</Def>
+<Def term="Ask Jupiter">Only if you add your own key for an AI provider (Anthropic, OpenAI, Google or OpenRouter). Requests go straight from your browser to that provider, using your key; they never pass through our server, so we never see your keys, your questions or the answers. The provider receives your question plus the library items the assistant reads to answer it (titles, addresses, descriptions and your notes, never the text of the pages themselves, and never notes you hide from AI or lock). That provider’s own privacy policy covers what it receives.</Def>
+<Def term="Connected agents">Only if you turn on Settings → Connected agents and connect a local MCP client. Tool calls travel over a bridge on this computer, not through our server. The client receives the tool results it asks for (titles, addresses, descriptions, your notes, tags and collection names, never the text of pages, hidden notes or locked notes) and may send them to its own AI model provider under that provider’s privacy policy. Pairing tokens and bridge state stay on this device.</Def>
 <Def term="AI model list">The extension downloads the list of AI providers and models from our server, at most once an hour, so new models appear without an update. The request carries no key, question or library data.</Def>
 <Def term="Shares">Only when you create, update or manage a share. What is sent is described below.</Def>
 </Defs>

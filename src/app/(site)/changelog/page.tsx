@@ -5,11 +5,11 @@ import { pageMetadata } from "@/lib/seo"
 export const metadata = pageMetadata({
   title: "Changelog | Jupiter Jots",
   description:
-    "What changed in each version of Jupiter Jots, newest first. Version 2.0.0 rebuilds it as one app across Chrome’s toolbar, side panel and a full-screen library.",
+    "What changed in each version of Jupiter Jots, newest first, including Ask Jupiter, connected terminal agents, sharing and the 2.0 library.",
   path: "/changelog",
   image: "changelog",
   imageAlt: "Jupiter Jots changelog",
-  keywords: ["Jupiter Jots changelog", "Jupiter Jots 2.0"],
+  keywords: ["Jupiter Jots changelog", "Jupiter Jots 2.0", "Ask Jupiter", "Jupiter Jots MCP"],
 })
 
 export default function ChangelogPage() {

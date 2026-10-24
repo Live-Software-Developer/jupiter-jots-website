@@ -1,6 +1,8 @@
 import type { MDXComponents } from "mdx/types"
 import Link from "next/link"
 
+import { AgentFlowPreview } from "@/components/site/AgentFlowPreview"
+import { AskPreview } from "@/components/site/AskPreview"
 import { Faq } from "@/components/site/Faq"
 import { Def, Defs, Kbd, Placeholder, Prose, Summary } from "@/components/site/Prose"
 import { Section } from "@/components/site/Section"
@@ -17,6 +19,8 @@ const components: MDXComponents = {
   Def,
   Kbd,
   Faq,
+  AskPreview,
+  AgentFlowPreview,
   Placeholder,
   /** The support address from src/lib/site.ts, as a mailto link. */
   SupportEmail: () => <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>,

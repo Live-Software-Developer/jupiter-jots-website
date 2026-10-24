@@ -10,7 +10,7 @@ import { pageMetadata } from "@/lib/seo"
 export const metadata = pageMetadata({
   title: "About | Jupiter Jots",
   description:
-    "Why Jupiter Jots exists and how it is built: local first, fast and calm. A bookmark manager for people who save pages for a reason, and what is planned next.",
+    "Why Jupiter Jots exists and how it is built: local first, fast and calm. A bookmark manager for people who save pages for a reason, with Ask Jupiter and connected agents.",
   path: "/about",
   image: "about",
   imageAlt: "About Jupiter Jots",
