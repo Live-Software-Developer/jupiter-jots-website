@@ -1,12 +1,11 @@
-import type { ReactNode } from "react"
-
 import { FOCUS_FLAT } from "@/components/site/styles"
-import { safeUrl } from "@/lib/share/format"
 import { MARKDOWN_CLASS, renderMarkdown } from "@/lib/share/markdown"
 import type { PBookmark } from "@/lib/share/types"
 import { cn } from "@/lib/utils"
 
+import { BookmarkSheetButton } from "./BookmarkSheetButton"
 import { GLYPH, ico } from "./icons"
+import { BookmarkReadToggle } from "./ReadState"
 import { SafeImg } from "./SafeImg"
 
 /** Tints for the five chart hues; a collection's `hue` (1-5) indexes this directly. */
@@ -73,22 +72,11 @@ export function BookmarkMark({
   )
 }
 
-/** A link to the bookmark when its URL is http(s), plain content otherwise. */
-export function BookmarkLink({ url, className, children }: { url: string; className: string; children: ReactNode }) {
-  const href = safeUrl(url)
-  if (!href) return <div className={className}>{children}</div>
-  return (
-    <a href={href} target="_blank" rel="noopener noreferrer nofollow ugc" className={className}>
-      {children}
-    </a>
-  )
-}
-
 /** One bookmark in a band or sheet list (design: share-bookmark-row). */
 export function BookmarkRow({ bookmark }: { bookmark: PBookmark }) {
   return (
-    <div data-bookmark-row className="group px-4 py-4 transition-colors hover:bg-accent/40 sm:px-5">
-      <BookmarkLink url={bookmark.url} className={cn("flex items-start gap-3.5 rounded-lg sm:gap-4", FOCUS_FLAT)}>
+    <div data-bookmark-row className="group flex items-start gap-2 px-4 py-4 transition-colors hover:bg-accent/40 sm:px-5">
+      <BookmarkSheetButton bookmark={bookmark} className={cn("flex min-w-0 flex-1 items-start gap-3.5 rounded-lg text-left sm:gap-4", FOCUS_FLAT)}>
         <BookmarkMark bookmark={bookmark} px={36} pad="p-2" className="size-9 rounded-lg text-sm font-semibold" />
         <span className="min-w-0 flex-1">
           <span className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
@@ -109,7 +97,8 @@ export function BookmarkRow({ bookmark }: { bookmark: PBookmark }) {
           ) : null}
         </span>
         {ico(GLYPH.external, "mt-1.5 size-4 shrink-0 text-muted-foreground/50 transition-colors group-hover:text-foreground")}
-      </BookmarkLink>
+      </BookmarkSheetButton>
+      <BookmarkReadToggle bookmark={bookmark} className="mt-0.5" />
     </div>
   )
 }

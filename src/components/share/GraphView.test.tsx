@@ -4,6 +4,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { sheetEntries } from '@/lib/share/collections'
 import type { PBookmark, PGraph, PayloadItem } from '@/lib/share/types'
 import { pressEscape } from '@/test/dialog'
+import { BookmarkSheetProvider } from './BookmarkSheet'
 import { CollectionCommentsSlot, CollectionSheetContext, CollectionSheetProvider, OpenCollectionButton } from './CollectionSheet'
 import { canvasSize, GraphView } from './GraphView'
 
@@ -177,12 +178,31 @@ describe('GraphView', () => {
     expect(open).toHaveBeenLastCalledWith('g:1/n:c1', canvasNode(el, 'c1')!.querySelector('button'))
   })
 
-  it('opens bookmark nodes in a new tab, and only for http(s) URLs', () => {
-    const el = mount(<GraphView graph={graph} itemKey="g:1" />)
-    const links = [...el.querySelectorAll('a')]
-    expect(links.map((a) => a.getAttribute('href'))).toEqual(['https://example.com/1'])
-    expect(links[0].getAttribute('target')).toBe('_blank')
-    expect(links[0].getAttribute('rel')).toBe('noopener noreferrer nofollow ugc')
+  it('opens a bookmark sheet from a node, with the URL only inside the sheet', () => {
+    const el = mount(
+      <BookmarkSheetProvider>
+        <GraphView graph={graph} itemKey="g:1" />
+      </BookmarkSheetProvider>,
+    )
+    expect(el.querySelector('a')).toBeNull()
+    click(el.querySelector('[data-gid="b1"] button[aria-haspopup="dialog"]'))
+    const d = sheet()!
+    expect(d.textContent).toContain('Bookmark 1')
+    const open = [...d.querySelectorAll('a')].find((a) => a.textContent?.includes('Open link'))!
+    expect(open.getAttribute('href')).toBe('https://example.com/1')
+    expect(open.getAttribute('target')).toBe('_blank')
+  })
+
+  it('leaves Open link out of the sheet when the bookmark URL is unsafe', () => {
+    const el = mount(
+      <BookmarkSheetProvider>
+        <GraphView graph={graph} itemKey="g:1" />
+      </BookmarkSheetProvider>,
+    )
+    click(el.querySelector('[data-gid="b2"] button[aria-haspopup="dialog"]'))
+    const d = sheet()!
+    expect(d.textContent).toContain('Bookmark 2')
+    expect([...d.querySelectorAll('a')].some((a) => a.textContent?.includes('Open link'))).toBe(false)
   })
 
   it('draws one wire per link and lights up a hovered node’s wires', () => {
@@ -239,6 +259,22 @@ describe('GraphView', () => {
     click(el.querySelector('[aria-label="Full screen"]'))
     click(document.querySelector('[aria-label="Exit full screen"]'))
     expect(graphDialog()).toBeNull()
+  })
+
+  it('puts graph comments in their own tab in full screen', () => {
+    const el = mount(
+      <CollectionCommentsSlot.Provider value={(k) => <p data-comments>{`comments on ${k}`}</p>}>
+        <GraphView graph={graph} itemKey="g:1" />
+      </CollectionCommentsSlot.Provider>,
+    )
+    click(el.querySelector('[aria-label="Full screen"]'))
+    const d = graphDialog()!
+    expect(d.querySelector('[role="tablist"][aria-label="Graph sections"]')).not.toBeNull()
+    expect(d.querySelector('[data-comments]')).toBeNull()
+    click([...d.querySelectorAll('[role="tab"]')].find((b) => b.textContent === 'Comments')!)
+    expect(d.querySelector('[data-comments]')?.textContent).toBe('comments on g:1')
+    click([...d.querySelectorAll('[role="tab"]')].find((b) => b.textContent === 'Content')!)
+    expect([...d.querySelectorAll('button')].some((b) => b.textContent?.trim() === 'Board')).toBe(true)
   })
 })
 
@@ -302,11 +338,8 @@ describe('CollectionSheet', () => {
     expect(document.getElementById(d.getAttribute('aria-labelledby')!)?.textContent).toBe('Weekend reading')
     expect(d.textContent).toContain('2 bookmarks · from Ada Okafor')
     expect(d.querySelectorAll('[data-bookmark-row]')).toHaveLength(2)
-    const links = [...d.querySelectorAll('[data-bookmark-row] a')]
-    expect(links.map((a) => [a.getAttribute('href'), a.getAttribute('target'), a.getAttribute('rel')])).toEqual([
-      ['https://example.com/20', '_blank', 'noopener noreferrer nofollow ugc'],
-      ['https://example.com/21', '_blank', 'noopener noreferrer nofollow ugc'],
-    ])
+    expect(d.querySelectorAll('[data-bookmark-row] button[aria-haspopup="dialog"]')).toHaveLength(2)
+    expect(d.querySelectorAll('[data-bookmark-row] a')).toHaveLength(0)
     expect(document.activeElement?.getAttribute('aria-label')).toBe('Close')
   })
 
@@ -359,10 +392,11 @@ describe('CollectionSheet', () => {
     expect(sheet()!.textContent).toContain('Nothing matches')
   })
 
-  it('renders the comments slot with the sheet key, and nothing without one', () => {
+  it('puts the sheet comments behind a Comments tab, and nothing without a provider', () => {
     let el = page()
     click(el.querySelector('[data-gid="c1"] button'))
     expect(sheet()!.querySelector('[data-comments]')).toBeNull()
+    expect(sheet()!.querySelector('[role="tablist"][aria-label="Sheet sections"]')).toBeNull()
     act(() => root!.unmount())
     host!.remove()
     el = mount(
@@ -373,7 +407,10 @@ describe('CollectionSheet', () => {
       </CollectionCommentsSlot.Provider>,
     )
     click(el.querySelector('[data-gid="c1"] button'))
-    expect(sheet()!.querySelector('[data-comments]')?.textContent).toBe('comments on g:1/n:c1')
+    const d = sheet()!
+    expect(d.querySelector('[data-comments]')).toBeNull()
+    click([...d.querySelectorAll('[role="tab"]')].find((b) => b.textContent === 'Comments')!)
+    expect(d.querySelector('[data-comments]')?.textContent).toBe('comments on g:1/n:c1')
   })
 
   it('closes from the backdrop', () => {

@@ -44,7 +44,7 @@ const commentMarkdown = (): MarkdownOptions => ({
  * collection sheets. It fills `CollectionCommentsSlot`, so it must sit above `CollectionSheetProvider`.
  */
 export function DiscussionProvider({ children, ...props }: StoreProps) {
-  const slot = useCallback((itemKey: string) => <ItemDiscussion itemKey={itemKey} />, [])
+  const slot = useCallback((itemKey: string, options?: { tabbed?: boolean }) => <ItemDiscussion itemKey={itemKey} tabbed={options?.tabbed} />, [])
   return (
     <DiscussionStoreProvider {...props}>
       <CollectionCommentsSlot.Provider value={slot}>{children}</CollectionCommentsSlot.Provider>
@@ -553,12 +553,15 @@ export function Discussion() {
   )
 }
 
-/** The comments on one collection, inside its sheet (fills `CollectionCommentsSlot`). */
-function ItemDiscussion({ itemKey }: { itemKey: string }) {
+/** The comments on one item, inside its sheet (fills `CollectionCommentsSlot`). */
+function ItemDiscussion({ itemKey, tabbed = false }: { itemKey: string; tabbed?: boolean }) {
   const s = useRequiredStore()
   const label = targetLabel(s.targets, itemKey)
   return (
-    <section aria-label={`Comments on ${label}`} className="mt-4 border-t border-border px-4 pt-4 pb-6 sm:px-5">
+    <section
+      aria-label={`Comments on ${label}`}
+      className={tabbed ? "px-4 pt-4 pb-6 sm:px-5" : "mt-4 border-t border-border px-4 pt-4 pb-6 sm:px-5"}
+    >
       <h3 className="text-sm font-medium">{plural(s.count(itemKey), "comment")}</h3>
       <ClosedNotice closed={s.closed} />
       <Composer itemKey={itemKey} />

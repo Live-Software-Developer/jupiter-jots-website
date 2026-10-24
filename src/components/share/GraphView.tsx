@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from "react"
+import { useCallback, useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from "react"
 
 import { FOCUS_FLAT } from "@/components/site/styles"
 import { plural } from "@/lib/share/format"
@@ -11,12 +11,14 @@ import { noteLabel } from "@/lib/share/targets"
 import type { PGraph, PGraphNode, PNote } from "@/lib/share/types"
 import { cn } from "@/lib/utils"
 
-import { BookmarkLink, BookmarkMark } from "./BookmarkRow"
-import { CollectionMark, Sheet, useCollectionSheet } from "./CollectionSheet"
+import { BookmarkMark } from "./BookmarkRow"
+import { useBookmarkSheet } from "./bookmarkSheetContext"
+import { CollectionCommentsSlot, CollectionMark, Sheet, useCollectionSheet } from "./CollectionSheet"
 import { GLYPH, ico } from "./icons"
 import { Modal } from "./Modal"
 import { NoteLinks } from "./NoteLinks"
 import { NoteBody, NoteMark } from "./NoteRow"
+import { BookmarkReadToggle } from "./ReadState"
 
 // Read-only port of the extension's graph view (design: graph-view). Board and Canvas show the
 // same nodes; Canvas places them at their saved x/y and zooms with a CSS transform.
@@ -69,6 +71,7 @@ const CARD =
 
 function NodeCard({ node, itemKey, graphName }: { node: PGraphNode; itemKey: string; graphName: string }) {
   const { open } = useCollectionSheet()
+  const openBookmark = useBookmarkSheet()
   if (node.ref.kind === "note") return <NoteNodeCard note={node.ref.note} graphName={graphName} />
   if (node.ref.kind === "collection") {
     const c = node.ref.collection
@@ -99,31 +102,26 @@ function NodeCard({ node, itemKey, graphName }: { node: PGraphNode; itemKey: str
   const b = node.ref.bookmark
   const domain = b.domain.replace(/^www\./, "")
   return (
-    <BookmarkLink url={b.url} className={cn(CARD, FOCUS_FLAT)}>
-      <span className="flex items-center gap-2 text-xs text-muted-foreground">
-        <BookmarkMark bookmark={b} px={20} pad="p-0.5" className="size-5 rounded text-xs font-semibold" />
-        <span className="min-w-0 truncate">{domain}</span>
-        {b.read ? (
-          <span className="ml-auto text-primary" title="Read">
-            {ico(I.check, "size-3.5", 2.4)}
-            <span className="sr-only">Read</span>
-          </span>
-        ) : (
-          <span className="ml-auto size-2.5 shrink-0 rounded-full border border-muted-foreground/50" title="Unread" />
-        )}
-      </span>
-      <span className="mt-1.5 block text-sm leading-snug font-medium break-words text-pretty text-card-foreground">{b.title || domain}</span>
-      {b.note ? <span className="mt-1 line-clamp-2 block text-xs leading-relaxed text-muted-foreground">{markdownPreview(b.note)}</span> : null}
-      {b.tags.length ? (
-        <span className="mt-2.5 flex items-center gap-1.5 text-xs text-muted-foreground">
-          {b.tags.slice(0, 2).map((t) => (
-            <span key={t} className="rounded bg-muted px-1.5 py-0.5">
-              #{t}
-            </span>
-          ))}
+    <div className="relative">
+      <button type="button" aria-haspopup="dialog" onClick={(event) => openBookmark(b, event.currentTarget)} className={cn(CARD, FOCUS_FLAT)}>
+        <span className="flex items-center gap-2 pr-8 text-xs text-muted-foreground">
+          <BookmarkMark bookmark={b} px={20} pad="p-0.5" className="size-5 rounded text-xs font-semibold" />
+          <span className="min-w-0 truncate">{domain}</span>
         </span>
-      ) : null}
-    </BookmarkLink>
+        <span className="mt-1.5 block text-sm leading-snug font-medium break-words text-pretty text-card-foreground">{b.title || domain}</span>
+        {b.note ? <span className="mt-1 line-clamp-2 block text-xs leading-relaxed text-muted-foreground">{markdownPreview(b.note)}</span> : null}
+        {b.tags.length ? (
+          <span className="mt-2.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+            {b.tags.slice(0, 2).map((t) => (
+              <span key={t} className="rounded bg-muted px-1.5 py-0.5">
+                #{t}
+              </span>
+            ))}
+          </span>
+        ) : null}
+      </button>
+      <BookmarkReadToggle bookmark={b} className="absolute top-2 right-2 z-10 bg-card/90 backdrop-blur" />
+    </div>
   )
 }
 
@@ -512,8 +510,10 @@ const TOOL = cn("grid size-8 place-items-center rounded-md text-muted-foreground
 export function GraphView({ graph, itemKey }: { graph: PGraph; itemKey: string }) {
   const [mode, setMode] = useState<Mode>(graph.mode === "canvas" ? "canvas" : "board")
   const [full, setFull] = useState(false)
+  const [tab, setTab] = useState<"content" | "comments">("content")
   const [hot, setHot] = useState<string | null>(null)
   const [placeholder, setPlaceholder] = useState(0)
+  const renderComments = useContext(CollectionCommentsSlot)
   const shell = useRef<HTMLDivElement>(null)
   const dialog = useRef<HTMLDialogElement>(null)
   const toggle = useRef<HTMLButtonElement>(null)
@@ -531,6 +531,7 @@ export function GraphView({ graph, itemKey }: { graph: PGraph; itemKey: string }
   const enterFull = () => {
     // Hold the band's height while the graph lives in the top layer, so the page doesn't jump.
     setPlaceholder(shell.current?.offsetHeight ?? 0)
+    setTab("content")
     setFull(true)
   }
 
@@ -540,7 +541,10 @@ export function GraphView({ graph, itemKey }: { graph: PGraph; itemKey: string }
       <button
         type="button"
         aria-pressed={on}
-        onClick={() => setMode(m)}
+        onClick={() => {
+          setMode(m)
+          setTab("content")
+        }}
         className={cn(
           "inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-sm font-medium transition-colors",
           on ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
@@ -600,7 +604,35 @@ export function GraphView({ graph, itemKey }: { graph: PGraph; itemKey: string }
           </button>
         </span>
       </div>
-      {mode === "board" ? <Board {...view} /> : <Canvas {...view} />}
+      {full && renderComments ? (
+        <div role="tablist" aria-label="Graph sections" className="flex shrink-0 gap-1 border-b border-border px-3">
+          {(["content", "comments"] as const).map((id) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={tab === id}
+              onClick={() => setTab(id)}
+              className={cn(
+                "h-10 border-b-2 px-2.5 text-sm font-medium transition-colors",
+                tab === id ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground",
+                FOCUS_FLAT,
+              )}
+            >
+              {id === "content" ? "Content" : "Comments"}
+            </button>
+          ))}
+        </div>
+      ) : null}
+      {full && tab === "comments" && renderComments ? (
+        <div role="tabpanel" className="min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-color:var(--border)_transparent] [scrollbar-width:thin]">
+          {renderComments(itemKey, { tabbed: true })}
+        </div>
+      ) : mode === "board" ? (
+        <Board {...view} />
+      ) : (
+        <Canvas {...view} />
+      )}
     </div>
   )
 

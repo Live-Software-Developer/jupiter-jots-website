@@ -29,7 +29,7 @@ export const useCollectionSheet = () => useContext(CollectionSheetContext)
  * sheet's key ("c:3" or "g:1/n:abc"); comments on the collection's bookmarks are nested under it
  * ("…/b:12"). The Discussion provides it; with no provider the sheet shows no comments.
  */
-export const CollectionCommentsSlot = createContext<((itemKey: string) => ReactNode) | null>(null)
+export const CollectionCommentsSlot = createContext<((itemKey: string, options?: { tabbed?: boolean }) => ReactNode) | null>(null)
 
 /**
  * Holds the open sheet for the page; anything below can `open(key, trigger)` a collection.
@@ -225,6 +225,7 @@ function CollectionSheet({ entry, curator, onClose }: { entry: SheetEntry; curat
       kind="Collection"
       title={c.name}
       meta={`${collectionCounts(c)}${context ? ` · ${context}` : ""}`}
+      commentsTab
     >
       {c.note ? (
         <div className={cn(MARKDOWN_CLASS, "space-y-2 px-4 pt-4 text-sm leading-relaxed text-pretty break-words text-muted-foreground sm:px-5")}>{renderMarkdown(c.note)}</div>
@@ -275,6 +276,7 @@ export function Sheet({
   title,
   meta,
   wide = false,
+  commentsTab = false,
   children,
 }: {
   itemKey: string
@@ -285,12 +287,16 @@ export function Sheet({
   meta: string
   /** Covers the whole viewport (a graph), instead of a side or bottom sheet. */
   wide?: boolean
+  /** Give comments their own tab instead of appending them after long content. */
+  commentsTab?: boolean
   children: ReactNode
 }) {
   const titleId = useId()
   const dialog = useRef<HTMLDialogElement>(null)
   const closeBtn = useRef<HTMLButtonElement>(null)
   const renderComments = useContext(CollectionCommentsSlot)
+  const [tab, setTab] = useState<'content' | 'comments'>('content')
+  const tabbed = commentsTab && !!renderComments
   const dismiss = () => dialog.current?.close()
 
   return (
@@ -328,9 +334,38 @@ export function Sheet({
             {ico(GLYPH.close, "size-5")}
           </button>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-color:var(--border)_transparent] [scrollbar-width:thin]">
-          {children}
-          {renderComments ? renderComments(itemKey) : null}
+        {tabbed ? (
+          <div role="tablist" aria-label="Sheet sections" className="flex shrink-0 gap-1 border-b border-border px-3 sm:px-4">
+            {(['content', 'comments'] as const).map((id) => (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                aria-selected={tab === id}
+                onClick={() => setTab(id)}
+                className={cn(
+                  "h-10 border-b-2 px-2.5 text-sm font-medium transition-colors",
+                  tab === id ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground",
+                  FOCUS_FLAT,
+                )}
+              >
+                {id === "content" ? "Content" : "Comments"}
+              </button>
+            ))}
+          </div>
+        ) : null}
+        <div
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-color:var(--border)_transparent] [scrollbar-width:thin]"
+          role={tabbed ? "tabpanel" : undefined}
+        >
+          {tabbed && tab === "comments" ? (
+            renderComments(itemKey, { tabbed: true })
+          ) : (
+            <>
+              {children}
+              {renderComments && !tabbed ? renderComments(itemKey) : null}
+            </>
+          )}
         </div>
         <div className="flex shrink-0 items-center gap-2 border-t border-border px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-5">
           <Link href="/#get" className={cn(btnPrimary("md"), "flex-1 sm:flex-none")}>

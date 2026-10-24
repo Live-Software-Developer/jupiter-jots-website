@@ -9,7 +9,10 @@ import { bookmarkLabel, collectionLabel, graphLabel, noteLabel, runKey } from "@
 import type { PBookmark, PNote, PayloadItem } from "@/lib/share/types"
 import { cn } from "@/lib/utils"
 
-import { BookmarkLink, BookmarkMark, BookmarkRow, CARD_TINT, hueIndex } from "./BookmarkRow"
+import { BookmarkReadToggle } from "./ReadState"
+import { BookmarkSheetButton } from "./BookmarkSheetButton"
+
+import { BookmarkMark, BookmarkRow, CARD_TINT, hueIndex } from "./BookmarkRow"
 import { CollectionMark, OpenCollectionButton } from "./CollectionSheet"
 import { BandCommentsLink } from "./Discussion"
 import { GraphView } from "./GraphView"
@@ -148,13 +151,14 @@ function BookmarksBody({ bookmarks }: { bookmarks: PBookmark[] }) {
 function BookmarkCard({ bookmark, curator }: { bookmark: PBookmark; curator?: string }) {
   const tint = CARD_TINT[hueIndex(bookmark.domain)]
   return (
-    <BookmarkLink
-      url={bookmark.url}
-      className={cn(
-        "group grid overflow-hidden rounded-3xl border border-border bg-card text-card-foreground transition-colors hover:border-foreground/25 md:grid-cols-5",
-        FOCUS,
-      )}
-    >
+    <div className="relative">
+      <BookmarkSheetButton
+        bookmark={bookmark}
+        className={cn(
+          "group grid w-full overflow-hidden rounded-3xl border border-border bg-card text-left text-card-foreground transition-colors hover:border-foreground/25 md:grid-cols-5",
+          FOCUS,
+        )}
+      >
       <div className={cn("relative grid min-h-48 place-items-center md:col-span-2 md:min-h-72", tint.panel)}>
         <SafeImg
           src={bookmark.image}
@@ -183,11 +187,13 @@ function BookmarkCard({ bookmark, curator }: { bookmark: PBookmark; curator?: st
           </div>
         ) : null}
         <span className="mt-auto inline-flex items-center gap-1.5 pt-6 text-sm font-medium text-primary">
-          Open {bookmark.domain}
-          {ico(GLYPH.external, "size-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5")}
+          Read details
+          {ico(GLYPH.chevronRight, "size-4 transition-transform group-hover:translate-x-0.5")}
         </span>
       </div>
-    </BookmarkLink>
+      </BookmarkSheetButton>
+      <BookmarkReadToggle bookmark={bookmark} className="absolute top-3 right-3 z-10 bg-background/80 backdrop-blur" />
+    </div>
   )
 }
 

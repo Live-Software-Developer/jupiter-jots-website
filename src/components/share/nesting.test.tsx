@@ -162,7 +162,11 @@ describe('note links that open sheets', () => {
     const d = top()
     expect(titleOf(d)).toBe('Path')
     expect(d.querySelector('[data-sheet="wide"]')).not.toBeNull()
-    expect([...d.querySelectorAll('button[aria-pressed]')].map((b) => b.textContent)).toEqual(['Board', 'Canvas'])
+    expect(
+      [...d.querySelectorAll('button[aria-pressed]')]
+        .map((b) => b.textContent)
+        .filter((text) => text === 'Board' || text === 'Canvas'),
+    ).toEqual(['Board', 'Canvas'])
     expect(d.textContent).toContain('First step')
     // The note inside the linked graph opens its own sheet on top; its graph link is a plain chip.
     click([...d.querySelectorAll('button')].find((b) => b.textContent?.includes('Inner')))
