@@ -22,6 +22,8 @@ export function ShareHero({ share, payload, action }: { share: PublicShare; payl
   const curator = payload.curator.name || share.curator_name
   const updated = formatDate(share.updated_at)
   const expires = formatDate(share.expires_at)
+  // The same short summary /explore uses on a public card (e.g. "1 graph · 2 collections").
+  const publicSummary = share.visibility === "public" && share.summary.trim() !== ""
 
   return (
     <div className="mx-auto w-full max-w-6xl px-3 pt-8 pb-10 sm:px-6 sm:pt-12 lg:pt-16">
@@ -31,7 +33,8 @@ export function ShareHero({ share, payload, action }: { share: PublicShare; payl
             <VisibilityBadge visibility={share.visibility} />
             {action}
           </div>
-          <h1 className="mt-5 font-serif text-4xl leading-[1.05] font-normal tracking-tight break-words text-balance sm:text-5xl lg:text-6xl">
+          {publicSummary ? <p className="mt-4 text-sm font-medium text-muted-foreground">{share.summary}</p> : null}
+          <h1 className={cn("font-serif text-4xl leading-[1.05] font-normal tracking-tight break-words text-balance sm:text-5xl lg:text-6xl", publicSummary ? "mt-2" : "mt-5")}>
             {payload.title || share.title}
           </h1>
           {payload.intro ? (
