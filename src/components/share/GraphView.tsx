@@ -1,10 +1,10 @@
 "use client"
 
-import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react"
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from "react"
 
 import { FOCUS_FLAT } from "@/components/site/styles"
 import { plural } from "@/lib/share/format"
-import { bandOf, boardColumns, computePath, NODE_W, type Box } from "@/lib/share/graph"
+import { bandOf, boardColumns, canvasBounds, computePath, NODE_W, type Box } from "@/lib/share/graph"
 import { markdownPreview } from "@/lib/share/markdown"
 import { allBookmarks, allNotes } from "@/lib/share/payload"
 import { noteLabel } from "@/lib/share/targets"
@@ -48,6 +48,12 @@ const I: Record<string, ReactNode> = {
   minus: <path d="M5 12h14" />,
   expand: <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />,
   shrink: <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" />,
+  fit: (
+    <>
+      <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
+      <circle cx="12" cy="12" r="2.5" />
+    </>
+  ),
   check: <path d="M5 12.5l4.5 4.5L19 7" />,
   info: (
     <>
@@ -178,7 +184,7 @@ function NoteNodeCard({ note, graphName }: { note: PNote; graphName: string }) {
 function Wires({ wires, hot }: { wires: Wire[]; hot: string | null }) {
   const mk = `${useId().replace(/[^a-z0-9]/gi, "")}-tip`
   const marker = (id: string, className: string) => (
-    <marker id={id} viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <marker id={id} viewBox="0 0 8 8" refX="8" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0 0L8 4L0 8Z" fill="currentColor" className={className} />
     </marker>
   )
@@ -291,7 +297,7 @@ function Board({ graph, itemKey, full, hot, setHot }: ViewProps) {
           full && "min-h-0 flex-1 overflow-y-auto",
         )}
       >
-        <div ref={surface} className="relative flex w-max min-w-full items-stretch gap-3 p-3">
+        <div ref={surface} className="relative flex min-h-[28rem] w-max min-w-full items-stretch gap-3 p-3 sm:min-h-[34rem]">
           {cols.map((col, i) => (
             <div
               key={col.key}
@@ -304,7 +310,7 @@ function Board({ graph, itemKey, full, hot, setHot }: ViewProps) {
                 <h3 className="min-w-0 truncate text-sm font-medium">{col.label}</h3>
                 <span className="ml-auto rounded-full bg-background px-1.5 text-xs tabular-nums text-muted-foreground">{col.nodeIds.length}</span>
               </header>
-              <ol className="flex flex-1 flex-col gap-2.5">
+              <ol className="flex flex-1 flex-col gap-4">
                 {col.nodeIds.map((id) => {
                   const node = byId.get(id)
                   return node ? (
@@ -328,59 +334,169 @@ function Board({ graph, itemKey, full, hot, setHot }: ViewProps) {
   )
 }
 
-/** Canvas size: every node plus a margin, never smaller than the design's 1100 × 520. */
-export const canvasSize = (graph: PGraph) => ({
-  w: Math.max(1100, ...graph.nodes.map((n) => n.x + NODE_W + 80)),
-  h: Math.max(520, ...graph.nodes.map((n) => n.y + 220)),
-})
+/** Kept for callers: the padded, normalised canvas rectangle. */
+export const canvasSize = canvasBounds
 
-function Canvas({ graph, itemKey, full, hot, setHot, scale, onFit }: ViewProps & { scale: number | null; onFit(z: number): void }) {
+interface ViewState {
+  x: number
+  y: number
+  z: number
+}
+
+const START_VIEW: ViewState = { x: 0, y: 0, z: 1 }
+const FIT_PAD = 24
+
+function Canvas({ graph, itemKey, full, hot, setHot }: ViewProps) {
   const { surface, wires } = useWires(graph)
   const pane = useRef<HTMLDivElement>(null)
-  const { w, h } = canvasSize(graph)
+  // Nodes can have negative x/y (dragged left or up in the app). Normalise them so the whole
+  // graph lives in a positive rectangle; otherwise the first columns are cropped and cannot be
+  // reached by scrolling.
+  const { x: bx, y: by, w, h } = useMemo(() => canvasBounds(graph), [graph])
+  const [view, setView] = useState<ViewState | null>(null)
+  const shown = view ?? START_VIEW
+  const [dragging, setDragging] = useState(false)
+  const drag = useRef<{ id: number; x: number; y: number; ox: number; oy: number } | null>(null)
   const bands = bandOf(graph)
   const stepIndex = new Map(graph.steps.map((s, i) => [s.id, i]))
-  const z = scale ?? 1
 
-  // First time the canvas shows: fit the graph's width, capped at 100%. Unmeasured (0) stays at 100%.
+  /** Fit the whole graph (not just its width) into the pane and centre it. */
+  const fit = useCallback(() => {
+    const el = pane.current
+    if (!el) return
+    const pw = el.clientWidth
+    const ph = el.clientHeight
+    if (pw <= 0 || ph <= 0) return
+    const z = clampZoom(Math.min(1, (pw - FIT_PAD * 2) / w, (ph - FIT_PAD * 2) / h))
+    setView({ z, x: Math.round((pw - w * z) / 2), y: Math.round((ph - h * z) / 2) })
+  }, [w, h])
+
   useLayoutEffect(() => {
-    if (scale !== null) return
-    const width = pane.current?.clientWidth ?? 0
-    onFit(width > 0 ? clampZoom(Math.min(1, width / w)) : 1)
-  }, [scale, onFit, w])
+    fit()
+  }, [fit])
+
+  const zoomBy = (delta: number) => {
+    setView((current) => {
+      const base = current ?? START_VIEW
+      const z = clampZoom(base.z + delta)
+      if (z === base.z) return base
+      const el = pane.current
+      const cx = (el?.clientWidth ?? 0) / 2
+      const cy = (el?.clientHeight ?? 0) / 2
+      const k = z / base.z
+      return { z, x: cx - (cx - base.x) * k, y: cy - (cy - base.y) * k }
+    })
+  }
+
+  const startPan = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return
+    const target = e.target as HTMLElement
+    if (target.closest("a, button, [data-gid], [data-canvas-controls]")) return
+    const v = view ?? START_VIEW
+    drag.current = { id: e.pointerId, x: e.clientX, y: e.clientY, ox: v.x, oy: v.y }
+    setDragging(true)
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId)
+    } catch {
+      // Pointer capture is best effort; moves still arrive while the pointer is over the pane.
+    }
+    e.preventDefault()
+  }
+
+  const movePan = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const d = drag.current
+    if (!d || d.id !== e.pointerId) return
+    setView((current) => ({
+      ...(current ?? START_VIEW),
+      x: d.ox + e.clientX - d.x,
+      y: d.oy + e.clientY - d.y,
+    }))
+  }
+
+  const endPan = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (drag.current?.id !== e.pointerId) return
+    drag.current = null
+    setDragging(false)
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId)
+    } catch {
+      // Already released.
+    }
+  }
 
   return (
     <div
       ref={pane}
+      role="region"
+      aria-label={`${graph.name} canvas`}
+      tabIndex={0}
+      onPointerDown={startPan}
+      onPointerMove={movePan}
+      onPointerUp={endPan}
+      onPointerCancel={endPan}
       className={cn(
-        "overflow-auto overscroll-contain bg-muted/20 bg-[radial-gradient(circle,var(--border)_0.0625rem,transparent_0.0625rem)] [background-size:1.25rem_1.25rem] [scrollbar-color:var(--border)_transparent] [scrollbar-width:thin]",
+        "relative touch-none overflow-hidden bg-muted/20 bg-[radial-gradient(circle,var(--border)_0.0625rem,transparent_0.0625rem)] [background-size:1.25rem_1.25rem]",
         full ? "min-h-0 flex-1" : "h-[28rem] sm:h-[34rem]",
+        dragging ? "cursor-grabbing" : "cursor-grab",
+        FOCUS_FLAT,
       )}
     >
-      <div style={{ width: w * z, height: h * z }}>
-        <div ref={surface} data-surface className="relative origin-top-left" style={{ width: w, height: h, transform: `scale(${z})` }}>
-          {bands.map((band) => {
-            const i = stepIndex.get(band.stepId) ?? 0
-            return (
-              <div
-                key={band.stepId}
-                className="absolute top-3 bottom-3 rounded-2xl border border-dashed border-border/70 bg-muted/25"
-                style={{ left: band.x0, width: band.x1 - band.x0 }}
-              >
-                <span className="absolute top-2.5 left-3 text-xs text-muted-foreground">
-                  <span className="tabular-nums">{String(i + 1).padStart(2, "0")}</span> · {graph.steps[i]?.label}
-                </span>
-              </div>
-            )
-          })}
-          <Wires wires={wires} hot={hot} />
-          {graph.nodes.map((n) => (
-            <div key={n.id} data-gid={n.id} className="absolute" style={{ left: n.x, top: n.y, width: NODE_W }} {...hotProps(n.id, setHot)}>
-              <NodeCard node={n} itemKey={itemKey} graphName={graph.name} />
+      <div
+        ref={surface}
+        data-surface
+        className="absolute top-0 left-0 origin-top-left select-none"
+        style={{ width: w, height: h, transform: `translate(${shown.x}px, ${shown.y}px) scale(${shown.z})` }}
+      >
+        {bands.map((band) => {
+          const i = stepIndex.get(band.stepId) ?? 0
+          return (
+            <div
+              key={band.stepId}
+              className="absolute top-3 bottom-3 rounded-2xl border border-dashed border-border/70 bg-muted/25"
+              style={{ left: band.x0 - bx, width: band.x1 - band.x0 }}
+            >
+              <span className="absolute top-2.5 left-3 text-xs text-muted-foreground">
+                <span className="tabular-nums">{String(i + 1).padStart(2, "0")}</span> · {graph.steps[i]?.label}
+              </span>
             </div>
-          ))}
-        </div>
+          )
+        })}
+        <Wires wires={wires} hot={hot} />
+        {graph.nodes.map((n) => (
+          <div key={n.id} data-gid={n.id} className="absolute" style={{ left: n.x - bx, top: n.y - by, width: NODE_W }} {...hotProps(n.id, setHot)}>
+            <NodeCard node={n} itemKey={itemKey} graphName={graph.name} />
+          </div>
+        ))}
       </div>
+      <CanvasControls z={shown.z} onZoom={zoomBy} onFit={fit} />
+    </div>
+  )
+}
+
+const CANVAS_CONTROL = cn("grid size-8 place-items-center border-b border-border text-muted-foreground transition-colors last:border-b-0 hover:bg-accent hover:text-foreground", FOCUS_FLAT)
+
+/** Canvas zoom and fit controls, bottom-left like the app's canvas. */
+function CanvasControls({ z, onZoom, onFit }: { z: number; onZoom(delta: number): void; onFit(): void }) {
+  return (
+    <div
+      data-canvas-controls
+      role="group"
+      aria-label="Canvas controls"
+      className="absolute bottom-3 left-3 z-10 flex flex-col overflow-hidden rounded-lg border border-border bg-card text-card-foreground shadow-sm"
+      onPointerDown={(e) => e.stopPropagation()}
+    >
+      <span className="border-b border-border px-2 py-1 text-center text-[11px] leading-4 tabular-nums text-muted-foreground" aria-live="polite">
+        {Math.round(z * 100)}%
+      </span>
+      <button type="button" aria-label="Zoom in" title="Zoom in" onClick={() => onZoom(ZOOM_STEP)} className={CANVAS_CONTROL}>
+        {ico(I.plus)}
+      </button>
+      <button type="button" aria-label="Zoom out" title="Zoom out" onClick={() => onZoom(-ZOOM_STEP)} className={CANVAS_CONTROL}>
+        {ico(I.minus)}
+      </button>
+      <button type="button" aria-label="Fit view" title="Fit view" onClick={onFit} className={CANVAS_CONTROL}>
+        {ico(I.fit)}
+      </button>
     </div>
   )
 }
@@ -388,14 +504,13 @@ function Canvas({ graph, itemKey, full, hot, setHot, scale, onFit }: ViewProps &
 const TOOL = cn("grid size-8 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground", FOCUS_FLAT)
 
 /**
- * A shared graph, read-only: Board/Canvas toggle (starting at the graph's own mode), zoom on the
- * canvas, full screen in a native modal dialog (Esc leaves it), wires that light up on hover,
- * collection and note nodes that open their sheet (`<itemKey>/n:<nodeId>`) and bookmark nodes that
- * open in a new tab.
+ * A shared graph, read-only: Board/Canvas toggle (starting at the graph's own mode), a canvas that
+ * fits and centres itself with drag-to-pan and on-canvas zoom/fit controls, full screen in a native
+ * modal dialog (Esc leaves it), wires that light up on hover, collection and note nodes that open
+ * their sheet (`<itemKey>/n:<nodeId>`) and bookmark nodes that open in a new tab.
  */
 export function GraphView({ graph, itemKey }: { graph: PGraph; itemKey: string }) {
   const [mode, setMode] = useState<Mode>(graph.mode === "canvas" ? "canvas" : "board")
-  const [scale, setScale] = useState<number | null>(null)
   const [full, setFull] = useState(false)
   const [hot, setHot] = useState<string | null>(null)
   const [placeholder, setPlaceholder] = useState(0)
@@ -410,8 +525,6 @@ export function GraphView({ graph, itemKey }: { graph: PGraph; itemKey: string }
     wasFull.current = full
   }, [full])
 
-  const zoom = (d: number) => setScale((s) => clampZoom((s ?? 1) + d))
-  const onFit = useCallback((z: number) => setScale(z), [])
   const hasLinks = graph.links.length > 0
   const hasBookmarks = graph.nodes.some((n) => n.ref.kind === "bookmark")
 
@@ -476,19 +589,6 @@ export function GraphView({ graph, itemKey }: { graph: PGraph; itemKey: string }
               ) : null}
             </span>
           ) : null}
-          {mode === "canvas" ? (
-            <span className="flex items-center rounded-md border border-border">
-              <button type="button" aria-label="Zoom out" onClick={() => zoom(-ZOOM_STEP)} className={TOOL}>
-                {ico(I.minus)}
-              </button>
-              <span className="w-11 text-center text-xs tabular-nums text-muted-foreground" aria-live="polite">
-                {Math.round((scale ?? 1) * 100)}%
-              </span>
-              <button type="button" aria-label="Zoom in" onClick={() => zoom(ZOOM_STEP)} className={TOOL}>
-                {ico(I.plus)}
-              </button>
-            </span>
-          ) : null}
           <button
             ref={toggle}
             type="button"
@@ -500,7 +600,7 @@ export function GraphView({ graph, itemKey }: { graph: PGraph; itemKey: string }
           </button>
         </span>
       </div>
-      {mode === "board" ? <Board {...view} /> : <Canvas {...view} scale={scale} onFit={onFit} />}
+      {mode === "board" ? <Board {...view} /> : <Canvas {...view} />}
     </div>
   )
 

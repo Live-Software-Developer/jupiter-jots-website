@@ -5,7 +5,7 @@ import { sheetEntries } from '@/lib/share/collections'
 import type { PBookmark, PGraph, PayloadItem } from '@/lib/share/types'
 import { pressEscape } from '@/test/dialog'
 import { CollectionCommentsSlot, CollectionSheetContext, CollectionSheetProvider, OpenCollectionButton } from './CollectionSheet'
-import { GraphView } from './GraphView'
+import { canvasSize, GraphView } from './GraphView'
 
 beforeAll(() => {
   ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -100,41 +100,66 @@ describe('GraphView', () => {
     expect(cols).toEqual(['Basics', 'Deeper'])
   })
 
-  it('toggling to Canvas renders absolutely positioned nodes at x/y', () => {
+  it('toggling to Canvas renders absolutely positioned nodes at their normalised x/y', () => {
     const el = mount(<GraphView graph={graph} itemKey="g:1" />)
     click(button(el, 'Canvas'))
     expect(button(el, 'Canvas').getAttribute('aria-pressed')).toBe('true')
+    const bounds = canvasSize(graph)
     for (const n of graph.nodes) {
       const box = canvasNode(el, n.id)!
       expect(box.classList.contains('absolute')).toBe(true)
-      expect(box.style.left).toBe(`${n.x}px`)
-      expect(box.style.top).toBe(`${n.y}px`)
+      expect(box.style.left).toBe(`${n.x - bounds.x}px`)
+      expect(box.style.top).toBe(`${n.y - bounds.y}px`)
       expect(box.style.width).toBe('240px')
     }
   })
 
-  it('opens the canvas fitted to the width, capped at 100%', () => {
-    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(550)
+  it('fits and centres the whole canvas, capped at 100%', () => {
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(598)
+    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(308)
     const el = mount(<GraphView graph={{ ...graph, mode: 'canvas' }} itemKey="g:1" />)
-    // canvasSize is 1100 wide here, so 550px fits at 50%.
-    expect(el.querySelector<HTMLElement>('[data-surface]')!.style.transform).toBe('scale(0.5)')
+    // canvasSize is 1100 × 520 here, so 598 × 308 fits at 50% and the margins centre it.
+    expect(el.querySelector<HTMLElement>('[data-surface]')!.style.transform).toBe('translate(24px, 24px) scale(0.5)')
     expect(el.textContent).toContain('50%')
     act(() => root!.unmount())
     host!.remove()
     vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(4000)
+    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(1000)
     const wide = mount(<GraphView graph={{ ...graph, mode: 'canvas' }} itemKey="g:1" />)
-    expect(wide.querySelector<HTMLElement>('[data-surface]')!.style.transform).toBe('scale(1)')
+    expect(wide.querySelector<HTMLElement>('[data-surface]')!.style.transform.endsWith('scale(1)')).toBe(true)
+    expect(wide.textContent).toContain('100%')
   })
 
-  it('zooms the canvas between 30% and 160%', () => {
+  it('brings a graph with negative node coordinates back inside the canvas', () => {
+    const shifted: PGraph = {
+      ...graph,
+      nodes: graph.nodes.map((n) => ({ ...n, x: n.x - 300 })),
+    }
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(800)
+    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(400)
+    const el = mount(<GraphView graph={{ ...shifted, mode: 'canvas' }} itemKey="g:1" />)
+    const bounds = canvasSize(shifted)
+    expect(bounds.x).toBeLessThan(0)
+    for (const n of shifted.nodes) {
+      expect(canvasNode(el, n.id)!.style.left).toBe(`${n.x - bounds.x}px`)
+      expect(Number.parseFloat(canvasNode(el, n.id)!.style.left)).toBeGreaterThan(0)
+    }
+    expect(el.querySelector('[data-canvas-controls]')).not.toBeNull()
+  })
+
+  it('zooms the canvas between 30% and 160%, and Fit view restores the fit', () => {
     const el = mount(<GraphView graph={{ ...graph, mode: 'canvas' }} itemKey="g:1" />)
     expect(el.textContent).toContain('100%')
     click(el.querySelector('[aria-label="Zoom in"]'))
-    expect(el.querySelector<HTMLElement>('[data-surface]')!.style.transform).toBe('scale(1.1)')
+    expect(el.querySelector<HTMLElement>('[data-surface]')!.style.transform).toBe('translate(0px, 0px) scale(1.1)')
     for (let i = 0; i < 12; i++) click(el.querySelector('[aria-label="Zoom in"]'))
     expect(el.textContent).toContain('160%')
     for (let i = 0; i < 20; i++) click(el.querySelector('[aria-label="Zoom out"]'))
     expect(el.textContent).toContain('30%')
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(598)
+    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(308)
+    click(el.querySelector('[aria-label="Fit view"]'))
+    expect(el.querySelector<HTMLElement>('[data-surface]')!.style.transform).toBe('translate(24px, 24px) scale(0.5)')
   })
 
   it('clicking a collection node calls open with its nested key and the clicked button', () => {

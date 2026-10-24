@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { bandOf, boardColumns, computePath } from './graph'
+import { bandOf, boardColumns, canvasBounds, computePath } from './graph'
 import type { PGraph, PGraphNode } from './types'
 
 const node = (id: string, stepId: string | null = null, x = 0, y = 0): PGraphNode => ({
@@ -57,18 +57,31 @@ describe('bandOf', () => {
   })
 })
 
+describe('canvasBounds', () => {
+  it('includes nodes dragged to negative coordinates and keeps the design minimum', () => {
+    const g = graph({ nodes: [node('a', null, -120, -40), node('b', null, 340, 240)] })
+    const b = canvasBounds(g)
+    expect(b.x).toBe(-160)
+    expect(b.y).toBe(-80)
+    expect(b.w).toBe(Math.max(1100, 340 + 240 + 40 - b.x))
+    expect(b.h).toBe(Math.max(520, 240 + 220 + 40 - b.y))
+    expect(-120 - b.x).toBeGreaterThan(0)
+    expect(-40 - b.y).toBeGreaterThan(0)
+  })
+})
+
 describe('computePath', () => {
   const box = (l: number, t: number, r: number, b: number) => ({ l, t, r, b })
-  it('routes sideways', () => {
-    expect(computePath(box(0, 0, 100, 50), box(200, 100, 300, 150))).toBe('M100 25C150 25 150 125 198 125')
+  it('routes sideways between facing centres', () => {
+    expect(computePath(box(0, 0, 100, 50), box(200, 100, 300, 150))).toBe('M100 25C150 25 150 125 200 125')
   })
-  it('routes down', () => {
-    expect(computePath(box(0, 0, 100, 50), box(10, 100, 110, 150))).toBe('M50 50C50 75 60 75 60 98')
+  it('routes down between facing centres', () => {
+    expect(computePath(box(0, 0, 100, 50), box(10, 100, 110, 150))).toBe('M50 50C50 75 60 75 60 100')
   })
-  it('routes backwards', () => {
-    expect(computePath(box(200, 0, 300, 50), box(0, 10, 100, 40))).toBe('M200 25C152 25 148 25 102 25')
+  it('routes backwards between facing centres', () => {
+    expect(computePath(box(200, 0, 300, 50), box(0, 10, 100, 40))).toBe('M200 25C150 25 150 25 100 25')
   })
-  it('routes upward', () => {
-    expect(computePath(box(0, 100, 100, 150), box(10, 0, 110, 50))).toBe('M50 100C50 75 60 75 60 52')
+  it('routes upward between facing centres', () => {
+    expect(computePath(box(0, 100, 100, 150), box(10, 0, 110, 50))).toBe('M50 100C50 75 60 75 60 50')
   })
 })
