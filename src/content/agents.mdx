@@ -16,7 +16,7 @@ export const toc = [
 
 Jupiter Jots can expose its library to an agent running in your terminal. The agent searches, reads, saves and organises through **MCP** (Model Context Protocol), the standard way tools are offered to Claude Code, Cursor and other MCP clients.
 
-The connection is **local to this computer**. A small bridge, included with Jupiter Jots, runs on your machine and talks to the extension. There is no account and no Jupiter Jots server in the middle. The agent may still send what it reads to its own model provider, under that provider’s terms.
+The connection is **local to this computer**. A small bridge, distributed as the `jupiter-jots-mcp` npm package, runs on your machine and talks to the extension. There is no account and no Jupiter Jots server in the middle. The agent may still send what it reads to its own model provider, under that provider’s terms.
 
 This is different from [Ask Jupiter](/guide/ask-jupiter): Ask Jupiter is the chat inside the extension, using the key you added there. Connected agents are outside programs you already work with.
 
@@ -32,9 +32,9 @@ This is different from [Ask Jupiter](/guide/ask-jupiter): Ask Jupiter is the cha
 You need:
 
 - **Jupiter Jots** installed in Chrome, with the Connected agents feature.
-- **Node.js**, because the bridge is a small Node.js program. If Claude Code runs on this machine, its Node.js is enough.
+- **Node.js 18 or newer and npm**, because the bridge runs from the `jupiter-jots-mcp` npm package. If Claude Code runs on this machine, its Node.js is enough.
 - **An MCP client** that can launch a local stdio server. The examples below use Claude Code; any client that understands `command` and `args` works the same way.
-- **The bridge files** in the Jupiter Jots checkout, under `mcp/`. Keep them in a folder you control; the client will launch `mcp/server.mjs` from there.
+- **An internet connection the first time**, to download the bridge. Later runs use npm’s cache.
 
 Keep Chrome running while you use the bridge. The extension’s offscreen document holds the local connection; closing Chrome closes it too.
 
@@ -58,33 +58,22 @@ Connected agents is off by default. Turning it on does not install a key or cont
 <Section anchor="connect" title="Connect your agent">
 <Prose>
 
-Point your MCP client at `mcp/server.mjs` with Node. In Claude Code, the project file `.mcp.json` does this:
+Point your MCP client at the npm package. In Claude Code, add this to the project’s `.mcp.json`:
 
 ```json
 {
   "mcpServers": {
     "jupiter-jots": {
-      "command": "node",
-      "args": ["mcp/server.mjs"]
+      "command": "npx",
+      "args": ["-y", "jupiter-jots-mcp"]
     }
   }
 }
 ```
 
-That relative path works when Claude Code starts in the Jupiter Jots folder. If your config lives elsewhere, use the absolute path to `server.mjs`:
+`npx` downloads the bridge the first time and runs it as a stdio MCP server. You do not need a checkout of the extension, and there is no separate command to start. For another MCP client, use `npx` as the command and `-y jupiter-jots-mcp` as its arguments.
 
-```json
-{
-  "mcpServers": {
-    "jupiter-jots": {
-      "command": "node",
-      "args": ["/absolute/path/to/jupiter-jots/mcp/server.mjs"]
-    }
-  }
-}
-```
-
-Restart the client or approve the project server when it asks. The client starts the local daemon itself; you do not run a separate bridge command. Once Connected agents is on in the extension, the two sides pair and **Bridge status** becomes **Connected**.
+Restart the client or approve the project server when it asks. The client starts the local daemon itself. Once Connected agents is on in the extension, the two sides pair and **Bridge status** becomes **Connected**.
 
 Run `/mcp` in Claude Code. `jupiter-jots` should show as connected with tools available.
 
@@ -172,7 +161,7 @@ The [privacy policy](/privacy#network) lists this alongside the rest of the exte
 - If Repair still fails, stop the local daemon and clear its pairing, then use Repair pairing again:
 
 ```bash
-node mcp/daemon.mjs --reset-pairing
+npx -y jupiter-jots-mcp --reset-pairing
 ```
 
 Only one browser extension is paired with a bridge at a time. To switch to a second profile or a copied browser, reset the daemon’s pairing with the command above, then use Repair pairing in the browser you want to connect.
@@ -190,9 +179,9 @@ Only one browser extension is paired with a bridge at a time. To switch to a sec
 
 **The connection works but a tool is missing.** Open **Settings → AI tools** and check that tool under **MCP**. Off tools are not listed at all.
 
-**The agent cannot start the server.** Use an absolute path to `mcp/server.mjs` in the client config, and check that `node` is the same Node.js your terminal uses.
+**The agent cannot start the server.** Check that Node.js 18 or newer and npm are installed, then run `npx -y jupiter-jots-mcp` once in a terminal to see its error. The client config must use `npx` as the command and `-y jupiter-jots-mcp` as its arguments.
 
-**Tools stopped after an update.** Disconnect the agent, close any old bridge process, reload the extension, then reconnect. Upgrading both halves together avoids a bridge speaking an older protocol.
+**Tools stopped after an update.** Disconnect the agent, close any old bridge process, reload the extension, then reconnect with `npx -y jupiter-jots-mcp@latest`. Upgrading both halves together avoids a bridge speaking an older protocol.
 
 </Prose>
 

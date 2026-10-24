@@ -15,7 +15,7 @@ export const metadata = pageMetadata({
   path: "/guide/agents",
   image: "agents",
   imageAlt: "Jupiter Jots connected to an agent in the terminal",
-  keywords: ["Jupiter Jots MCP", "Claude Code bookmark manager", "MCP bookmark server", "AI agent bookmarks"],
+  keywords: ["Jupiter Jots MCP", "jupiter-jots-mcp", "Claude Code bookmark manager", "MCP bookmark server", "AI agent bookmarks"],
 })
 
 export default function AgentsPage() {

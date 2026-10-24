@@ -9,7 +9,7 @@ Ask your library a question, and let a terminal agent work with it too.
 - **Ask Jupiter.** A conversation inside the extension that finds saved items, summarises collections, suggests tags and prepares bookmarks, notes, collections, graphs and shares. Bring your own key from Anthropic, OpenAI, Google or OpenRouter; it stays encrypted on this device.
 - **Review before it changes.** Ask Jupiter shows a change set with Apply, Discard and Undo. Writes always wait for you, even when their tool is set to On, and sharing or destructive tools always ask.
 - **Saved chats.** Keep a conversation, reopen it from the panel and delete it when you are done. Chats stay in this browser.
-- **Connected agents.** A local MCP bridge lets Claude Code and other terminal agents use the same library. Turn it on in Settings → Connected agents, then point the client at the bridge. The connection stays on this computer.
+- **Connected agents.** A local MCP bridge, installed from npm as `jupiter-jots-mcp`, lets Claude Code and other terminal agents use the same library. Turn it on in Settings → Connected agents, then run `npx -y jupiter-jots-mcp` from your client. The connection stays on this computer.
 - **Approvals for agents.** Every write appears in Connected agents with the agent, tool and input. Closing the page does not cancel it; turning the bridge off or revoking it denies what is waiting.
 - **Separate tool permissions.** Settings → AI tools now has an Assistant and an MCP column, each Off, Ask or On, plus read-only mode and per-group switches.
 
