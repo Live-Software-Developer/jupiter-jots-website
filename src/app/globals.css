@@ -131,6 +131,19 @@
   html:has(dialog[open]) {
     overflow: hidden;
   }
+  /*
+   * The scrollbar's room stays reserved, so locking the page for a dialog (overflow: hidden) no
+   * longer widens it and shifts everything sideways.
+   */
+  html {
+    scrollbar-gutter: stable;
+    /* The gutter shows the root's background: match the page in both themes. */
+    background: var(--background);
+  }
+  /* Radix's scroll lock (Select) adds a right margin the width of the scrollbar; the reserved gutter already covers it. */
+  html body[data-scroll-locked] {
+    margin-right: 0 !important;
+  }
   @media (prefers-reduced-motion: no-preference) {
     html {
       scroll-behavior: smooth;
