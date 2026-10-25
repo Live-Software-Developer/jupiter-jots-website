@@ -9,7 +9,7 @@ export const metadata = pageMetadata({
   path: "/changelog",
   image: "changelog",
   imageAlt: "Jupiter Jots changelog",
-  keywords: ["Jupiter Jots changelog", "Jupiter Jots 2.0", "Ask Jupiter", "Jupiter Jots MCP"],
+  keywords: ["Jupiter Jots changelog", "Jupiter Jots 2.1", "Jupiter Jots 2.0", "Ask Jupiter", "Jupiter Jots MCP"],
 })
 
 export default function ChangelogPage() {

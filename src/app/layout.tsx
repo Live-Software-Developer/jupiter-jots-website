@@ -50,7 +50,7 @@ const jsonLd = {
       name: SITE.name,
       operatingSystem: "Chrome",
       applicationCategory: "BrowserApplication",
-      softwareVersion: "2.0.0",
+      softwareVersion: "2.1.0",
       description: SITE.description,
       url: SITE_URL,
       downloadUrl: STORE_URL,

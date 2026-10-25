@@ -1,55 +1,53 @@
 import { Release } from "@/components/site/Release"
 
-<Release id="export-import-forking" version="Export, import & forking" date="2026-10-25" label="25 October 2026" latest>
+<Release id="v2-1-0" version="Version 2.1.0" date="2026-10-25" label="25 October 2026" latest>
 
-Export exactly what you want, restore more from a backup, and keep a copy of a share.
+The biggest update since 2.0. Share your library, ask it questions, let terminal agents work with it, and export or import exactly the parts you want.
 
-### New
+### Sharing
+
+- **Share pages.** Share any mix of collections, bookmarks, notes and graphs with one link. Each share opens on this website, with each item in its own section and graphs shown as a board or a canvas. Formatting in notes and descriptions is kept; links, images and HTML in them are shown as plain text.
+- **Unlisted, public or password protected.** A share is unlisted by default: only people with the link can open it. Make it public to list it on [Explore](/explore) and let search engines find it, or lock it with a password. A password-protected share and its comments are encrypted in your browser, so our server can’t read them.
+- **Locked notes.** A password-locked note is only shared if you opt in, and then it stays encrypted. Locking a note that is already shared warns you and takes it out of the share.
+- **Live shares.** Make a share live and it updates when the items in it change; other shares stay as they were when you made them. Open any item from Edit share to change it.
+- **Comments.** Visitors can comment and reply, mark comments helpful and report them. New comments appear live. You choose whether comments are open, approved first or off.
+- **Owner controls.** Revoke or delete a share, or set an expiry or a view limit. A 12-character code made on your device lets you manage your shares from any device. There is no account or email.
+- **Forking.** Choose Save to Jupiter Jots on a share page, or Import a share in the extension and paste the link, to keep your own copy. A private share asks for its password in the extension, and locked notes stay locked.
+- **Trends.** Each share shows views, forks and comments, with a daily trend for the last 7, 30 or 90 days. Views and forks count once per visitor per day.
+
+### Ask Jupiter
+
+- **Ask your library.** A conversation inside the extension that finds saved items, summarises collections, suggests tags and prepares bookmarks, notes, collections, graphs and shares. Bring your own key from Anthropic, OpenAI, Google or OpenRouter; it stays encrypted on this device.
+- **Review before it changes.** Jupiter batches what it wants to change into one proposal, with Apply, Discard and Undo. Nothing is saved until you apply it, and sharing or deleting always asks.
+- **Longer tasks.** Jupiter plans multi-step work, shows what it is doing as it goes, and picks up an unfinished plan where it stopped. Errors show as a card you can retry.
+- **Saved chats.** Keep a conversation, reopen it from the panel and delete it when you are done. Chats stay in this browser.
+- **Models.** Pick a provider, model and effort under the message box. Refresh models fetches a provider’s latest list.
+
+### Connected agents
+
+- **Terminal agents.** A local MCP bridge, installed from npm as `jupiter-jots-mcp`, lets Claude Code and other terminal agents use the same library. Turn it on in Settings → Connected agents, then run `npx -y jupiter-jots-mcp` from your client. The connection stays on this computer.
+- **Approvals.** Every write an agent asks for appears in Connected agents with the agent, tool and input, and a red pulse in the top bar tells you something is waiting. Turning the bridge off or revoking an agent denies what is waiting.
+- **Tool permissions.** Settings → AI tools has an Assistant and an MCP column, each Off, Ask or On, plus read-only mode and per-group switches.
+
+### Export & import
 
 - **Export selected.** Pick individual items in each section of Import & export, or select items in the Library, Notes or Collections and choose Export selected.
-- **Fuller imports.** Graphs, notes and saved chats in a backup are restored. Bookmarks you already have are referenced instead of duplicated, and you choose the destination collection. Share records are skipped, because sync restores them. Every import can be undone.
-- **Fork a share.** Choose Save to Jupiter Jots on a share page, or use Import → Import a share in the extension and paste the link. A private share’s password is typed in the extension, and locked notes stay locked.
-- **Forks in your stats.** Each share shows its forks beside views and comments, counted once per visitor per day.
+- **Fuller imports.** Graphs, notes and saved chats in a backup are restored. Bookmarks you already have are referenced instead of duplicated, and you choose the destination collection. Every import can be undone.
 
-</Release>
+### Library
 
-<Release id="ask-and-agents" version="Ask Jupiter & agents" date="2026-10-24" label="24 October 2026">
-
-Ask your library a question, and let a terminal agent work with it too.
-
-### New
-
-- **Ask Jupiter.** A conversation inside the extension that finds saved items, summarises collections, suggests tags and prepares bookmarks, notes, collections, graphs and shares. Bring your own key from Anthropic, OpenAI, Google or OpenRouter; it stays encrypted on this device.
-- **Review before it changes.** Ask Jupiter shows a change set with Apply, Discard and Undo. Writes always wait for you, even when their tool is set to On, and sharing or destructive tools always ask.
-- **Saved chats.** Keep a conversation, reopen it from the panel and delete it when you are done. Chats stay in this browser.
-- **Connected agents.** A local MCP bridge, installed from npm as `jupiter-jots-mcp`, lets Claude Code and other terminal agents use the same library. Turn it on in Settings → Connected agents, then run `npx -y jupiter-jots-mcp` from your client. The connection stays on this computer.
-- **Approvals for agents.** Every write appears in Connected agents with the agent, tool and input. Closing the page does not cancel it; turning the bridge off or revoking it denies what is waiting.
-- **Separate tool permissions.** Settings → AI tools now has an Assistant and an MCP column, each Off, Ask or On, plus read-only mode and per-group switches.
+- **List and detail side by side.** On wide screens, lists keep their place while the item you open shows beside them, and each item has its own address. Notes opened from a collection open in the same view.
+- **Search everything.** Search finds notes, collections, graphs and shares as well as bookmarks, and looks through titles, descriptions, notes and tags.
+- **Reading list.** Mark bookmarks to read without moving them out of their collections.
+- **Fresh page details.** When you have a saved page open, Jupiter Jots fills in a missing icon, description or preview image, and offers a changed title instead of replacing yours.
+- **Graphs.** Note cards on the canvas are compact, with a short title and excerpt. Graphs can be deleted from the Graphs list and go to Trash first.
+- **Activity.** A full activity log shows what changed and whether you, Ask Jupiter or a connected agent changed it.
 
 ### Also
 
-- Notes you hide from AI, and password-locked notes, stay invisible to Ask Jupiter and to connected agents.
+- The [privacy policy](/privacy) and [terms](/terms) cover shares, your code, comments and the one cookie share pages use.
 - The [Ask Jupiter guide](/guide/ask-jupiter) and [terminal agents guide](/guide/agents) cover setup, privacy and troubleshooting.
-
-</Release>
-
-<Release id="sharing" version="Sharing" date="2026-10-23" label="23 October 2026">
-
-Share any mix of collections, bookmarks and graphs with one link.
-
-### New
-
-- **Share pages.** Every share opens on this website, with each item in its own section and graphs shown as a board or a canvas. Bookmarks show their site icons and preview images, and collections their icon and description, as in the extension.
-- **Notes in shares.** Share a note on its own or inside a collection, listed before its bookmarks. Notes, bookmark notes and collection descriptions show their formatting: bold, italic, code, lists and quotes. Links, images and HTML in them are shown as plain text.
-- **Unlisted, public or password protected.** A share is unlisted by default: only people with the link can open it. Make it public to list it on [Explore](/explore) and let search engines find it, or lock it with a password. A password-protected share is encrypted in your browser, and so are its comments, so our server can’t read them.
-- **Explore.** Browse and search the shares people chose to make public.
-- **Comments.** Visitors can comment and reply, mark comments helpful and report them. New comments appear live.
-- **Owner controls.** Revoke or delete a share, set an expiry or a view limit, and choose whether comments are open, approved first or off.
-- **Your code.** A 12-character code made on your device lets you manage your shares from any device. There is no account or email.
-
-### Also
-
-- The [privacy policy](/privacy) and [terms](/terms) now cover shares, your code, comments and the one cookie share pages use. Their 24 October update explains unlisted, public and password-protected shares.
+- Notes you hide from AI, and password-locked notes, stay invisible to Ask Jupiter and to connected agents.
 
 </Release>
 
