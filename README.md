@@ -66,6 +66,8 @@ Every page builds its metadata with `pageMetadata()` (`src/lib/seo.ts`): absolut
 
 Share pages need the backend URL. `NEXT_PUBLIC_JJ_API_URL` is inlined at build time, so set it when you run `pnpm build` or `pnpm bundle`; `JJ_API_URL` optionally overrides it for server renders at runtime. A production build without `NEXT_PUBLIC_JJ_API_URL` still succeeds, but share pages show "This share can't be loaded" and the server logs a warning. In development both default to `http://127.0.0.1:8000`. See `.env.example`.
 
+The share page's "Save to Jupiter Jots" button talks to the installed extension through `NEXT_PUBLIC_JJ_EXTENSION_ID` (also inlined at build time; the store id is `dnfmgdmobmoglemckapnbgncnfhkighd`, an unpacked dev build has its own id on `chrome://extensions`). The extension only accepts it from origins in its manifest's `externally_connectable` (production and `http://localhost:3000`). Unset, the button only shows how to install Jupiter Jots and import the link by hand.
+
 ```bash
 SITE_URL=https://jj.livesoftwaredeveloper.com NEXT_PUBLIC_JJ_API_URL=https://<backend> pnpm bundle   # build + copy public/, static assets and deploy/ into .next/standalone
 PORT=3010 pnpm serve                                        # node .next/standalone/server.js

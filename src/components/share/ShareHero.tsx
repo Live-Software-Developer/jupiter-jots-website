@@ -15,9 +15,20 @@ import { VisibilityBadge } from "./VisibilityBadge"
 
 /**
  * Header for every share (design: share-hero), with the "In this share" index once there are 2+ bands.
- * `action` sits next to the badge (an unlocked private share's "Lock again").
+ * `action` sits next to the badge (an unlocked private share's "Lock again"); `fork` goes under the
+ * card's buttons (the "Save to Jupiter Jots" button).
  */
-export function ShareHero({ share, payload, action }: { share: PublicShare; payload: SharePayload; action?: ReactNode }) {
+export function ShareHero({
+  share,
+  payload,
+  action,
+  fork,
+}: {
+  share: PublicShare
+  payload: SharePayload
+  action?: ReactNode
+  fork?: ReactNode
+}) {
   const bands = toBands(payload.items)
   const curator = payload.curator.name || share.curator_name
   const updated = formatDate(share.updated_at)
@@ -70,7 +81,7 @@ export function ShareHero({ share, payload, action }: { share: PublicShare; payl
           <div className="rounded-2xl bg-primary/[0.07] p-5 ring-1 ring-primary/15">
             <p className="text-sm font-medium">Like this share?</p>
             <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-              Make collections and graphs like this one with Jupiter Jots. Free, and your library stays on your device.
+              Save it to your library, or make collections and graphs like this one with Jupiter Jots. Free, and your library stays on your device.
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
               <Link
@@ -90,6 +101,7 @@ export function ShareHero({ share, payload, action }: { share: PublicShare; payl
                 )}
               />
             </div>
+            {fork ? <div className="mt-2">{fork}</div> : null}
           </div>
         </div>
       </div>
