@@ -27,6 +27,7 @@ Already set: the Chrome Web Store listing (`STORE_URL`, every "Add to Chrome" li
 | Route | Source | Design route |
 |---|---|---|
 | `/` | `src/app/(site)/page.tsx` | `/site` |
+| `/features` | `src/app/(site)/features/page.tsx` (sections in `src/components/site/features/sections.ts`) | — |
 | `/guide` | `src/content/guide.mdx` | `/site-guide` |
 | `/guide/ask-jupiter` | `src/content/ask-jupiter.mdx` | — |
 | `/guide/agents` | `src/content/agents.mdx` | — |
@@ -44,6 +45,7 @@ Also `sitemap.xml`, `robots.txt`, `manifest.webmanifest`, `favicon.ico`, `icon.s
 ## Where things are
 
 - `src/components/site/*`: the design's marketing components as React; `src/components/share/*` is the share-page set (topbar, footer, hero, bands, graph view, private gate, discussion); `src/lib/share/*` holds its API client, payload types, crypto, graph layout and markdown. Server components except `NavLinks`, `MobileMenu` (native modal `<dialog>`), `Toc` (scroll-spy), `Faq` (accordion item), `ThemeToggle` and `ThemeProvider`.
+  - `GuideTabs`, `GuidePager` and `GuideMore` (`GuideNav.tsx`) link the three guide pages in order (`GUIDE_STEPS` in `nav.ts`). `features/*` is the /features page: section data, sticky section nav (`FeatureNav`, client), hero `Orbit` and the drawings in `visuals.tsx`.
   - `SiteHeader`, `SiteFooter`, `Platforms` + `PlatformLogo` (brand SVGs inlined from the design, in `platform-logos.ts`), `PageIntro`, `Section`, `Prose` (also `Summary`, `Defs`/`Def`, `Kbd`, `Placeholder`), `Toc`, `Release`, `Shot`, `BrandLogo`.
 - `src/content/*.mdx`: long-form copy. Each file exports its `toc`. MDX pages can use `<Section>`, `<Prose>`, `<Summary>`, `<Defs>`, `<Def>`, `<Kbd>`, `<Faq>`, `<SupportEmail />` and `<GoverningLaw />` without imports (`src/mdx-components.tsx`).
 - `public/shots/*.webp`: real extension screenshots from the TaskFlow design surface at 2x. `next/image` serves resized copies; the hero pair is preloaded. Retake them there when the extension UI changes and update sizes in `Shot.tsx`.

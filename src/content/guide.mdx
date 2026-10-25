@@ -1,13 +1,18 @@
 export const toc = [
   { id: "install", label: "Install and pin" },
   { id: "save", label: "Save a page" },
-  { id: "notes", label: "Notes and details" },
+  { id: "details", label: "Lists and details" },
   { id: "collections", label: "Collections and nesting" },
-  { id: "tags", label: "Tags and filters" },
+  { id: "tags", label: "Tags, filters and reading" },
+  { id: "notes", label: "Notes" },
+  { id: "graphs", label: "Graphs" },
+  { id: "share", label: "Share a link" },
+  { id: "trash", label: "Trash and cleanup" },
   { id: "import", label: "Import from Chrome" },
   { id: "shortcuts", label: "Shortcuts that open sites" },
-  { id: "insights", label: "Insights" },
+  { id: "insights", label: "Insights and activity" },
   { id: "backup", label: "Back up and move" },
+  { id: "more", label: "Ask Jupiter and agents" },
 ]
 
 <Section anchor="install" title="Install and pin">
@@ -17,7 +22,7 @@ export const toc = [
 2. Click the puzzle piece in Chrome’s toolbar and pin Jupiter Jots, so its button is always one click away.
 3. Click the button. The first time, Jupiter Jots offers to import your existing bookmarks. You can skip this and do it later.
 
-There is no account to create. Your library starts empty, on this computer.
+There is no account to create. Your library starts empty, on this computer. For a tour of everything it can do, see [every feature](/features).
 
 </Prose>
 </Section>
@@ -39,15 +44,17 @@ The popup, the side panel and the full-screen library are the same app in three 
 
 If you saved the page before, Jupiter Jots tells you instead of making a duplicate.
 
+The title, site icon, description and preview image come from the page itself. When you later open a page you saved, Jupiter Jots fills in any of them that were missing. If the page has changed, it shows **Page details changed** with an **Update** button, and you choose which details to take; the title stays as you had it unless you tick it. Updating is an ordinary edit, so you can undo it.
+
 </Prose>
 </Section>
 
-<Section anchor="notes" title="Notes and details">
+<Section anchor="details" title="Lists and details">
 <Prose>
 
-Every bookmark keeps the page’s title, its own description and its preview image. Add a **note** to say why you saved it, in your words. Notes are searchable, so “that article about database locks” finds it even when the title says nothing of the sort.
+Every list in the full-screen library shows two columns: the list, and the details of the item you choose beside it. Choosing a bookmark, a note or a collection never takes you away from the list, so you can go down it one item at a time. On a narrow window, such as the popup or side panel, the list comes first and the item opens on its own.
 
-If you select text on a page before saving, it is kept with the bookmark. Open a bookmark to edit any of it, mark it as a favourite, or archive it when you are done.
+A bookmark’s details hold the page’s title, its description and preview image, and your **note** on why you saved it. Notes are searchable, so “that article about database locks” finds it even when the title says nothing of the sort. Edit any of it in place, mark it as a favourite, set its reading status, archive it when you are done, or choose **Open page**. If you selected text on a page before saving, it is kept with the bookmark.
 
 </Prose>
 </Section>
@@ -66,12 +73,73 @@ When you delete a collection, Jupiter Jots asks where its bookmarks should go. D
 </Prose>
 </Section>
 
-<Section anchor="tags" title="Tags and filters">
+<Section anchor="tags" title="Tags, filters and reading">
 <Prose>
 
-Tags work across collections. Add as many as you like to a bookmark, such as `#recipe` or `#read-later`, and manage them on the Tags page.
+Tags work across collections. Add as many as you like to a bookmark, such as `#recipe` or `#read-later`, and manage them on the Tags page, where you can rename and merge them.
 
-To narrow the library, combine filters: collection, tag, favourites, archive or date. Sort by newest, oldest, title or last opened, and switch between grid and list. Search covers titles, addresses, notes, page descriptions, tags and collection names.
+To narrow the library, combine filters: collection, tag, favourites, archive or date. Sort by newest, oldest, title or last opened, and switch between grid and list. Search covers titles, addresses, notes, page descriptions, tags and collection names; put a phrase in "quotes", or write `-word` to leave a word out. Press <Kbd>Ctrl</Kbd> <Kbd>K</Kbd> (<Kbd>⌘</Kbd> <Kbd>K</Kbd> on a Mac) to jump to any screen.
+
+The **reading list** keeps track of what you mean to read. Give a bookmark the status To read, Reading or Done, then open **To read** to work through it.
+
+</Prose>
+</Section>
+
+<Section anchor="notes" title="Notes">
+<Prose>
+
+Notes are your own writing, kept in the library next to your bookmarks. Open **Notes** and start one; it saves as you type. Notes take Markdown (bold, italic, code, lists and quotes) and can be filed in a collection and tagged like a bookmark.
+
+- **Link a note** to the bookmarks and collections it is about, and open them from the note.
+- **Speak to type** with the mic button. Chrome asks for the microphone once; Chrome’s speech service, run by Google, turns what you say into text. Choose its language in Settings.
+- **Lock a note** with a password. Its text is encrypted on this device, and you can hide its title too. Without the password, a locked note can’t be read, so keep it somewhere safe.
+- **Hide from AI** keeps a note away from Ask Jupiter and connected agents. Locked notes are always hidden.
+
+</Prose>
+</Section>
+
+<Section anchor="graphs" title="Graphs">
+<Prose>
+
+A graph is a reading path: bookmarks, collections and notes from your library, joined by arrows in the order you would read them. It is a second view over items you already saved, not a copy.
+
+1. Open **Graphs** and choose **Start a graph**.
+2. Add items from your library and draw the arrows between them.
+3. Open a bookmark’s details from the graph, and mark it read as you go. The progress bar shows how far along you are.
+
+Any collection can also be opened as a graph of what is inside it. Deleting a graph moves it to the Trash, where you can restore it.
+
+</Prose>
+</Section>
+
+<Section anchor="share" title="Share a link">
+<Prose>
+
+Choose **Share** on a bookmark, note, collection or graph, or start a share on the **Shares** page and add several items. Only what you pick is uploaded; the rest of your library stays on your device. The first time, you set up a sharing code on this device. It stands in for an account, so keep it: it is how you manage your shares later.
+
+</Prose>
+<Defs>
+<Def term="Unlisted">Anyone with the link can open it. It isn’t listed, and search engines won’t index it.</Def>
+<Def term="Public">Listed on [Explore](/explore) for anyone to find.</Def>
+<Def term="Password protected">Encrypted in your browser with a password you choose. Our server can’t read it. You can also cap how many times it can be viewed.</Def>
+<Def term="Live or snapshot">A live share updates as you edit the items in it, and share pages people already have open refresh. Otherwise people see a snapshot of the day you shared.</Def>
+<Def term="Comments">Open, Approve first or Off, with words you block. Every share’s comments arrive in one queue.</Def>
+<Def term="Expiry">Never, or after 7, 30 or 90 days. Revoke a link at any time, or delete the share and its comments.</Def>
+</Defs>
+<Prose className="mt-6">
+
+Locked notes stay out of a share unless you turn on **Include locked notes**. Then each one travels encrypted, and viewers need that note’s own password; it is opened in their browser. Anyone with the link can try passwords, so use a strong one you don’t use elsewhere. If you lock a note that is already shared, Jupiter Jots shows which shares reach it and what locking will do to each.
+
+</Prose>
+</Section>
+
+<Section anchor="trash" title="Trash and cleanup">
+<Prose>
+
+Deleted bookmarks, notes and graphs go to the **Trash** first. Restore any of them from there, delete one forever, or empty the trash. Most other changes, including a whole import, show **Undo** straight after.
+
+- **Library health** gathers duplicates to merge, untagged and unsorted bookmarks, and a broken-link check that only runs when you start it.
+- **Tab sweep** files your open tabs into collections a batch at a time, then closes them. Undo reopens them where they were.
 
 </Prose>
 </Section>
@@ -103,12 +171,14 @@ Chrome only lets you set extension keys on its own page, which is why this step 
 </Prose>
 </Section>
 
-<Section anchor="insights" title="Insights">
+<Section anchor="insights" title="Insights and activity">
 <Prose>
 
 Insights shows how you use your library: how often you open links, which collections and tags you return to, when in the week you read, and which saves you have never opened. It also suggests small next steps, like tagging untagged links or giving a daily site a shortcut.
 
 It is built from a log of opens and saves that stays on your device. You can pause or clear it in Settings.
+
+The **Activity** page lists every create, update and delete in your library, newest first: yours, Ask Jupiter’s and connected agents’. Filter it by action, item, who made the change and when. It records titles, never the text of notes or pages.
 
 </Prose>
 </Section>
@@ -123,4 +193,13 @@ Your library lives only in this browser, so uninstalling Jupiter Jots or clearin
 - To move to another computer, import the JSON file there.
 
 </Prose>
+</Section>
+
+<Section anchor="more" title="Ask Jupiter and agents">
+<Prose>
+
+Two more ways to work with your library, each with its own page in this guide. Both use the same tools and the same rule: nothing changes until you approve it.
+
+</Prose>
+<GuideMore />
 </Section>

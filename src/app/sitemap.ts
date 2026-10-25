@@ -6,7 +6,7 @@ import type { ExploreItem } from "@/lib/share/types"
 import { SITE_URL } from "@/lib/site"
 
 /** Last content change; bump it with each release or policy update. */
-const UPDATED = "2026-10-24"
+const UPDATED = "2026-10-25"
 
 /** At most this many pages of 20 public shares go in the sitemap. */
 const MAX_SHARE_PAGES = 25
@@ -34,6 +34,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // [path, priority, how often it changes]
   const pages: [string, number, "daily" | "weekly" | "monthly" | "yearly", string][] = [
     ["", 1, "monthly", "home"],
+    ["/features", 0.9, "monthly", "features"],
     ["/explore", 0.7, "daily", "home"],
     ["/guide", 0.8, "monthly", "guide"],
     ["/guide/ask-jupiter", 0.8, "monthly", "ask-jupiter"],

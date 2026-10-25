@@ -16,7 +16,7 @@ export function SiteHeader() {
           <Link href="/" className={`-ml-1 flex shrink-0 items-center gap-2.5 rounded-lg p-1 ${FOCUS}`} aria-label="Jupiter Jots home">
             <Wordmark />
           </Link>
-          <nav aria-label="Main" className="ml-6 hidden items-center gap-1 md:flex">
+          <nav aria-label="Main" className="ml-2 hidden items-center gap-1 md:flex lg:ml-6">
             <NavLinks />
           </nav>
           <div className="ml-auto flex items-center gap-1">

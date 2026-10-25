@@ -18,7 +18,7 @@ Jupiter Jots can expose its library to an agent running in your terminal. The ag
 
 The connection is **local to this computer**. A small bridge, distributed as the `jupiter-jots-mcp` npm package, runs on your machine and talks to the extension. There is no account and no Jupiter Jots server in the middle. The agent may still send what it reads to its own model provider, under that provider’s terms.
 
-This is different from [Ask Jupiter](/guide/ask-jupiter): Ask Jupiter is the chat inside the extension, using the key you added there. Connected agents are outside programs you already work with.
+This is different from [Ask Jupiter](/guide/ask-jupiter): Ask Jupiter is the chat inside the extension, using the key you added there. Connected agents are outside programs you already work with. New to Jupiter Jots? Start with [the basics](/guide): installing, saving and organising.
 
 </Prose>
 
@@ -31,7 +31,7 @@ This is different from [Ask Jupiter](/guide/ask-jupiter): Ask Jupiter is the cha
 
 You need:
 
-- **Jupiter Jots** installed in Chrome, with the Connected agents feature.
+- **Jupiter Jots** installed in Chrome, with the Connected agents feature. The [guide](/guide#install) covers installing and pinning it.
 - **Node.js 18 or newer and npm**, because the bridge runs from the `jupiter-jots-mcp` npm package. If Claude Code runs on this machine, its Node.js is enough.
 - **An MCP client** that can launch a local stdio server. The examples below use Claude Code; any client that understands `command` and `args` works the same way.
 - **An internet connection the first time**, to download the bridge. Later runs use npm’s cache.
@@ -94,7 +94,7 @@ Once connected, you can ask the agent in your own words. It sees the same tools 
 <Def term="Search and read">Find bookmarks by title, address, description, note, tag or collection. Summarise what you saved and open the items behind the answer.</Def>
 <Def term="Save and edit">Save a page or link, add a note or tags, and move bookmarks between collections.</Def>
 <Def term="Organise">Create, rename and nest collections; make notes; build graphs; suggest tags or clean up duplicates.</Def>
-<Def term="Share">Prepare a share link or update a share. Sharing tools always wait for your approval.</Def>
+<Def term="Share">Prepare a share link or update a share. Sharing tools always wait for your approval. [Sharing](/guide#share) explains the kinds of link.</Def>
 <Def term="Browser context">Read the open tabs or save a group of tabs, with a separate confirmation when tabs will close.</Def>
 </Defs>
 

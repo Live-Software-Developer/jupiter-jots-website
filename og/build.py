@@ -28,6 +28,8 @@ HOST = "jj.livesoftwaredeveloper.com"  # the domain printed on the cards (SITE_U
 IMAGES = [
     ("home", "", "Save the page. Keep the reason.",
      "A free bookmark manager for Chrome that remembers why you saved each page.", "hero"),
+    ("features", "/features", "Everything Jupiter Jots does",
+     "Saving, collections, notes, reading paths, share links, Ask Jupiter and terminal agents.", None),
     ("guide", "/guide", "How to use Jupiter Jots",
      "From installing to backing up: saving, collections, tags, import and shortcuts.", None),
     ("ask-jupiter", "/guide/ask-jupiter", "Ask Jupiter",

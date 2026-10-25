@@ -1,9 +1,9 @@
 import Link from "next/link"
 
 import { DocLayout } from "@/components/site/DocLayout"
-import { GuideNext } from "@/components/site/GuideNext"
+import { GuidePager, GuideTabs } from "@/components/site/GuideNav"
 import { HelpBlock } from "@/components/site/HelpBlock"
-import { btnPrimary, btnSecondary, textLink } from "@/components/site/styles"
+import { btnPrimary, btnSecondary } from "@/components/site/styles"
 import AskJupiter, { toc } from "@/content/ask-jupiter.mdx"
 import { pageMetadata } from "@/lib/seo"
 
@@ -23,24 +23,13 @@ export default function AskJupiterPage() {
     <DocLayout
       title="Ask Jupiter"
       lede="Ask questions about what you saved, in plain words. Jupiter finds the items, explains them, and prepares any change for you to approve."
-      meta={
-        <>
-          Part of the <Link href="/guide" className={textLink}>Jupiter Jots guide</Link>.
-        </>
-      }
+      nav={<GuideTabs current="/guide/ask-jupiter" />}
       toc={toc}
       tocTitle="In this guide"
     >
       <div className="space-y-14">
         <AskJupiter />
-        <GuideNext
-          href="/guide/agents"
-          title="Agents in your terminal"
-          action="Connect an agent"
-        >
-          If you already work in Claude Code or another MCP client, you can give it the same library.
-          The connection stays on this computer, and every write waits for your approval.
-        </GuideNext>
+        <GuidePager current="/guide/ask-jupiter" />
         <HelpBlock
           title="Still deciding?"
           actions={

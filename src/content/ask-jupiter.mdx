@@ -15,7 +15,7 @@ Ask Jupiter is a conversation inside Jupiter Jots. It works on **your saved libr
 
 It is not a browser copilot. It does not read the page you are looking at, and it cannot browse sites for you. Its answers come from what you saved, plus the AI model you connect.
 
-Ask Jupiter is included in the extension. It stays dormant until you add a key from an AI provider you choose.
+Ask Jupiter is included in the extension. It stays dormant until you add a key from an AI provider you choose. If you would rather work from Claude Code or another terminal agent, the [agents guide](/guide/agents) shows how to connect it to the same library.
 
 </Prose>
 
@@ -29,19 +29,21 @@ Ask Jupiter is included in the extension. It stays dormant until you add a key f
 Ask Jupiter uses **your** account with an AI provider, not one supplied by Jupiter Jots. That keeps your questions and library out of our hands, and means you choose the model and pay the provider directly (some OpenRouter models are free).
 
 1. Open Jupiter Jots and go to **Settings → AI providers**.
-2. Choose a provider: Anthropic, OpenAI, Google or OpenRouter, and paste its API key.
+2. Choose a provider: Anthropic, OpenAI, Google, DeepSeek, xAI, Meta or OpenRouter, and paste its API key.
 3. Set a vault password. The key is encrypted with it and kept in this browser only.
-4. Choose the model you want to use. You can change it later.
-5. Open **Ask Jupiter** from the sparkle in the header, or press <Kbd>Ctrl</Kbd>/<Kbd>Cmd</Kbd> + <Kbd>K</Kbd> and type a question.
+4. Choose the model you want to use. You can change it later, and **Refresh models** fetches the provider’s current list when it adds new ones.
+5. Open **Ask Jupiter** from the sparkle in the header, or press <Kbd>Ctrl</Kbd>/<Kbd>Cmd</Kbd> + <Kbd>K</Kbd> and type a question. **Ask your library** on the Insights page opens it with example questions.
 
 The first time, Jupiter Jots may ask Chrome for permission to reach that provider’s API. No request goes to a Jupiter Jots server. The key is never synced, put in a backup, or sent to us. If you forget the vault password, it cannot be recovered; reset the vault and add the key again.
 
 </Prose>
 
 <Defs>
-<Def term="Bring your own key">Use a key you already have with Anthropic, OpenAI, Google or OpenRouter.</Def>
+<Def term="Bring your own key">Use a key you already have with Anthropic, OpenAI, Google, DeepSeek, xAI, Meta or OpenRouter.</Def>
 <Def term="Your vault">The key is encrypted on this device with a password you choose. Unlock it when you want to ask.</Def>
 <Def term="Your model">Different models differ in quality, speed and price. The model picker shows what each provider offers.</Def>
+<Def term="Effort">On models that can think before answering, choose **Low**, **Medium** or **High** next to the message box. Higher effort takes longer and uses more tokens; Low is the cheapest.</Def>
+<Def term="Another device">To move your keys, make a **transfer code** in the vault and open it on the other device by pasting it or scanning its QR code. It stays encrypted with a passphrase on the way.</Def>
 <Def term="No key, no requests">Without a key, the panel shows setup instructions and never contacts a provider.</Def>
 </Defs>
 
@@ -77,6 +79,8 @@ Answers are grounded in the library, but a model can still be wrong. Treat a sum
 Ask Jupiter uses the same tools as the rest of Jupiter Jots, under permissions you control. When a conversation proposes a change, it is staged as a **Change set**: you see the before and after, then choose **Apply** or **Discard**. After applying, **Undo** reverses it.
 
 Writes never happen silently. Even with a tool set to **On**, a write comes back as a proposal. Destructive actions ask again before they run.
+
+For a request with several steps, such as “tag my unsorted bookmarks and file them”, Jupiter first writes a **plan** and marks each step as it starts, finishes or is skipped. When a step stages changes, the plan pauses for you. After you apply them, it carries on until every step is done, instead of stopping after the first.
 
 </Prose>
 

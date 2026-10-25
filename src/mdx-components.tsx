@@ -4,6 +4,7 @@ import Link from "next/link"
 import { AgentFlowPreview } from "@/components/site/AgentFlowPreview"
 import { AskPreview } from "@/components/site/AskPreview"
 import { Faq } from "@/components/site/Faq"
+import { GuideMore } from "@/components/site/GuideNav"
 import { Def, Defs, Kbd, Placeholder, Prose, Summary } from "@/components/site/Prose"
 import { Section } from "@/components/site/Section"
 import { GOVERNING_LAW, SUPPORT_EMAIL } from "@/lib/site"
@@ -21,6 +22,7 @@ const components: MDXComponents = {
   Faq,
   AskPreview,
   AgentFlowPreview,
+  GuideMore,
   Placeholder,
   /** The support address from src/lib/site.ts, as a mailto link. */
   SupportEmail: () => <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>,

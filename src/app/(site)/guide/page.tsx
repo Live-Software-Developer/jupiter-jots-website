@@ -1,7 +1,7 @@
 import Link from "next/link"
 
 import { DocLayout } from "@/components/site/DocLayout"
-import { GuideNext } from "@/components/site/GuideNext"
+import { GuidePager, GuideTabs } from "@/components/site/GuideNav"
 import { HelpBlock } from "@/components/site/HelpBlock"
 import { btnPrimary, btnSecondary } from "@/components/site/styles"
 import Guide, { toc } from "@/content/guide.mdx"
@@ -11,7 +11,7 @@ export const metadata = pageMetadata({
   title: "Guide | How to use Jupiter Jots",
   socialTitle: "How to use Jupiter Jots",
   description:
-    "How to use Jupiter Jots, from installing to backing up: saving pages, notes, nested collections, tags, importing from Chrome, shortcuts and Insights, plus Ask Jupiter and connected agents.",
+    "How to use Jupiter Jots: install, save pages, notes, nested collections, tags, graphs, share links, trash, import from Chrome, shortcuts and backups, plus Ask Jupiter and agents.",
   path: "/guide",
   image: "guide",
   imageAlt: "The Jupiter Jots guide",
@@ -23,15 +23,13 @@ export default function GuidePage() {
     <DocLayout
       title="Guide"
       lede="How to use Jupiter Jots, from installing to backing up. Read it in order, or jump to the part you need."
+      nav={<GuideTabs current="/guide" />}
       toc={toc}
       tocTitle="In this guide"
     >
       <div className="space-y-14">
         <Guide />
-        <GuideNext href="/guide/ask-jupiter" title="Ask Jupiter" action="Ask your library">
-          Ask questions about what you saved, get answers with the items behind them, and approve
-          every change before it touches your library.
-        </GuideNext>
+        <GuidePager current="/guide" />
         <HelpBlock
           title="Need more help?"
           actions={

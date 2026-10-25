@@ -3,7 +3,7 @@ import Link from "next/link"
 import { BrandLogo } from "@/components/site/BrandLogo"
 import { AskPreview } from "@/components/site/AskPreview"
 import { StoreLink } from "@/components/site/ExternalStoreLink"
-import { PlusIcon } from "@/components/site/icons"
+import { ChevronRightIcon, PlusIcon } from "@/components/site/icons"
 import { Platforms } from "@/components/site/Platforms"
 import { Shot } from "@/components/site/Shot"
 import { FOCUS_FLAT, btnPrimary, btnSecondary, textLink } from "@/components/site/styles"
@@ -89,9 +89,15 @@ export default function HomePage() {
             <h2 id="app-h" className={`${H2} lg:col-span-6`}>
               One library, three places
             </h2>
-            <p className={`max-w-lg ${LEAD} lg:col-span-5 lg:col-start-8`}>
-              The full-screen library, the toolbar popup and the side panel are the same app. Save from one, sort in another.
-            </p>
+            <div className="lg:col-span-5 lg:col-start-8">
+              <p className={`max-w-lg ${LEAD}`}>
+                The full-screen library, the toolbar popup and the side panel are the same app. Save from one, sort in another.
+              </p>
+              <Link href="/features" className={`mt-3 inline-flex items-center gap-1 ${textLink}`}>
+                See every feature
+                <ChevronRightIcon className="size-4" />
+              </Link>
+            </div>
           </div>
           <figure className="mt-10">
             <div className={FRAME}>
@@ -191,7 +197,7 @@ export default function HomePage() {
             <ul className="mt-6 space-y-2.5 text-muted-foreground">
               <li className="flex gap-2.5">
                 <span className="mt-2 size-1.5 shrink-0 rounded-full bg-primary" aria-hidden="true" />
-                <span><strong className="font-medium text-foreground">Bring your own AI key.</strong> Anthropic, OpenAI, Google or OpenRouter. It stays encrypted on this computer.</span>
+                <span><strong className="font-medium text-foreground">Bring your own AI key.</strong> Anthropic, OpenAI, Google, OpenRouter and more. It stays encrypted on this computer.</span>
               </li>
               <li className="flex gap-2.5">
                 <span className="mt-2 size-1.5 shrink-0 rounded-full bg-primary" aria-hidden="true" />

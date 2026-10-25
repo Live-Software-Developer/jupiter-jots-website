@@ -16,6 +16,7 @@ export function GuideNext({
   action = "Continue",
   children,
   className,
+  as: Heading = "h2",
 }: {
   href: string
   label?: string
@@ -23,11 +24,13 @@ export function GuideNext({
   action?: string
   children: ReactNode
   className?: string
+  /** h3 when the card sits inside a guide section. */
+  as?: "h2" | "h3"
 }) {
   return (
     <aside className={cn("rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-sm shadow-foreground/5 sm:p-6", className)}>
       <p className="text-sm font-medium text-primary">{label}</p>
-      <h2 className="mt-1 font-serif text-2xl leading-tight tracking-tight text-balance">{title}</h2>
+      <Heading className="mt-1 font-serif text-2xl leading-tight tracking-tight text-balance">{title}</Heading>
       <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">{children}</p>
       <Link
         href={href}

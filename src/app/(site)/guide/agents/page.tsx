@@ -1,9 +1,9 @@
 import Link from "next/link"
 
 import { DocLayout } from "@/components/site/DocLayout"
-import { GuideNext } from "@/components/site/GuideNext"
+import { GuidePager, GuideTabs } from "@/components/site/GuideNav"
 import { HelpBlock } from "@/components/site/HelpBlock"
-import { btnPrimary, btnSecondary, textLink } from "@/components/site/styles"
+import { btnPrimary, btnSecondary } from "@/components/site/styles"
 import Agents, { toc } from "@/content/agents.mdx"
 import { pageMetadata } from "@/lib/seo"
 
@@ -23,25 +23,13 @@ export default function AgentsPage() {
     <DocLayout
       title="Agents in your terminal"
       lede="Give Claude Code or another MCP client your saved library. The bridge stays on this computer, and changes wait for you."
-      meta={
-        <>
-          Part of the <Link href="/guide" className={textLink}>Jupiter Jots guide</Link>.
-        </>
-      }
+      nav={<GuideTabs current="/guide/agents" />}
       toc={toc}
       tocTitle="In this guide"
     >
       <div className="space-y-14">
         <Agents />
-        <GuideNext
-          href="/guide/ask-jupiter"
-          label="Also in the guide"
-          title="Ask Jupiter"
-          action="Read about Ask Jupiter"
-        >
-          Prefer to stay in Chrome? Ask Jupiter uses the same library and the same approval rules,
-          with a key you add in the extension.
-        </GuideNext>
+        <GuidePager current="/guide/agents" />
         <HelpBlock
           title="Need a hand?"
           actions={
