@@ -31,6 +31,31 @@ export interface PNote {
   tags: string[]
   /** What the note is about: linked bookmarks in full, linked collections and graphs in full one level deep. */
   links?: PNoteLink[]
+  /**
+   * A password-locked note (the curator turned on "Include locked notes"): `body` is '' and there
+   * are no tags or links until the viewer unlocks it with the note's own password, in the browser
+   * only (`LockedNote.tsx`). `title` is '' when the curator hid it too.
+   */
+  lock?: PNoteLock
+}
+/**
+ * A locked note as the payload carries it (the extension's PLockedNote): the stored lock copied as
+ * it is. `toNote` turns it into a PNote with `lock`.
+ */
+export interface PLockedNote {
+  key: string
+  locked: true
+  /** The visible title, or null when it is hidden (then `lock.title` holds it encrypted). */
+  title: string | null
+  lock: PNoteLock
+}
+/** PBKDF2-SHA256 (`iters`, base64 `salt`) -> AES-GCM-256; `body` and `title` are each base64(iv ‖ cipher) of a JSON string. */
+export interface PNoteLock {
+  v: 1
+  salt: string
+  iters: number
+  body: string
+  title?: string
 }
 /**
  * A linked collection or graph carries its contents (`collection` / `graph`, keys under

@@ -16,6 +16,7 @@ import { useBookmarkSheet } from "./bookmarkSheetContext"
 import { CollectionCommentsSlot, CollectionMark, Sheet, useCollectionSheet } from "./CollectionSheet"
 import { GLYPH, ico } from "./icons"
 import { Modal } from "./Modal"
+import { LockedMark, LockedNodeFace, LockedNoteForm, useOpenedNote } from "./LockedNote"
 import { NoteLinks } from "./NoteLinks"
 import { NoteBody, NoteMark } from "./NoteRow"
 import { BookmarkReadToggle } from "./ReadState"
@@ -125,10 +126,16 @@ function NodeCard({ node, itemKey, graphName }: { node: PGraphNode; itemKey: str
   )
 }
 
-/** A note node: its title and a clamped plain preview; a click opens the whole note in a sheet. */
-function NoteNodeCard({ note, graphName }: { note: PNote; graphName: string }) {
+/**
+ * A note node: its title and a clamped plain preview; a click opens the whole note in a sheet. A
+ * locked note shows its lock until it is unlocked; its sheet asks for the note's password.
+ */
+function NoteNodeCard({ note: shared, graphName }: { note: PNote; graphName: string }) {
   const [open, setOpen] = useState(false)
   const trigger = useRef<HTMLButtonElement>(null)
+  const { opened, open: unlock } = useOpenedNote(shared)
+  const note = opened ?? shared
+  const locked = !opened
   const preview = markdownPreview(note.body)
   // Runs after the native close, so the page is no longer inert and the card can take focus back.
   const close = useCallback(() => {
@@ -138,25 +145,40 @@ function NoteNodeCard({ note, graphName }: { note: PNote; graphName: string }) {
   return (
     <>
       <button ref={trigger} type="button" aria-haspopup="dialog" onClick={() => setOpen(true)} className={cn(CARD, FOCUS_FLAT)}>
-        <span className="flex items-center gap-2 text-xs text-muted-foreground">
-          <NoteMark className="size-5 rounded" glyph="size-3" />
-          <span className="min-w-0 truncate">Note</span>
-        </span>
-        <span className="mt-1.5 block text-sm leading-snug font-medium break-words text-pretty text-card-foreground">{noteLabel(note)}</span>
-        {preview ? <span className="mt-1 line-clamp-3 block text-xs leading-relaxed break-words text-muted-foreground">{preview}</span> : null}
-        <span className="mt-2.5 flex items-center gap-1.5 text-xs text-muted-foreground">
-          {note.tags.slice(0, 2).map((t) => (
-            <span key={t} className="rounded bg-muted px-1.5 py-0.5">
-              #{t}
+        {locked ? (
+          <LockedNodeFace note={note} />
+        ) : (
+          <>
+            <span className="flex items-center gap-2 text-xs text-muted-foreground">
+              <NoteMark className="size-5 rounded" glyph="size-3" />
+              <span className="min-w-0 truncate">Note</span>
             </span>
-          ))}
-          <span className="ml-auto font-medium text-primary">Read</span>
-        </span>
+            <span className="mt-1.5 block text-sm leading-snug font-medium break-words text-pretty text-card-foreground">{noteLabel(note)}</span>
+            {preview ? <span className="mt-1 line-clamp-3 block text-xs leading-relaxed break-words text-muted-foreground">{preview}</span> : null}
+            <span className="mt-2.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+              {note.tags.slice(0, 2).map((t) => (
+                <span key={t} className="rounded bg-muted px-1.5 py-0.5">
+                  #{t}
+                </span>
+              ))}
+              <span className="ml-auto font-medium text-primary">Read</span>
+            </span>
+          </>
+        )}
       </button>
       {open ? (
-        <Sheet itemKey={note.key} onClose={close} mark={<NoteMark className="size-11 rounded-xl" glyph="size-5" />} kind="Note" title={noteLabel(note)} meta={`in ${graphName}`}>
+        <Sheet
+          itemKey={note.key}
+          onClose={close}
+          mark={locked ? <LockedMark className="size-11 rounded-xl" glyph="size-5" /> : <NoteMark className="size-11 rounded-xl" glyph="size-5" />}
+          kind={locked ? "Locked note" : "Note"}
+          title={noteLabel(note)}
+          meta={`in ${graphName}`}
+        >
           <div className="px-4 pt-4 pb-2 sm:px-5">
-            {note.body ? (
+            {locked ? (
+              <LockedNoteForm note={shared} onOpen={unlock} compact />
+            ) : note.body ? (
               <NoteBody note={note} className="space-y-3 text-sm leading-relaxed text-pretty text-foreground/90" />
             ) : (
               <p className="text-sm text-muted-foreground">This note is empty.</p>

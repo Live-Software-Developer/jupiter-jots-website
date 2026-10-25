@@ -1,5 +1,5 @@
 import { httpsUrl } from './format'
-import type { PBookmark, PCollection, PGraph, PGraphNode, PIcon, PNote, PNoteLink, PSubCollection, PayloadItem, SharePayload } from './types'
+import type { PBookmark, PCollection, PGraph, PGraphNode, PIcon, PNote, PNoteLink, PNoteLock, PSubCollection, PayloadItem, SharePayload } from './types'
 
 /** The extension's collection glyphs (its `GLYPH_CHOICES`); any other glyph name is dropped. */
 export const MARK_GLYPHS = [
@@ -36,6 +36,7 @@ export const NOTE_MAX = 20_000
  */
 export function toNote(raw: unknown, embed = true): PNote | null {
   const n = raw as Record<string, unknown> | null
+  if (n && typeof n === 'object' && n.locked === true) return toLockedNote(n)
   if (!n || typeof n !== 'object' || typeof n.key !== 'string' || !n.key || typeof n.title !== 'string' || typeof n.body !== 'string') return null
   return {
     key: n.key,
@@ -44,6 +45,22 @@ export function toNote(raw: unknown, embed = true): PNote | null {
     tags: Array.isArray(n.tags) ? n.tags.filter((t): t is string => typeof t === 'string') : [],
     links: Array.isArray(n.links) ? n.links.map((l) => toNoteLink(l, embed)).filter((l) => l !== null) : undefined,
   }
+}
+
+const isCipher = (v: unknown): v is string => typeof v === 'string' && v.length > 0
+
+/**
+ * A locked note (PLockedNote) as a PNote with `lock`: no body, tags or links until it is unlocked.
+ * Null when the lock is malformed. Salt and iteration count are checked when it is unlocked.
+ */
+function toLockedNote(n: Record<string, unknown>): PNote | null {
+  const l = n.lock as Record<string, unknown> | null
+  if (typeof n.key !== 'string' || !n.key || !l || typeof l !== 'object' || l.v !== 1) return null
+  if (typeof l.salt !== 'string' || typeof l.iters !== 'number' || !isCipher(l.body) || (l.title !== undefined && !isCipher(l.title))) return null
+  const hidden = l.title !== undefined
+  if (!hidden && typeof n.title !== 'string') return null
+  const lock: PNoteLock = { v: 1, salt: l.salt, iters: l.iters, body: l.body, ...(hidden && { title: l.title as string }) }
+  return { key: n.key, title: hidden ? '' : (n.title as string), body: '', tags: [], lock }
 }
 
 const isHue = (h: unknown): h is PCollection['hue'] => [1, 2, 3, 4, 5].includes(h as number)

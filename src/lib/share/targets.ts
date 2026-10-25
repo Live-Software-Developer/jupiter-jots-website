@@ -39,7 +39,7 @@ export const UNKNOWN_TARGET = 'this share'
 export const bookmarkLabel = (b: PBookmark) => b.title || b.domain || 'Untitled bookmark'
 export const collectionLabel = (c: PCollection) => c.name || 'Untitled collection'
 export const graphLabel = (g: PGraph) => g.name || 'Untitled graph'
-export const noteLabel = (n: PNote) => n.title || 'Untitled note'
+export const noteLabel = (n: PNote) => n.title || (n.lock ? 'Locked note' : 'Untitled note')
 
 type Push = (t: CommentTarget) => void
 

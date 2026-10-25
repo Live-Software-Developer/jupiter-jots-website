@@ -16,6 +16,7 @@ import { BookmarkRow, HUE_TINT } from "./BookmarkRow"
 import { CopyLinkButton } from "./CopyLinkButton"
 import { GLYPH, ico, MARK_GLYPH } from "./icons"
 import { Modal } from "./Modal"
+import { LockedNoteRow } from "./LockedNote"
 import { NoteRow } from "./NoteRow"
 import { SafeImg } from "./SafeImg"
 
@@ -152,7 +153,7 @@ function CollectionRows({ collection: c, depth, filtering }: { collection: PColl
         <SubCollection key={s.key} sub={s} depth={depth} filtering={filtering} />
       ))}
       {(c.notes ?? []).map((n, i) => (
-        <NoteRow key={n.key || i} note={n} />
+        n.lock ? <LockedNoteRow key={n.key || i} note={n} /> : <NoteRow key={n.key || i} note={n} />
       ))}
       {c.bookmarks.map((b, i) => (
         <BookmarkRow key={b.key || i} bookmark={b} />

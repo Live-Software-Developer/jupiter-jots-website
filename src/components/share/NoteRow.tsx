@@ -43,3 +43,30 @@ export function NoteRow({ note, clamp = false }: { note: PNote; clamp?: boolean 
     </div>
   )
 }
+
+/**
+ * A shared note: its rendered body and tags on a card; the band's heading is its title. `heading`
+ * puts the title on the card too (a locked note whose title was hidden, once unlocked).
+ */
+export function NoteCard({ note, heading = false }: { note: PNote; heading?: boolean }) {
+  return (
+    <article className="max-w-3xl rounded-3xl border border-border bg-card p-5 text-card-foreground sm:p-8">
+      {heading ? <h3 className="mb-4 font-serif text-2xl leading-tight tracking-tight break-words">{noteLabel(note)}</h3> : null}
+      {note.body ? (
+        <NoteBody note={note} className="space-y-4 text-base leading-relaxed text-pretty text-foreground/90" />
+      ) : (
+        <p className="text-sm text-muted-foreground">This note is empty.</p>
+      )}
+      <NoteLinks note={note} bleed="-mx-5 sm:-mx-8" />
+      {note.tags.length > 0 ? (
+        <div className="mt-6 flex flex-wrap gap-1.5">
+          {note.tags.map((tag) => (
+            <span key={tag} className="rounded-md bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
+              #{tag}
+            </span>
+          ))}
+        </div>
+      ) : null}
+    </article>
+  )
+}

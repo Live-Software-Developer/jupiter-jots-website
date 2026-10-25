@@ -6,7 +6,7 @@ import { anchorFor, plural } from "@/lib/share/format"
 import { MARKDOWN_CLASS, renderMarkdown } from "@/lib/share/markdown"
 import { allBookmarks, allNotes } from "@/lib/share/payload"
 import { bookmarkLabel, collectionLabel, graphLabel, noteLabel, runKey } from "@/lib/share/targets"
-import type { PBookmark, PNote, PayloadItem } from "@/lib/share/types"
+import type { PBookmark, PayloadItem } from "@/lib/share/types"
 import { cn } from "@/lib/utils"
 
 import { BookmarkReadToggle } from "./ReadState"
@@ -17,8 +17,8 @@ import { CollectionMark, OpenCollectionButton } from "./CollectionSheet"
 import { BandCommentsLink } from "./Discussion"
 import { GraphView } from "./GraphView"
 import { GLYPH, ico } from "./icons"
-import { NoteLinks } from "./NoteLinks"
-import { NoteBody, NoteRow } from "./NoteRow"
+import { LockedNoteCard, LockedNoteRow } from "./LockedNote"
+import { NoteCard, NoteRow } from "./NoteRow"
 import { SafeImg } from "./SafeImg"
 
 /** A band on the page: a payload item, or a run of adjacent loose bookmarks shown together. */
@@ -120,7 +120,13 @@ function CollectionBody({ band }: { band: Extract<Band, { kind: "collection" }> 
     <>
       <div className="grid gap-px overflow-hidden rounded-2xl border border-border bg-border md:grid-cols-2 md:[&>*:last-child:nth-child(odd)]:col-span-2 [&>*]:bg-card">
         {all.slice(0, ROWS_SHOWN).map((e, i) =>
-          "note" in e ? <NoteRow key={e.note.key || i} note={e.note} clamp /> : <BookmarkRow key={e.bookmark.key || i} bookmark={e.bookmark} />,
+          "note" in e ? (
+            e.note.lock ? (
+              <LockedNoteRow key={e.note.key || i} note={e.note} clamp />
+            ) : (
+              <NoteRow key={e.note.key || i} note={e.note} clamp />
+            )
+          ) : <BookmarkRow key={e.bookmark.key || i} bookmark={e.bookmark} />,
         )}
       </div>
       {all.length > ROWS_SHOWN ? (
@@ -194,29 +200,6 @@ function BookmarkCard({ bookmark, curator }: { bookmark: PBookmark; curator?: st
       </BookmarkSheetButton>
       <BookmarkReadToggle bookmark={bookmark} className="absolute top-3 right-3 z-10 bg-background/80 backdrop-blur" />
     </div>
-  )
-}
-
-/** A shared note: its rendered body and tags on a card; the band's heading is its title. */
-function NoteCard({ note }: { note: PNote }) {
-  return (
-    <article className="max-w-3xl rounded-3xl border border-border bg-card p-5 text-card-foreground sm:p-8">
-      {note.body ? (
-        <NoteBody note={note} className="space-y-4 text-base leading-relaxed text-pretty text-foreground/90" />
-      ) : (
-        <p className="text-sm text-muted-foreground">This note is empty.</p>
-      )}
-      <NoteLinks note={note} bleed="-mx-5 sm:-mx-8" />
-      {note.tags.length > 0 ? (
-        <div className="mt-6 flex flex-wrap gap-1.5">
-          {note.tags.map((tag) => (
-            <span key={tag} className="rounded-md bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
-              #{tag}
-            </span>
-          ))}
-        </div>
-      ) : null}
-    </article>
   )
 }
 
@@ -310,7 +293,7 @@ export function ShareBand({ item, index, total, curator }: { item: Band; index: 
         {item.kind === "collection" ? <CollectionBody band={item} /> : null}
         {item.kind === "bookmarks" ? <BookmarksBody bookmarks={item.bookmarks} /> : null}
         {item.kind === "bookmark" ? <BookmarkCard bookmark={item.bookmark} curator={curator} /> : null}
-        {item.kind === "note" ? <NoteCard note={item.note} /> : null}
+        {item.kind === "note" ? (item.note.lock ? <LockedNoteCard note={item.note} /> : <NoteCard note={item.note} />) : null}
       </div>
     </section>
   )
