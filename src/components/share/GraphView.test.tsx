@@ -296,6 +296,17 @@ describe('note nodes', () => {
     expect(el.querySelector('[data-gid="c1"]')!.textContent).toContain('1 note · 2 links')
   })
 
+  it('shows only a clamped excerpt of a long multi-paragraph note, not the whole body', () => {
+    const long: PGraph = {
+      ...noted,
+      nodes: noted.nodes.map((n) => (n.id === 'n1' && n.ref.kind === 'note' ? { ...n, ref: { kind: 'note' as const, note: { ...n.ref.note, body: `${'First paragraph words. '.repeat(12)}\n\nSECOND-PARAGRAPH-MARKER` } } } : n)),
+    }
+    const card = mount(<GraphView graph={long} itemKey="g:1" />).querySelector('[data-gid="n1"]')!
+    expect(card.textContent).toContain('Why this order')
+    expect(card.textContent).toContain('First paragraph words.')
+    expect(card.textContent).not.toContain('SECOND-PARAGRAPH-MARKER')
+  })
+
   it('opens the whole note in a sheet with its comments, and focus returns to the card', () => {
     const el = mount(
       <CollectionCommentsSlot.Provider value={(k) => <p data-comments>{`comments on ${k}`}</p>}>

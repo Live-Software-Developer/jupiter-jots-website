@@ -183,7 +183,7 @@ export function LockedNodeFace({ note }: { note: PNote }) {
         <LockedMark className="size-5 rounded" glyph="size-3" />
         <span className="min-w-0 truncate">Locked note</span>
       </span>
-      <span className="mt-1.5 block text-sm leading-snug font-medium break-words text-pretty text-card-foreground">{noteLabel(note)}</span>
+      <span className="mt-1.5 line-clamp-2 text-sm leading-snug font-medium break-words text-pretty text-card-foreground">{noteLabel(note)}</span>
       <span className="mt-2.5 flex items-center text-xs text-muted-foreground">
         Needs its password
         <span className={cn("ml-auto font-medium text-primary", FOCUS_FLAT)}>Unlock</span>

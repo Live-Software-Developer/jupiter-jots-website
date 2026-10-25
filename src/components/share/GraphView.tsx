@@ -87,7 +87,7 @@ function NodeCard({ node, itemKey, graphName }: { node: PGraphNode; itemKey: str
             <span className="min-w-0 truncate">Collection</span>
           </span>
           <span className="mt-1.5 block text-sm leading-snug font-medium break-words text-pretty text-card-foreground">{c.name}</span>
-          {c.note ? <span className="mt-1 line-clamp-2 block text-xs leading-relaxed text-muted-foreground">{markdownPreview(c.note)}</span> : null}
+          {c.note ? <span className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">{markdownPreview(c.note)}</span> : null}
           <span className="mt-2.5 flex items-center gap-1.5 text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-1">
               {ico(GLYPH.folder, "size-3.5")}
@@ -110,7 +110,7 @@ function NodeCard({ node, itemKey, graphName }: { node: PGraphNode; itemKey: str
           <span className="min-w-0 truncate">{domain}</span>
         </span>
         <span className="mt-1.5 block text-sm leading-snug font-medium break-words text-pretty text-card-foreground">{b.title || domain}</span>
-        {b.note ? <span className="mt-1 line-clamp-2 block text-xs leading-relaxed text-muted-foreground">{markdownPreview(b.note)}</span> : null}
+        {b.note ? <span className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">{markdownPreview(b.note)}</span> : null}
         {b.tags.length ? (
           <span className="mt-2.5 flex items-center gap-1.5 text-xs text-muted-foreground">
             {b.tags.slice(0, 2).map((t) => (
@@ -130,13 +130,16 @@ function NodeCard({ node, itemKey, graphName }: { node: PGraphNode; itemKey: str
  * A note node: its title and a clamped plain preview; a click opens the whole note in a sheet. A
  * locked note shows its lock until it is unlocked; its sheet asks for the note's password.
  */
+/** A node shows only a short excerpt of a note, never its body; the sheet holds the whole note. */
+const excerpt = (s: string, max = 140) => (s.length > max ? `${s.slice(0, max).trimEnd()}…` : s)
+
 function NoteNodeCard({ note: shared, graphName }: { note: PNote; graphName: string }) {
   const [open, setOpen] = useState(false)
   const trigger = useRef<HTMLButtonElement>(null)
   const { opened, open: unlock } = useOpenedNote(shared)
   const note = opened ?? shared
   const locked = !opened
-  const preview = markdownPreview(note.body)
+  const preview = excerpt(markdownPreview(note.body))
   // Runs after the native close, so the page is no longer inert and the card can take focus back.
   const close = useCallback(() => {
     setOpen(false)
@@ -144,7 +147,7 @@ function NoteNodeCard({ note: shared, graphName }: { note: PNote; graphName: str
   }, [])
   return (
     <>
-      <button ref={trigger} type="button" aria-haspopup="dialog" onClick={() => setOpen(true)} className={cn(CARD, FOCUS_FLAT)}>
+      <button ref={trigger} type="button" aria-haspopup="dialog" onClick={() => setOpen(true)} className={cn(CARD, FOCUS_FLAT, "max-h-40 overflow-hidden")}>
         {locked ? (
           <LockedNodeFace note={note} />
         ) : (
@@ -153,8 +156,8 @@ function NoteNodeCard({ note: shared, graphName }: { note: PNote; graphName: str
               <NoteMark className="size-5 rounded" glyph="size-3" />
               <span className="min-w-0 truncate">Note</span>
             </span>
-            <span className="mt-1.5 block text-sm leading-snug font-medium break-words text-pretty text-card-foreground">{noteLabel(note)}</span>
-            {preview ? <span className="mt-1 line-clamp-3 block text-xs leading-relaxed break-words text-muted-foreground">{preview}</span> : null}
+            <span className="mt-1.5 line-clamp-2 text-sm leading-snug font-medium break-words text-pretty text-card-foreground">{noteLabel(note)}</span>
+            {preview ? <span className="mt-1 line-clamp-2 text-xs leading-relaxed break-words text-muted-foreground">{preview}</span> : null}
             <span className="mt-2.5 flex items-center gap-1.5 text-xs text-muted-foreground">
               {note.tags.slice(0, 2).map((t) => (
                 <span key={t} className="rounded bg-muted px-1.5 py-0.5">
