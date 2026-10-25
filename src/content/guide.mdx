@@ -8,7 +8,7 @@ export const toc = [
   { id: "graphs", label: "Graphs" },
   { id: "share", label: "Share a link" },
   { id: "trash", label: "Trash and cleanup" },
-  { id: "import", label: "Import from Chrome" },
+  { id: "import", label: "Import and export" },
   { id: "shortcuts", label: "Shortcuts that open sites" },
   { id: "insights", label: "Insights and activity" },
   { id: "backup", label: "Back up and move" },
@@ -131,6 +131,11 @@ Choose **Share** on a bookmark, note, collection or graph, or start a share on t
 Locked notes stay out of a share unless you turn on **Include locked notes**. Then each one travels encrypted, and viewers need that note’s own password; it is opened in their browser. Anyone with the link can try passwords, so use a strong one you don’t use elsewhere. If you lock a note that is already shared, Jupiter Jots shows which shares reach it and what locking will do to each.
 
 </Prose>
+<Prose className="mt-6">
+
+**Fork a share.** To keep a copy of a share someone sent you, open its link and choose **Save to Jupiter Jots**, or go to **Import & export → Import a share** in the extension and paste the link. Nothing is saved until you confirm, and you can undo it afterwards. A private share asks for its password in the extension, never on the website. Locked notes arrive still locked, with their own password. Each fork is counted once per visitor per day and shown beside the share’s views and comments.
+
+</Prose>
 </Section>
 
 <Section anchor="trash" title="Trash and cleanup">
@@ -144,7 +149,7 @@ Deleted bookmarks, notes and graphs go to the **Trash** first. Restore any of th
 </Prose>
 </Section>
 
-<Section anchor="import" title="Import from Chrome">
+<Section anchor="import" title="Import and export">
 <Prose>
 
 1. Open the full-screen library and go to **Import & export**.
@@ -153,6 +158,10 @@ Deleted bookmarks, notes and graphs go to the **Trash** first. Restore any of th
 4. Choose **Import**. Each folder becomes a collection inside it, with its nesting kept. Pages you already saved are skipped.
 
 You can undo the whole import in one step, and your Chrome bookmarks are never changed. From another browser, export a bookmarks HTML file there and import that file instead. CSV files from Raindrop or Pocket work too.
+
+**Importing a file.** Choose a file on the same page, pick what to bring in, and choose the destination collection. Bookmarks you already have are referenced rather than duplicated, so a collection or graph in the file points at your existing copy. Graphs, notes and saved chats in a Jupiter Jots backup are restored. Share records in a backup are skipped, because sync restores them. Every import can be undone in one step.
+
+**Export only what you want.** On Import & export, pick individual items in each section. You can also select items in the Library, Notes or Collections and choose **Export selected**.
 
 </Prose>
 </Section>
@@ -188,7 +197,7 @@ The **Activity** page lists every create, update and delete in your library, new
 
 Your library lives only in this browser, so uninstalling Jupiter Jots or clearing its data deletes it. Keep a copy:
 
-- **Back up** or **Export** from the Import & export page. JSON keeps everything, including notes, tags and nesting.
+- **Back up** or **Export** from the Import & export page, or use **Export selected** on a selection. JSON keeps everything, including notes, tags and nesting.
 - Export a single collection as JSON, browser bookmarks HTML or CSV.
 - To move to another computer, import the JSON file there.
 
