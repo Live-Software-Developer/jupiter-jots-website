@@ -13,9 +13,6 @@ export const metadata = pageMetadata({
   keywords: ["Jupiter Jots news", "Jupiter Jots updates", "Jupiter Jots announcements"],
 })
 
-/** Posts change rarely; refresh the page every five minutes. */
-export const revalidate = 300
-
 const KIND: Record<string, { label: string; className: string }> = {
   update: { label: "Update", className: "bg-primary/10 text-primary" },
   announcement: { label: "Announcement", className: "bg-muted text-foreground" },
