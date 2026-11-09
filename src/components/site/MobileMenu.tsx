@@ -3,11 +3,10 @@
 import { useRef } from "react"
 
 import { Wordmark } from "@/components/site/BrandLogo"
-import { StoreLink } from "@/components/site/ExternalStoreLink"
-import { CloseIcon, MenuIcon, PlusIcon } from "@/components/site/icons"
+import { InstallButton } from "@/components/site/InstallButton"
+import { CloseIcon, MenuIcon } from "@/components/site/icons"
 import { NavLinks } from "@/components/site/NavLinks"
-import { FOCUS, btnPrimary } from "@/components/site/styles"
-import { cn } from "@/lib/utils"
+import { FOCUS } from "@/components/site/styles"
 
 /**
  * The phone menu: a native modal <dialog>, so focus is trapped, Escape closes it and focus
@@ -56,10 +55,7 @@ export function MobileMenu() {
             <NavLinks mobile onNavigate={close} />
           </nav>
           <div className="mt-auto border-t border-border p-4">
-            <StoreLink className={cn(btnPrimary("md"), "h-11 w-full px-4 text-base")}>
-              <PlusIcon />
-              Add to Chrome
-            </StoreLink>
+            <InstallButton className="h-11 w-full px-4 text-base" />
             <p className="mt-3 text-center text-sm text-muted-foreground">Free. No account. Your library stays on your device.</p>
           </div>
         </div>

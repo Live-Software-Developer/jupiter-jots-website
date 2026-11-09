@@ -1,7 +1,7 @@
 import Link from "next/link"
 
 import { BrandLogo } from "@/components/site/BrandLogo"
-import { PlusIcon } from "@/components/site/icons"
+import { ShareCta } from "@/components/share/ForkButton"
 import { FOCUS, FOCUS_FLAT } from "@/components/site/styles"
 import { ThemeToggle } from "@/components/site/ThemeToggle"
 import { cn } from "@/lib/utils"
@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils"
 /**
  * The share page's bar: stays at the top while the page scrolls (bands and the discussion keep
  * `scroll-mt-20` clear of it; sheets and dialogs sit in the top layer above it), with the
- * theme choice. On narrow phones the wordmark gives way to the logo alone.
+ * theme choice and the main action: "Save to Jj" with the extension installed, else the install CTA. On narrow phones the wordmark gives way to the logo alone.
  */
 export function ShareTopbar() {
   return (
@@ -23,16 +23,7 @@ export function ShareTopbar() {
         <span className="hidden text-sm text-muted-foreground sm:block">Shared page</span>
         <div className="ml-auto flex items-center gap-2">
           <ThemeToggle />
-          <Link
-            href="/#get"
-            className={cn(
-              "inline-flex h-9 items-center justify-center gap-1.5 rounded-full bg-primary px-4 text-sm font-medium whitespace-nowrap text-primary-foreground transition-colors hover:bg-primary/90",
-              FOCUS,
-            )}
-          >
-            <PlusIcon />
-            Add to Chrome
-          </Link>
+          <ShareCta size="sm" compact />
         </div>
       </div>
     </header>

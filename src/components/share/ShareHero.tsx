@@ -1,8 +1,7 @@
-import Link from "next/link"
 import type { ReactNode } from "react"
 
 import { CopyLinkButton } from "@/components/share/CopyLinkButton"
-import { PlusIcon } from "@/components/site/icons"
+import { ShareCta } from "@/components/share/ForkButton"
 import { FOCUS } from "@/components/site/styles"
 import { formatDate, initialsOf } from "@/lib/share/format"
 import { MARKDOWN_CLASS, renderMarkdown } from "@/lib/share/markdown"
@@ -15,19 +14,17 @@ import { VisibilityBadge } from "./VisibilityBadge"
 
 /**
  * Header for every share (design: share-hero), with the "In this share" index once there are 2+ bands.
- * `action` sits next to the badge (an unlocked private share's "Lock again"); `fork` goes under the
- * card's buttons (the "Save to Jupiter Jots" button).
+ * `action` sits next to the badge (an unlocked private share's "Lock again"). The card's main
+ * button is "Save to Jupiter Jots" when the extension is installed, else "Get Jupiter Jots".
  */
 export function ShareHero({
   share,
   payload,
   action,
-  fork,
 }: {
   share: PublicShare
   payload: SharePayload
   action?: ReactNode
-  fork?: ReactNode
 }) {
   const bands = toBands(payload.items)
   const curator = payload.curator.name || share.curator_name
@@ -84,16 +81,7 @@ export function ShareHero({
               Save it to your library, or make collections and graphs like this one with Jupiter Jots. Free, and your library stays on your device.
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
-              <Link
-                href="/#get"
-                className={cn(
-                  "inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-full bg-primary px-5 text-sm font-medium whitespace-nowrap text-primary-foreground transition-colors hover:bg-primary/90",
-                  FOCUS,
-                )}
-              >
-                <PlusIcon />
-                Get Jupiter Jots
-              </Link>
+              <ShareCta slug={share.slug} className="flex-1" />
               <CopyLinkButton
                 className={cn(
                   "inline-flex h-10 items-center justify-center rounded-full border border-border bg-background px-4 text-sm font-medium transition-colors hover:bg-accent",
@@ -101,7 +89,6 @@ export function ShareHero({
                 )}
               />
             </div>
-            {fork ? <div className="mt-2">{fork}</div> : null}
           </div>
         </div>
       </div>

@@ -3,54 +3,24 @@
 import { useEffect, useId, useRef, useState } from "react"
 
 import { CopyLinkButton } from "@/components/share/CopyLinkButton"
-import { FOCUS, FOCUS_FLAT } from "@/components/site/styles"
-import { STORE_URL } from "@/lib/site"
+import { InstallButton } from "@/components/site/InstallButton"
+import { btnPrimary, btnSecondary } from "@/components/site/styles"
+import { forkShare, useExtensionPresence } from "@/lib/extension"
 import { cn } from "@/lib/utils"
 
 import { GLYPH, ico } from "./icons"
 
-/** The slice of `chrome.runtime` Chrome gives a page that an installed extension lists in externally_connectable. */
-type PageRuntime = {
-  lastError?: { message?: string }
-  sendMessage: (extensionId: string, message: unknown, callback: (response: unknown) => void) => void
-}
-
-/** How long to wait for the extension before assuming it is not installed. */
-const ANSWER_MS = 1500
-
-/**
- * One message to the installed extension; undefined when there is no extension to answer
- * (another browser, not installed, disabled, or too slow).
- */
-function sendToExtension(extensionId: string, message: unknown): Promise<unknown> {
-  const runtime = (globalThis as { chrome?: { runtime?: PageRuntime } }).chrome?.runtime
-  if (!extensionId || typeof runtime?.sendMessage !== "function") return Promise.resolve(undefined)
-  return new Promise((resolve) => {
-    const timer = setTimeout(() => resolve(undefined), ANSWER_MS)
-    try {
-      runtime.sendMessage(extensionId, message, (response) => {
-        clearTimeout(timer)
-        // Reading lastError tells Chrome the failure was handled.
-        resolve(runtime.lastError ? undefined : response)
-      })
-    } catch {
-      clearTimeout(timer)
-      resolve(undefined)
-    }
-  })
-}
-
-const isOk = (r: unknown) => typeof r === "object" && r !== null && (r as { ok?: unknown }).ok === true
-
-type Phase = "idle" | "checking" | "opening" | "help"
+type Phase = "idle" | "opening" | "opened" | "failed"
+type Size = "sm" | "md"
 
 /**
  * "Save to Jupiter Jots": hands the share's slug to the installed extension, which opens its
  * fork screen (nothing is imported until the reader presses Save there, and a private share's
- * password is typed in the extension, never passed from this page). Without the extension it
- * explains how to import the link by hand. NEXT_PUBLIC_JJ_EXTENSION_ID unset: help only.
+ * password is typed in the extension, never passed from this page). If the extension does not
+ * take it (e.g. an older version), the full button explains how to import the link by hand;
+ * `compact` (the top bar) just says so on the button.
  */
-export function ForkButton({ slug }: { slug: string }) {
+export function ForkButton({ slug, size = "md", compact, className }: { slug: string; size?: Size; compact?: boolean; className?: string }) {
   const [phase, setPhase] = useState<Phase>("idle")
   const panelId = useId()
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -61,65 +31,74 @@ export function ForkButton({ slug }: { slug: string }) {
     }
   }, [])
 
-  async function save() {
-    if (phase === "help") return setPhase("idle")
-    if (phase !== "idle") return
-    setPhase("checking")
-    const extensionId = process.env.NEXT_PUBLIC_JJ_EXTENSION_ID ?? ""
-    const ping = await sendToExtension(extensionId, { type: "jj:ping" })
-    if (!isOk(ping)) return setPhase("help")
-    const opened = await sendToExtension(extensionId, { type: "jj:fork-share", slug })
-    if (!isOk(opened)) return setPhase("help")
-    setPhase("opening")
+  const later = (next: Phase) => {
     if (timer.current) clearTimeout(timer.current)
-    timer.current = setTimeout(() => setPhase("idle"), 4000)
+    timer.current = setTimeout(() => setPhase(next), 4000)
   }
 
-  const busy = phase === "checking" || phase === "opening"
+  async function save() {
+    if (phase === "failed" && !compact) return setPhase("idle")
+    if (phase === "opening") return
+    setPhase("opening")
+    if (await forkShare(slug)) {
+      setPhase("opened")
+      later("idle")
+    } else {
+      setPhase("failed")
+      if (compact) later("idle")
+    }
+  }
+
+  const text =
+    phase === "opening" || phase === "opened"
+      ? "Opening Jupiter Jots…"
+      : phase === "failed" && compact
+        ? "Couldn’t open"
+        : compact
+          ? "Save to Jj"
+          : "Save to Jupiter Jots"
 
   return (
-    <div>
+    <>
       <button
         type="button"
         onClick={save}
-        aria-busy={busy || undefined}
-        aria-expanded={phase === "help"}
-        aria-controls={panelId}
-        className={cn(
-          "inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-full border border-border bg-background px-4 text-sm font-medium transition-colors hover:bg-accent",
-          FOCUS,
-        )}
+        aria-busy={phase === "opening" || undefined}
+        aria-expanded={compact ? undefined : phase === "failed"}
+        aria-controls={compact ? undefined : panelId}
+        aria-label={compact && phase === "idle" ? "Save to Jupiter Jots" : undefined}
+        className={cn(btnPrimary(size), className)}
       >
         {ico(GLYPH.bookmark)}
-        <span aria-live="polite">{phase === "opening" ? "Opening Jupiter Jots…" : "Save to Jupiter Jots"}</span>
+        <span aria-live="polite">{text}</span>
       </button>
-      {phase === "help" ? (
-        <div id={panelId} role="region" aria-label="Save this share" className="mt-2 rounded-xl border border-border bg-card p-4 text-card-foreground">
+      {!compact && phase === "failed" ? (
+        <div id={panelId} role="region" aria-label="Save this share" className="order-last basis-full rounded-xl border border-border bg-card p-4 text-card-foreground">
           <p className="text-sm leading-relaxed text-muted-foreground">
-            Install Jupiter Jots, then use Import → Import a share and paste this link.
+            Jupiter Jots didn’t open. In the extension, use Import → Import a share and paste this link.
           </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <CopyLinkButton
-              className={cn(
-                "inline-flex h-9 items-center justify-center rounded-full border border-border bg-background px-4 text-sm font-medium transition-colors hover:bg-accent",
-                FOCUS_FLAT,
-              )}
-            />
-            <a
-              href={STORE_URL}
-              target="_blank"
-              rel="noopener"
-              className={cn(
-                "inline-flex h-9 items-center justify-center gap-1.5 rounded-full bg-primary px-4 text-sm font-medium whitespace-nowrap text-primary-foreground transition-colors hover:bg-primary/90",
-                FOCUS,
-              )}
-            >
-              Add to Chrome
-              {ico(GLYPH.external, "size-3.5")}
-            </a>
-          </div>
+          <CopyLinkButton className={cn(btnSecondary("sm"), "mt-3")} />
         </div>
       ) : null}
-    </div>
+    </>
+  )
+}
+
+/**
+ * A share page's main action: "Save to Jupiter Jots" when the extension is installed, otherwise
+ * the install CTA ("Get Jupiter Jots", or the browser's "Add to …" in the top bar). Until the
+ * ping answers, an invisible stand-in holds the space so nothing jumps. Without `slug` (the top
+ * bar, sheets) it is read from the /s/<slug> URL; that only happens once the ping has answered,
+ * which is after hydration, so the server never needs it.
+ */
+export function ShareCta({ slug, size = "md", compact, className }: { slug?: string; size?: Size; compact?: boolean; className?: string }) {
+  const presence = useExtensionPresence()
+  const s = presence === "installed" ? (slug ?? /^\/s\/([^/]+)/.exec(window.location.pathname)?.[1]) : undefined
+
+  if (s) return <ForkButton slug={s} size={size} compact={compact} className={className} />
+  return (
+    <span className={cn("contents", presence === "unknown" && "[&>*]:invisible")} aria-hidden={presence === "unknown" || undefined}>
+      <InstallButton size={size} compact={compact} label={compact ? undefined : "Get Jupiter Jots"} className={className} />
+    </span>
   )
 }

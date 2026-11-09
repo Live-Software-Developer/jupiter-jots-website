@@ -1,13 +1,13 @@
 import Link from "next/link"
 
 import { BrandLogo } from "@/components/site/BrandLogo"
-import { StoreLink } from "@/components/site/ExternalStoreLink"
+import { InstallButton } from "@/components/site/InstallButton"
 import { FeatureNav } from "@/components/site/features/FeatureNav"
 import { Orbit } from "@/components/site/features/Orbit"
 import { COMING_SOON, FEATURE_SECTIONS, type FeatureSection } from "@/components/site/features/sections"
 import { FeatureVisualFor } from "@/components/site/features/visuals"
-import { ChevronRightIcon, PlusIcon } from "@/components/site/icons"
-import { btnPrimary, btnSecondary, textLink } from "@/components/site/styles"
+import { ChevronRightIcon } from "@/components/site/icons"
+import { btnSecondary, textLink } from "@/components/site/styles"
 import { pageMetadata } from "@/lib/seo"
 import { cn } from "@/lib/utils"
 
@@ -71,10 +71,7 @@ export default function FeaturesPage() {
               your own AI key, and agents in your terminal. All of it free, with your library kept on your device.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
-              <StoreLink className={btnPrimary("lg")}>
-                <PlusIcon />
-                Add to Chrome
-              </StoreLink>
+              <InstallButton size="lg" />
               <Link href="/guide" className={btnSecondary("lg")}>
                 Read the guide
               </Link>
@@ -123,10 +120,7 @@ export default function FeaturesPage() {
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">Free in Chrome, Brave and Edge. No account to create.</p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <StoreLink className={btnPrimary("lg")}>
-              <PlusIcon />
-              Add to Chrome
-            </StoreLink>
+            <InstallButton size="lg" />
             <Link href="/guide" className={btnSecondary("lg")}>
               Read the guide
             </Link>

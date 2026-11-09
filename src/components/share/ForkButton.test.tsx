@@ -2,9 +2,9 @@ import { act } from "react"
 import { createRoot, type Root } from "react-dom/client"
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest"
 
-import { STORE_URL } from "@/lib/site"
+import { resetExtensionPresence } from "@/lib/extension"
 
-import { ForkButton } from "./ForkButton"
+import { ShareCta } from "./ForkButton"
 
 const EXT = "dnfmgdmobmoglemckapnbgncnfhkighd"
 
@@ -29,12 +29,13 @@ function stubChrome(answer: (msg: Msg) => unknown) {
 let root: Root | null = null
 let host: HTMLElement | null = null
 
-function mount() {
+async function mount() {
   host = document.createElement("div")
   document.body.appendChild(host)
   root = createRoot(host)
-  act(() => root!.render(<ForkButton slug="abcdefghij" />))
-  return host.querySelector("button")!
+  act(() => root!.render(<ShareCta slug="abcdefghij" />))
+  await settle()
+  return host
 }
 
 async function settle() {
@@ -42,6 +43,8 @@ async function settle() {
     await new Promise((r) => setTimeout(r, 10))
   })
 }
+
+const saveButton = () => [...host!.querySelectorAll("button")].find((b) => b.textContent?.includes("Save to Jupiter Jots"))
 
 beforeAll(() => {
   ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -52,52 +55,60 @@ afterEach(() => {
   host?.remove()
   root = null
   host = null
+  resetExtensionPresence()
   vi.unstubAllGlobals()
   vi.unstubAllEnvs()
 })
 
-describe("ForkButton", () => {
-  it("sendsSlugWhenExtensionAnswersPing", async () => {
+describe("ShareCta", () => {
+  it("offers only Save when the extension answers, and sends the slug", async () => {
     vi.stubEnv("NEXT_PUBLIC_JJ_EXTENSION_ID", EXT)
     const runtime = stubChrome((msg) => (msg.type === "jj:ping" ? { ok: true, version: "2.0.1" } : { ok: true }))
-    const button = mount()
-    expect(button.textContent).toContain("Save to Jupiter Jots")
-    await act(async () => button.click())
-    await settle()
+    await mount()
     expect(runtime.sendMessage).toHaveBeenNthCalledWith(1, EXT, { type: "jj:ping" }, expect.any(Function))
+    expect(host!.textContent).not.toContain("Get Jupiter Jots")
+    await act(async () => saveButton()!.click())
+    await settle()
     expect(runtime.sendMessage).toHaveBeenNthCalledWith(2, EXT, { type: "jj:fork-share", slug: "abcdefghij" }, expect.any(Function))
     expect(host!.textContent).toContain("Opening Jupiter Jots…")
-    expect(host!.textContent).not.toContain("Install Jupiter Jots")
   })
 
-  it("showsInstallHelpWithoutExtension", async () => {
+  it("explains the manual import when the extension does not take the share", async () => {
     vi.stubEnv("NEXT_PUBLIC_JJ_EXTENSION_ID", EXT)
-    const runtime = stubChrome(() => undefined) // not installed: lastError, no answer
-    const button = mount()
+    stubChrome((msg) => (msg.type === "jj:ping" ? { ok: true } : { ok: false }))
+    await mount()
+    const button = saveButton()!
     await act(async () => button.click())
     await settle()
-    expect(runtime.sendMessage).toHaveBeenCalledTimes(1)
-    expect(host!.textContent).toContain("Install Jupiter Jots, then use Import → Import a share and paste this link")
-    expect(host!.querySelector(`a[href="${STORE_URL}"]`)).not.toBeNull()
+    expect(host!.textContent).toContain("Import → Import a share and paste this link")
     expect([...host!.querySelectorAll("button")].some((b) => b.textContent === "Copy link")).toBe(true)
     expect(button.getAttribute("aria-expanded")).toBe("true")
   })
 
-  it("shows the install help in other browsers and when no extension id is set", async () => {
+  it("offers only the install link without the extension", async () => {
     vi.stubEnv("NEXT_PUBLIC_JJ_EXTENSION_ID", EXT)
-    let button = mount() // no `chrome` global at all
-    await act(async () => button.click())
-    await settle()
-    expect(host!.textContent).toContain("Install Jupiter Jots")
+    const runtime = stubChrome(() => undefined) // not installed: lastError, no answer
+    await mount()
+    expect(runtime.sendMessage).toHaveBeenCalledTimes(1)
+    expect(saveButton()).toBeUndefined()
+    expect(host!.textContent).toContain("Get Jupiter Jots")
+    // jsdom is no Chromium browser, so the link goes to the platforms list (installCta is tested on its own).
+    expect(host!.querySelector('a[href="/#get"]')?.textContent).toContain("Get Jupiter Jots")
+  })
+
+  it("offers the install link in other browsers and when no extension id is set", async () => {
+    vi.stubEnv("NEXT_PUBLIC_JJ_EXTENSION_ID", EXT)
+    await mount() // no `chrome` global at all
+    expect(saveButton()).toBeUndefined()
+    expect(host!.textContent).toContain("Get Jupiter Jots")
     act(() => root?.unmount())
     host?.remove()
+    resetExtensionPresence()
 
     vi.stubEnv("NEXT_PUBLIC_JJ_EXTENSION_ID", "")
     const runtime = stubChrome(() => ({ ok: true }))
-    button = mount()
-    await act(async () => button.click())
-    await settle()
+    await mount()
     expect(runtime.sendMessage).not.toHaveBeenCalled()
-    expect(host!.textContent).toContain("Install Jupiter Jots")
+    expect(saveButton()).toBeUndefined()
   })
 })

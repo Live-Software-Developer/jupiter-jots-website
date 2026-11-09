@@ -2,11 +2,11 @@ import Link from "next/link"
 
 import { BrandLogo } from "@/components/site/BrandLogo"
 import { AskPreview } from "@/components/site/AskPreview"
-import { StoreLink } from "@/components/site/ExternalStoreLink"
-import { ChevronRightIcon, PlusIcon } from "@/components/site/icons"
+import { InstallButton } from "@/components/site/InstallButton"
+import { ChevronRightIcon } from "@/components/site/icons"
 import { Platforms } from "@/components/site/Platforms"
 import { Shot } from "@/components/site/Shot"
-import { FOCUS_FLAT, btnPrimary, btnSecondary, textLink } from "@/components/site/styles"
+import { FOCUS_FLAT, btnSecondary, textLink } from "@/components/site/styles"
 import { HOME_SEO } from "@/app/home-seo"
 
 export const metadata = HOME_SEO
@@ -48,10 +48,7 @@ export default function HomePage() {
               A bookmark manager that saves any page in one click, with a note on why it mattered. Bookmark the tabs you mean to read, give them a reason, then close them. Free, and your library stays on your device.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
-              <StoreLink className={btnPrimary("lg")}>
-                <PlusIcon />
-                Add to Chrome
-              </StoreLink>
+              <InstallButton size="lg" />
               <a href="#get" className={btnSecondary("lg")}>
                 All platforms
               </a>
@@ -277,10 +274,7 @@ export default function HomePage() {
             Try it on the next page you save
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">Import your Chrome bookmarks in one step. Your folders arrive as collections.</p>
-          <StoreLink className={`mt-8 ${btnPrimary("lg")}`}>
-            <PlusIcon />
-            Add to Chrome
-          </StoreLink>
+          <InstallButton size="lg" className="mt-8" />
           <a
             href="#get"
             className={`mt-4 rounded text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline ${FOCUS_FLAT}`}

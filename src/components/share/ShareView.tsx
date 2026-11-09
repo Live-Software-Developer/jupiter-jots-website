@@ -3,7 +3,6 @@ import type { ReactNode } from "react"
 import { BookmarkSheetProvider } from "@/components/share/BookmarkSheet"
 import { CollectionSheetProvider } from "@/components/share/CollectionSheet"
 import { Discussion, ShareDiscussionProvider, type CommentCodec } from "@/components/share/Discussion"
-import { ForkButton } from "@/components/share/ForkButton"
 import { LockedNotesProvider } from "@/components/share/LockedNote"
 import { ShareReadProvider } from "@/components/share/ReadState"
 import { ShareBand, toBands } from "@/components/share/ShareBand"
@@ -48,7 +47,7 @@ export function ShareView({
           <CollectionSheetProvider collections={sheetEntries(payload.items)} curator={curator}>
             <LockedNotesProvider>
               <main>
-                <ShareHero share={share} payload={payload} action={heroAction} fork={<ForkButton slug={share.slug} />} />
+                <ShareHero share={share} payload={payload} action={heroAction} />
                 {bands.map((band, i) => (
                   <ShareBand key={band.key} item={band} index={i} total={bands.length} curator={curator} />
                 ))}

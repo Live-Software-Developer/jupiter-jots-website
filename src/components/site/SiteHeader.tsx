@@ -1,13 +1,12 @@
 import Link from "next/link"
 
 import { Wordmark } from "@/components/site/BrandLogo"
-import { StoreLink } from "@/components/site/ExternalStoreLink"
-import { PlusIcon } from "@/components/site/icons"
+import { InstallButton } from "@/components/site/InstallButton"
 import { MobileMenu } from "@/components/site/MobileMenu"
 import { NavLinks } from "@/components/site/NavLinks"
-import { FOCUS, btnPrimary } from "@/components/site/styles"
+import { FOCUS } from "@/components/site/styles"
 
-/** The design's <site-header>: sticky, logo, main nav (md+), Add to Chrome, and a menu sheet on phones. */
+/** The design's <site-header>: sticky, logo, main nav (md+), the install CTA (named for the browser), and a menu sheet on phones. */
 export function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 block">
@@ -21,10 +20,7 @@ export function SiteHeader() {
           </nav>
           <div className="ml-auto flex items-center gap-1">
             <span className="hidden sm:block">
-              <StoreLink className={btnPrimary("sm")}>
-                <PlusIcon />
-                Add to Chrome
-              </StoreLink>
+              <InstallButton size="sm" compact />
             </span>
             <MobileMenu />
           </div>

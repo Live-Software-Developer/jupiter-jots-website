@@ -5,7 +5,7 @@ import Link from "next/link"
 import { type ReactNode, useState } from "react"
 
 import { GLYPH, ico } from "@/components/share/icons"
-import { StoreLink } from "@/components/site/ExternalStoreLink"
+import { InstallButton } from "@/components/site/InstallButton"
 import { FOCUS, FOCUS_FLAT, btnPrimary, btnSecondary } from "@/components/site/styles"
 import { EXPLORE_MAX_Q, getExplore } from "@/lib/share/api"
 import { formatDate, initialsOf } from "@/lib/share/format"
@@ -150,9 +150,7 @@ export function ExploreList({ q, initial }: { q: string; initial: ExploreResult 
       <Notice
         title="No public shares yet"
         action={
-          <StoreLink className={btnPrimary("md")}>
-            Get Jupiter Jots
-          </StoreLink>
+          <InstallButton icon={false} label="Get Jupiter Jots" />
         }
       >
         Shares appear here when their curators choose Public in Jupiter Jots. Unlisted and password-protected shares are never listed.

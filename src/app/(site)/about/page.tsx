@@ -1,9 +1,9 @@
 import Link from "next/link"
 
 import { PlainLayout } from "@/components/site/DocLayout"
-import { StoreLink } from "@/components/site/ExternalStoreLink"
+import { InstallButton } from "@/components/site/InstallButton"
 import { HelpBlock } from "@/components/site/HelpBlock"
-import { btnPrimary, btnSecondary } from "@/components/site/styles"
+import { btnSecondary } from "@/components/site/styles"
 import About from "@/content/about.mdx"
 import { pageMetadata } from "@/lib/seo"
 
@@ -24,7 +24,7 @@ export default function AboutPage() {
         title="Try it"
         actions={
           <>
-            <StoreLink className={btnPrimary("md")}>Add to Chrome</StoreLink>
+            <InstallButton icon={false} />
             <Link href="/guide" className={btnSecondary("md")}>
               Read the guide
             </Link>

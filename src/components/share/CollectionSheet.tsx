@@ -1,9 +1,8 @@
 "use client"
 
-import Link from "next/link"
 import { createContext, useCallback, useContext, useId, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react"
 
-import { btnPrimary, btnSecondary, FOCUS_FLAT } from "@/components/site/styles"
+import { btnSecondary, FOCUS_FLAT } from "@/components/site/styles"
 import { collectionCounts, type SheetEntry } from "@/lib/share/collections"
 import { anchorFor, plural } from "@/lib/share/format"
 import { MARKDOWN_CLASS, renderMarkdown } from "@/lib/share/markdown"
@@ -14,6 +13,7 @@ import { cn } from "@/lib/utils"
 
 import { BookmarkRow, HUE_TINT } from "./BookmarkRow"
 import { CopyLinkButton } from "./CopyLinkButton"
+import { ShareCta } from "./ForkButton"
 import { GLYPH, ico, MARK_GLYPH } from "./icons"
 import { Modal } from "./Modal"
 import { LockedNoteRow } from "./LockedNote"
@@ -369,9 +369,7 @@ export function Sheet({
           )}
         </div>
         <div className="flex shrink-0 items-center gap-2 border-t border-border px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-5">
-          <Link href="/#get" className={cn(btnPrimary("md"), "flex-1 sm:flex-none")}>
-            Get Jupiter Jots
-          </Link>
+          <ShareCta className="flex-1 sm:flex-none" />
           {/* A nested sheet (a graph node, a note's link) does not open from a link; its anchor is the top item's. */}
           <CopyLinkButton
             hash={anchorFor(itemKey)}
