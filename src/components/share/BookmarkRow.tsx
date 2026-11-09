@@ -1,5 +1,5 @@
 import { FOCUS_FLAT } from "@/components/site/styles"
-import { MARKDOWN_CLASS, renderMarkdown } from "@/lib/share/markdown"
+import { MARKDOWN_CLASS, renderMarkdown, RICH } from "@/lib/share/markdown"
 import type { PBookmark } from "@/lib/share/types"
 import { cn } from "@/lib/utils"
 
@@ -84,7 +84,7 @@ export function BookmarkRow({ bookmark }: { bookmark: PBookmark }) {
             <span className="text-xs text-muted-foreground">{bookmark.domain}</span>
           </span>
           {bookmark.note ? (
-            <span className={cn(MARKDOWN_CLASS, "mt-1 block space-y-2 text-sm leading-relaxed break-words text-muted-foreground")}>{renderMarkdown(bookmark.note)}</span>
+            <span className={cn(MARKDOWN_CLASS, "mt-1 block space-y-2 text-sm leading-relaxed break-words text-muted-foreground")}>{renderMarkdown(bookmark.note, undefined, RICH)}</span>
           ) : null}
           {bookmark.tags.length > 0 ? (
             <span className="mt-2 flex flex-wrap gap-1">

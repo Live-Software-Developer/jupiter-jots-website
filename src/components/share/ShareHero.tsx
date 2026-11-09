@@ -4,7 +4,7 @@ import { CopyLinkButton } from "@/components/share/CopyLinkButton"
 import { ShareCta } from "@/components/share/ForkButton"
 import { FOCUS } from "@/components/site/styles"
 import { formatDate, initialsOf } from "@/lib/share/format"
-import { MARKDOWN_CLASS, renderMarkdown } from "@/lib/share/markdown"
+import { MARKDOWN_CLASS, renderMarkdown, RICH } from "@/lib/share/markdown"
 import type { PublicShare, SharePayload } from "@/lib/share/types"
 import { cn } from "@/lib/utils"
 
@@ -47,7 +47,7 @@ export function ShareHero({
           </h1>
           {payload.intro ? (
             <div className={cn(MARKDOWN_CLASS, "mt-4 max-w-2xl space-y-3 text-lg leading-relaxed text-pretty text-muted-foreground")}>
-              {renderMarkdown(payload.intro)}
+              {renderMarkdown(payload.intro, undefined, RICH)}
             </div>
           ) : null}
           <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-3">

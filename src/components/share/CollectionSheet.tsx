@@ -5,7 +5,7 @@ import { createContext, useCallback, useContext, useId, useMemo, useRef, useStat
 import { btnSecondary, FOCUS_FLAT } from "@/components/site/styles"
 import { collectionCounts, type SheetEntry } from "@/lib/share/collections"
 import { anchorFor, plural } from "@/lib/share/format"
-import { MARKDOWN_CLASS, renderMarkdown } from "@/lib/share/markdown"
+import { MARKDOWN_CLASS, renderMarkdown, RICH } from "@/lib/share/markdown"
 import type { MarkGlyph } from "@/lib/share/payload"
 import { allBookmarks, allNotes } from "@/lib/share/payload"
 import type { PBookmark, PCollection, PIcon, PNote, PSubCollection } from "@/lib/share/types"
@@ -191,7 +191,7 @@ function SubCollection({ sub, depth, filtering }: { sub: PSubCollection; depth: 
       {shown ? (
         <div id={id} className={cn("divide-y divide-border border-l-2 border-border", depth < 3 ? "ml-6 sm:ml-8" : "ml-2")}>
           {sub.note ? (
-            <div className={cn(MARKDOWN_CLASS, "space-y-2 px-4 py-3 text-sm leading-relaxed text-pretty break-words text-muted-foreground sm:px-5")}>{renderMarkdown(sub.note)}</div>
+            <div className={cn(MARKDOWN_CLASS, "space-y-2 px-4 py-3 text-sm leading-relaxed text-pretty break-words text-muted-foreground sm:px-5")}>{renderMarkdown(sub.note, undefined, RICH)}</div>
           ) : null}
           {count || sub.collections?.length ? (
             <CollectionRows collection={sub} depth={depth + 1} filtering={filtering} />
@@ -229,7 +229,7 @@ function CollectionSheet({ entry, curator, onClose }: { entry: SheetEntry; curat
       commentsTab
     >
       {c.note ? (
-        <div className={cn(MARKDOWN_CLASS, "space-y-2 px-4 pt-4 text-sm leading-relaxed text-pretty break-words text-muted-foreground sm:px-5")}>{renderMarkdown(c.note)}</div>
+        <div className={cn(MARKDOWN_CLASS, "space-y-2 px-4 pt-4 text-sm leading-relaxed text-pretty break-words text-muted-foreground sm:px-5")}>{renderMarkdown(c.note, undefined, RICH)}</div>
       ) : null}
       {hasAny ? (
         <>

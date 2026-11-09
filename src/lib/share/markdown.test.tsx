@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { markdownPreview, renderMarkdown, shareLinkSlug } from './markdown'
+import { markdownPreview, renderMarkdown, RICH, shareLinkSlug } from './markdown'
 
 const html = (s: string) => renderToStaticMarkup(<>{renderMarkdown(s)}</>)
 
@@ -90,5 +90,35 @@ describe('share links in comments', () => {
     expect(shareLinkSlug(`${ORIGIN}/s/abc123xyz0`, [ORIGIN])).toBe('abc123xyz0')
     expect(shareLinkSlug(`${ORIGIN}/s/abc123xyz0`, [])).toBeNull()
     expect(shareLinkSlug('/s/abc123xyz0', [''])).toBeNull()
+  })
+})
+
+describe('rich markdown (the share author’s own writing)', () => {
+  const rich = (src: string) => renderToStaticMarkup(<>{renderMarkdown(src, undefined, RICH)}</>)
+
+  it('renders a table with its alignment', () => {
+    const out = rich('| Name | Qty |\n| :--- | ---: |\n| **Apples** | 3 |')
+    expect(out).toMatch(/<table[^>]*>/)
+    expect(out).toMatch(/<td[^>]*text-align:right[^>]*>3<\/td>/)
+  })
+
+  it('renders safe links and https media only', () => {
+    const out = rich('[site](https://ok.example/a) [bad](javascript:alert(1)) ![pic](https://img.example/p.png) ![x](http://img.example/p.png) ![clip](https://v.example/c.mp4)')
+    expect(out).toContain('href="https://ok.example/a"')
+    expect(out).toContain('rel="noopener noreferrer nofollow ugc"')
+    expect(out).not.toContain('href="javascript:')
+    expect(out).toMatch(/<img src="https:\/\/img\.example\/p\.png"[^>]*referrerPolicy="no-referrer"/i)
+    expect(out).not.toContain('src="http://img.example')
+    expect(out).toMatch(/<video src="https:\/\/v\.example\/c\.mp4"/)
+  })
+
+  it('turns a YouTube link on its own line into a thumbnail card, never an iframe', () => {
+    const out = rich('https://youtu.be/dQw4w9WgXcQ')
+    expect(out).toContain('https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg')
+    expect(out).not.toContain('<iframe')
+  })
+
+  it('still never renders raw HTML', () => {
+    expect(rich('## T\n\n<img src=x onerror=alert(1)>')).toContain('&lt;img src=x onerror=alert(1)&gt;')
   })
 })

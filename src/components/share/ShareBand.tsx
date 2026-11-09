@@ -3,7 +3,7 @@ import type { ReactNode } from "react"
 import { FOCUS } from "@/components/site/styles"
 import { collectionCounts } from "@/lib/share/collections"
 import { anchorFor, plural } from "@/lib/share/format"
-import { MARKDOWN_CLASS, renderMarkdown } from "@/lib/share/markdown"
+import { MARKDOWN_CLASS, renderMarkdown, RICH } from "@/lib/share/markdown"
 import { allBookmarks, allNotes } from "@/lib/share/payload"
 import { bookmarkLabel, collectionLabel, graphLabel, noteLabel, runKey } from "@/lib/share/targets"
 import type { PBookmark, PayloadItem } from "@/lib/share/types"
@@ -179,7 +179,7 @@ function BookmarkCard({ bookmark, curator }: { bookmark: PBookmark; curator?: st
         <h3 className="text-2xl leading-snug font-medium break-words text-pretty">{bookmark.title || bookmark.domain}</h3>
         {bookmark.note ? (
           <blockquote className="mt-5 border-l-2 border-primary/50 pl-4 text-base leading-relaxed text-pretty text-muted-foreground">
-            <span className={cn(MARKDOWN_CLASS, "block space-y-3 break-words")}>{renderMarkdown(bookmark.note)}</span>
+            <span className={cn(MARKDOWN_CLASS, "block space-y-3 break-words")}>{renderMarkdown(bookmark.note, undefined, RICH)}</span>
             <span className="mt-2 block text-xs">— {curator ? `${curator}'s note` : "The curator's note"}</span>
           </blockquote>
         ) : null}
@@ -268,7 +268,7 @@ export function ShareBand({ item, index, total, curator }: { item: Band; index: 
             </div>
             {description ? <p className="mt-2 max-w-2xl text-base leading-relaxed text-pretty text-muted-foreground">{description}</p> : null}
             {note ? (
-              <div className={cn(MARKDOWN_CLASS, "mt-2 max-w-2xl space-y-3 text-base leading-relaxed text-pretty break-words text-muted-foreground")}>{renderMarkdown(note)}</div>
+              <div className={cn(MARKDOWN_CLASS, "mt-2 max-w-2xl space-y-3 text-base leading-relaxed text-pretty break-words text-muted-foreground")}>{renderMarkdown(note, undefined, RICH)}</div>
             ) : null}
           </div>
           <div className="flex flex-wrap items-center gap-2 empty:hidden">

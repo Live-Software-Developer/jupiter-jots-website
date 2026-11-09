@@ -139,7 +139,10 @@ describe('ShareBand notes', () => {
     expect(section.querySelector('strong')?.textContent).toBe('these')
     expect([...section.querySelectorAll('li')].map((li) => li.textContent)).toEqual(['one', 'two'])
     expect(section.textContent).toContain('#plan')
-    expect(section.querySelector('script, a[href*="evil"]')).toBeNull()
+    expect(section.querySelector('script')).toBeNull()
+    // The author's own links render, opening apart from the page and passing no ranking or referrer.
+    const link = section.querySelector('a[href*="evil"]')
+    expect(link?.getAttribute('rel')).toBe('noopener noreferrer nofollow ugc')
   })
 
   it('lists what a note links to: bookmark rows and collection name chips', () => {

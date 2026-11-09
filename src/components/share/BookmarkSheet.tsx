@@ -4,7 +4,7 @@ import { useCallback, useState, type ReactNode } from "react"
 
 import { btnPrimary } from "@/components/site/styles"
 import { safeUrl } from "@/lib/share/format"
-import { MARKDOWN_CLASS, renderMarkdown } from "@/lib/share/markdown"
+import { MARKDOWN_CLASS, renderMarkdown, RICH } from "@/lib/share/markdown"
 import type { PBookmark } from "@/lib/share/types"
 import { cn } from "@/lib/utils"
 
@@ -75,7 +75,7 @@ function BookmarkSheet({ bookmark, onClose }: { bookmark: PBookmark; onClose(): 
         ) : null}
         {bookmark.note ? (
           <div className={cn(MARKDOWN_CLASS, "mt-5 space-y-3 text-sm leading-relaxed break-words text-foreground/90")}>
-            {renderMarkdown(bookmark.note)}
+            {renderMarkdown(bookmark.note, undefined, RICH)}
           </div>
         ) : (
           <p className="mt-5 text-sm text-muted-foreground">The curator didn’t add a note to this bookmark.</p>

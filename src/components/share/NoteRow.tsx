@@ -1,4 +1,4 @@
-import { MARKDOWN_CLASS, renderMarkdown } from "@/lib/share/markdown"
+import { MARKDOWN_CLASS, renderMarkdown, RICH } from "@/lib/share/markdown"
 import { NOTE_MAX } from "@/lib/share/payload"
 import { noteLabel } from "@/lib/share/targets"
 import type { PNote } from "@/lib/share/types"
@@ -16,7 +16,7 @@ export const NoteMark = ({ className, glyph = "size-4" }: { className: string; g
 
 /** A note's rendered markdown body; the full note, up to the parser's cap. */
 export const NoteBody = ({ note, className }: { note: PNote; className?: string }) =>
-  note.body ? <div className={cn(MARKDOWN_CLASS, "wrap-anywhere", className)}>{renderMarkdown(note.body, NOTE_MAX)}</div> : null
+  note.body ? <div className={cn(MARKDOWN_CLASS, "wrap-anywhere", className)}>{renderMarkdown(note.body, NOTE_MAX, RICH)}</div> : null
 
 /**
  * One note in a collection's band or sheet, above its bookmarks. `clamp` cuts the body to four
