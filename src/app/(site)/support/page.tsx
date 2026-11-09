@@ -1,6 +1,7 @@
 import Link from "next/link"
 
 import { PlainLayout } from "@/components/site/DocLayout"
+import { FeedbackForm } from "@/components/site/FeedbackForm"
 import { ChevronRightIcon } from "@/components/site/icons"
 import { Prose } from "@/components/site/Prose"
 import { Section } from "@/components/site/Section"
@@ -45,22 +46,17 @@ export default function SupportPage() {
         </ul>
       </Section>
 
-      <Section anchor="bug" title="Report a problem">
+      <Section anchor="bug" title="Report a problem or share an idea">
         <Prose>
-          <p>Email us with “Bug” in the subject. These details help us find the problem:</p>
-          <ul>
-            <li>What you did, what you expected, and what happened instead.</li>
-            <li>Where it happened: the popup, the side panel or the full-screen library.</li>
-            <li>
-              Your Jupiter Jots version (on <code>chrome://extensions</code>) and your Chrome version (on <code>chrome://version</code>).
-            </li>
-            <li>A screenshot, if it shows the problem.</li>
-          </ul>
           <p>
-            We have no access to your library, so we can’t look up your bookmarks. Please don’t send a backup file unless we ask, and remove
-            anything private from it first.
+            Tell us here and it goes straight to the people who build Jupiter Jots. There’s also a <strong>Send feedback</strong> page in the
+            extension (Settings). We have no access to your library, so describe what you did and what happened; please don’t send a backup
+            file.
           </p>
         </Prose>
+        <div className="mt-6">
+          <FeedbackForm />
+        </div>
       </Section>
 
       <Section anchor="contact" title="Contact us">
@@ -72,7 +68,7 @@ export default function SupportPage() {
           >
             {SUPPORT_EMAIL}
           </a>
-          <p className="mt-3 leading-7 text-muted-foreground">For bugs, questions and ideas.</p>
+          <p className="mt-3 leading-7 text-muted-foreground">If the form above doesn’t work for you, or for anything private.</p>
         </div>
       </Section>
 
