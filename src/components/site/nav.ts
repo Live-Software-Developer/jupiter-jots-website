@@ -17,6 +17,7 @@ export const FOOTER_COLUMNS = [
       ["Ask Jupiter", "/guide/ask-jupiter"],
       ["Terminal agents", "/guide/agents"],
       ["Changelog", "/changelog"],
+      ["News & updates", "/news"],
       ["FAQ", "/faq"],
     ],
   },
